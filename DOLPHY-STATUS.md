@@ -62,3 +62,7 @@
 - `./gradlew :app:compileDebugKotlin` ✅ (نجح مع جميع الوحدات الجديدة).
 - `./gradlew :core:model:test :core:hal:test :core:security:test :rootd:test :bridge:flipper:test` ✅ (كلها نجحت).
 - `./gradlew :app:assembleDebug` يعمل لكن يحتاج وقتاً طويلاً (>5 دقائق) بسبب حجم المشروع؛ لم ينتهِ في المحاولة الأخيرة لكن لم يُظهر أي خطأ في `compileDebugKotlin`.
+تمت إضافة اختبار الجهاز الحقيقي
+تم إضافة lint-baseline احترافي
+تم إضافة Driver DSL (Parser)
+تم إضافة RootdService (daemon)

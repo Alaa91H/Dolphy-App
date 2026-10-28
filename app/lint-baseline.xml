@@ -1,1 +1,2 @@
-<!-- Baseline created: lint analysis is extremely slow on this large project (>3GB RAM, >5 min). Will be updated after build optimization. -->
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.9.1" client="gradle" server="gradle" version="1.0"/>\n
