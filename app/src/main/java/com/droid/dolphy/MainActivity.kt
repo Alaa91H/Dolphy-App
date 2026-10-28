@@ -95,6 +95,7 @@ import com.droid.dolphy.bluetooth.audio.BtAudioStressScanScreen
 import com.droid.dolphy.network.CameraNetworkResultsScreen
 import com.droid.dolphy.network.CameraNetworkScanScreen
 import com.droid.dolphy.network.LanScannerScreen
+import com.droid.dolphy.hardware.DeviceGraphScreen
 import com.droid.dolphy.network.LanToolsScreen
 import com.droid.dolphy.network.MyCamScreen
 import com.droid.dolphy.network.NetworkDiagnosticHubScreen
@@ -1005,6 +1006,8 @@ fun MainScaffold(
 
             composable("network_diagnostic_hub") { NetworkDiagnosticHubScreen(screenNavController) }
             composable("other/network_diagnostic_hub") { NetworkDiagnosticHubScreen(screenNavController) }
+            composable("device_graph") { DeviceGraphScreen(screenNavController) }
+            composable("other/device_graph") { DeviceGraphScreen(screenNavController) }
             composable("lan_scanner") { LanToolsScreen(screenNavController) }
             composable("other/lan_scanner") { LanToolsScreen(screenNavController) }
             composable("lan_scanner_run") { LanScannerScreen(screenNavController) }

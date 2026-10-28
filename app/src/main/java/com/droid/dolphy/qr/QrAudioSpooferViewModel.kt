@@ -220,7 +220,7 @@ class QrAudioSpooferViewModel(application: Application) : AndroidViewModel(appli
                     observeServer(sm)
                 }
 
-                val startedPort = sm.start(8080)
+                val startedPort = sm.start(8080, localIp)
                 if (startedPort == -1) {
                     launch(Dispatchers.Main) {
                         _logs.value = (

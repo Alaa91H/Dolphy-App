@@ -1045,6 +1045,7 @@
     <string name="plugin_preview_size">Размер</string>
     <string name="plugin_preview_security">Полный доступ</string>
     <string name="plugin_preview_security_body">Плагин выполняется внутри Dolphy и может использовать разрешения приложения, Android API, Bluetooth, Wi-Fi, USB, Root и Shizuku. Устанавливайте только файлы от разработчиков, которым доверяете.</string>
+    <string name="plugin_preview_consent">Я понимаю, что плагин получит полный доступ к возможностям приложения, и доверяю его автору.</string>
     <string name="plugin_preview_no_description">Разработчик не добавил описание.</string>
     <string name="plugin_preview_invalid">Не удалось открыть плагин</string>
     <string name="plugin_preview_install_success">Плагин установлен</string>
@@ -1119,4 +1120,19 @@
     <string name="customize_animations_permanent_badge">Постоянная</string>
     <string name="customize_animations_set_success">Анимация сохранена как постоянная</string>
     <string name="customize_animations_reset_success">Анимация сброшена на стандартный режим</string>
+    <string name="device_graph_title">Граф устройств</string>
+    <string name="device_graph_subtitle">Внутренние модули телефона и внешние устройства (USB, Flipper) в одном списке. Возможности берутся из HAL, а не из модели устройства.</string>
+    <string name="device_graph_empty">Устройства не найдены. Подключите Flipper Zero или USB-серийное устройство.</string>
+    <string name="device_graph_connect">Подключить</string>
+    <string name="device_graph_disconnect">Отключить</string>
+    <string name="device_graph_connecting">Подключение…</string>
+    <string name="device_graph_flipper_connected">Flipper Zero подключён</string>
+    <string name="device_graph_error">Ошибка: %1$s</string>
+    <string name="device_graph_state_detected">обнаружено</string>
+    <string name="device_graph_state_probing">проверка</string>
+    <string name="device_graph_state_ready">готово</string>
+    <string name="device_graph_state_busy">занято</string>
+    <string name="device_graph_state_disconnected">отключено</string>
+    <string name="device_graph_state_error">ошибка</string>
+    <string name="device_graph_state_recovering">восстановление</string>
 </resources>

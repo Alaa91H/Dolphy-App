@@ -1,6 +1,7 @@
 import java.net.URI
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -11,11 +12,52 @@ plugins {
     alias(libs.plugins.chaquopy)
 }
 
+/**
+ * Release signing is supplied out-of-band. Never commit real credentials.
+ *
+ * Preferred (CI): environment variables
+ *   DOLPHY_KEYSTORE_FILE, DOLPHY_KEYSTORE_PASSWORD, DOLPHY_KEY_ALIAS, DOLPHY_KEY_PASSWORD
+ * Alternative (local): keystore.properties in the repository root (git-ignored)
+ */
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
 
+fun signingValue(envName: String, propertyName: String): String? =
+    System.getenv(envName)?.takeIf { it.isNotBlank() }
+        ?: keystoreProperties.getProperty(propertyName)?.takeIf { it.isNotBlank() }
+
+val releaseStoreFilePath = signingValue("DOLPHY_KEYSTORE_FILE", "storeFile")
+val releaseStorePassword = signingValue("DOLPHY_KEYSTORE_PASSWORD", "storePassword")
+val releaseKeyAlias = signingValue("DOLPHY_KEY_ALIAS", "keyAlias")
+val releaseKeyPassword = signingValue("DOLPHY_KEY_PASSWORD", "keyPassword")
+val hasReleaseSigning = listOf(
+    releaseStoreFilePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { it != null }
 
 android {
     namespace = "com.droid.dolphy"
     compileSdk = 36
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFilePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.droid.dolphy"
@@ -49,7 +91,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             isProfileable = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -66,8 +108,13 @@ android {
         noCompress += "png"
     }
     lint {
-        checkReleaseBuilds = false
-        abortOnError = false
+        checkReleaseBuilds = true
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
+        warningsAsErrors = false
+        checkDependencies = false
+        checkTestSources = false
+        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -109,6 +156,10 @@ chaquopy {
 
 
 dependencies {
+    implementation(project(":core:hal"))
+    implementation(project(":core:security"))
+    implementation(project(":rootd"))
+    implementation(project(":bridge:flipper"))
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -193,4 +244,23 @@ val syncFlipperIrAssets = tasks.register<Copy>("syncFlipperIrAssets") {
 tasks.named("preBuild") {
     dependsOn(syncFlipperIrAssets)
 
+}
+
+/**
+ * Fail fast instead of silently producing an unsigned release APK.
+ */
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        if (!hasReleaseSigning) {
+            throw GradleException(
+                "Release signing is not configured. Set DOLPHY_KEYSTORE_FILE, " +
+                    "DOLPHY_KEYSTORE_PASSWORD, DOLPHY_KEY_ALIAS and DOLPHY_KEY_PASSWORD " +
+                    "(or provide keystore.properties). See docs/security/P0.md."
+            )
+        }
+        val store = rootProject.file(releaseStoreFilePath!!)
+        if (!store.exists()) {
+            throw GradleException("Release keystore not found: ${store.absolutePath}")
+        }
+    }
 }

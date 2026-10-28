@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.droid.dolphy.bridge.flipper.FlipperCliAdapterTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:53:53" hostname="Alaa-LT" time="0.484">
+  <properties/>
+  <testcase name="rejectsUnsafeCommands" classname="com.droid.dolphy.bridge.flipper.FlipperCliAdapterTest" time="0.234"/>
+  <testcase name="acceptsReadOnlyDiagnosticCommand" classname="com.droid.dolphy.bridge.flipper.FlipperCliAdapterTest" time="0.121"/>
+  <testcase name="parsesInfoAndBuildsDescriptor" classname="com.droid.dolphy.bridge.flipper.FlipperCliAdapterTest" time="0.124"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

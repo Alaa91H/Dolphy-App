@@ -1062,6 +1062,7 @@
     <string name="plugin_preview_size">Size</string>
     <string name="plugin_preview_security">Full access</string>
     <string name="plugin_preview_security_body">The plugin runs inside Dolphy and can use app permissions, Android APIs, Bluetooth, Wi-Fi, USB, Root, and Shizuku. Only install files from developers you trust.</string>
+    <string name="plugin_preview_consent">I understand this plugin receives full access to the app\'s capabilities and I trust its author.</string>
     <string name="plugin_preview_no_description">The developer did not provide a description.</string>
     <string name="plugin_preview_invalid">Could not open plugin</string>
     <string name="plugin_preview_install_success">Plugin installed</string>
@@ -1136,4 +1137,19 @@
     <string name="customize_animations_permanent_badge">Permanent</string>
     <string name="customize_animations_set_success">Animation set as permanent on home screen</string>
     <string name="customize_animations_reset_success">Animation reset to standard mode</string>
+    <string name="device_graph_title">Device graph</string>
+    <string name="device_graph_subtitle">Phone-internal modules and external devices (USB, Flipper) in one list. Features request capabilities from the HAL, not a device model.</string>
+    <string name="device_graph_empty">No devices found. Connect a Flipper Zero or a USB serial device.</string>
+    <string name="device_graph_connect">Connect</string>
+    <string name="device_graph_disconnect">Disconnect</string>
+    <string name="device_graph_connecting">Connecting…</string>
+    <string name="device_graph_flipper_connected">Flipper Zero connected</string>
+    <string name="device_graph_error">Error: %1$s</string>
+    <string name="device_graph_state_detected">detected</string>
+    <string name="device_graph_state_probing">probing</string>
+    <string name="device_graph_state_ready">ready</string>
+    <string name="device_graph_state_busy">busy</string>
+    <string name="device_graph_state_disconnected">disconnected</string>
+    <string name="device_graph_state_error">error</string>
+    <string name="device_graph_state_recovering">recovering</string>
 </resources>

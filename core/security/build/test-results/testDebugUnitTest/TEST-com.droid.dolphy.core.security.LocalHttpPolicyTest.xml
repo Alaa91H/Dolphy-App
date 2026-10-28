@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.droid.dolphy.core.security.LocalHttpPolicyTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:52:49" hostname="Alaa-LT" time="0.716">
+  <properties/>
+  <testcase name="validatesUrlsAndSchemes" classname="com.droid.dolphy.core.security.LocalHttpPolicyTest" time="0.311"/>
+  <testcase name="rejectsPublicAddresses" classname="com.droid.dolphy.core.security.LocalHttpPolicyTest" time="0.364"/>
+  <testcase name="acceptsPrivateAndLoopbackAddresses" classname="com.droid.dolphy.core.security.LocalHttpPolicyTest" time="0.025"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

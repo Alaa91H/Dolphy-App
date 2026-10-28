@@ -209,36 +209,11 @@ object PluginManager {
         }
     }
 
-    private fun inferCapabilities(source: String): List<String> {
-        val supported = setOf(
-            "dex", "download", "network", "files", "ble_spam", "bluetooth", "wifi",
-            "infrared", "usb", "root", "shizuku", "shell", "hooks",
-        )
-        val declaredBody = Regex("(?ms)^\\s*__permissions__\\s*=\\s*\\[(.*?)]\\s*$")
-            .find(source)?.groupValues?.getOrNull(1).orEmpty()
-        val declared = Regex("[\"']([^\"']+)[\"']")
-            .findAll(declaredBody)
-            .map { it.groupValues[1].trim().lowercase().replace('-', '_') }
-            .filter { it in supported }
-            .toList()
-        val checks = linkedMapOf(
-            "dex" to listOf("load_dex_", "loadDex", "export_app_class", "find_java_class"),
-            "download" to listOf("download_assets", "httpDownload", "http_download"),
-            "network" to listOf("httpRequest", "http_request", "tcpReachable", "portScan", "pingHost"),
-            "files" to listOf("filesWrite", "filesRead", "asset_path", "apply_asset"),
-            "ble_spam" to listOf("register_ble_mode", "registerBleMode", "bleAdvertise", "advertis"),
-            "bluetooth" to listOf("bleStartScan", "bleConnect", "bluetooth", "gatt"),
-            "wifi" to listOf("wifi", "WifiManager", "networkSuggest"),
-            "infrared" to listOf("infrared", "irTransmit", "ir_remote"),
-            "usb" to listOf("UsbManager", "usb", "bad_hid", "bad_usb"),
-            "root" to listOf("rootExec", "root_exec"),
-            "shizuku" to listOf("shizukuExec", "shizuku_exec"),
-            "shell" to listOf("shellExec", "shell_exec", "smartExec"),
-            "hooks" to listOf("hook_screen", "hook_action", "hook_surface", "registerScreenHook"),
-        )
-        return (declared + checks.filterValues { tokens -> tokens.any { source.contains(it, ignoreCase = true) } }.keys)
-            .distinct()
-    }
+    private fun inferCapabilities(source: String): List<String> =
+        PluginPermissions.resolve(source).map { it.token }.sorted()
+
+    fun inferPermissions(source: String): Set<PluginPermission> =
+        PluginPermissions.resolve(source)
 
     
     fun dispatchNfcTag(tag: android.nfc.Tag) {
@@ -312,7 +287,10 @@ object PluginManager {
         }
     }
 
-    private fun installSource(manifest: PluginManifest, raw: String, runtime: String): Result<PluginManifest> {
+    private fun installSource(sourceManifest: PluginManifest, raw: String, runtime: String): Result<PluginManifest> {
+        val manifest = sourceManifest.copy(
+            permissions = sourceManifest.permissions.ifEmpty { PluginPermissions.resolve(raw) },
+        )
 
         if (permanentlyDeleted.remove(manifest.id)) {
             saveDeletedIds()
@@ -529,6 +507,12 @@ object PluginManager {
                             isDesignLibrary = fromSource.isDesignLibrary || serial.isDesignLibrary,
                             icon = fromSource.icon,
                             dependencies = fromSource.dependencies.ifEmpty { serial.dependencies },
+                            permissions = if (serial.permissions.isEmpty()) {
+                                // Installed before permission tracking existed: fall back to the source.
+                                fromSource.permissions
+                            } else {
+                                PluginPermission.parse(serial.permissions)
+                            },
                         )
                     } catch (_: Exception) {
                         fromSource
@@ -634,6 +618,7 @@ object PluginManager {
             runtime = runtime,
             pinned = pinned,
             dependencies = manifest.dependencies,
+            permissions = manifest.permissions.map { it.token }.sorted(),
         )
         metaDir.mkdirs()
         File(metaDir, "${manifest.id}.json").writeText(
@@ -796,11 +781,12 @@ object PluginManager {
     }
 
     private fun parseManifest(runtime: String, raw: String, fallbackId: String, fallbackName: String): PluginManifest {
-        return if (runtime == "python") {
+        val parsed = if (runtime == "python") {
             PythonPluginSession.parseManifest(raw, fallbackId, fallbackName)
         } else {
             JsPluginSession.parseManifest(raw, fallbackId, fallbackName)
         }
+        return parsed.copy(permissions = PluginPermissions.resolve(raw))
     }
 
     private fun looksLikePython(raw: String): Boolean {
@@ -825,6 +811,7 @@ object PluginManager {
         val icon: String = "extension",
         val pinned: Boolean = false,
         val dependencies: List<String> = emptyList(),
+        val permissions: List<String> = emptyList(),
     ) {
         fun toManifest() = PluginManifest(
             id, name, version, description, author,
@@ -832,6 +819,7 @@ object PluginManager {
             isDesignLibrary = isDesignLibrary,
             icon = icon,
             dependencies = dependencies,
+            permissions = PluginPermission.parse(permissions),
         )
     }
 

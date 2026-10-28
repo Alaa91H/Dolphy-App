@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -73,6 +74,7 @@ fun PluginPreviewScreen(uriString: String?, onBack: () -> Unit) {
     var installing by remember(uriString) { mutableStateOf(false) }
     var installed by remember(uriString) { mutableStateOf(false) }
     var installFailure by remember(uriString) { mutableStateOf<String?>(null) }
+    var consentChecked by remember(uriString) { mutableStateOf(false) }
     val installSuccess = stringResource(R.string.plugin_preview_install_success)
     val installError = stringResource(R.string.plugin_preview_install_error)
     val preview = previewResult?.getOrNull()
@@ -130,9 +132,27 @@ fun PluginPreviewScreen(uriString: String?, onBack: () -> Unit) {
                         }
                     }
                     item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Checkbox(
+                                checked = consentChecked,
+                                onCheckedChange = { consentChecked = it },
+                                enabled = !installing,
+                            )
+                            Text(
+                                text = stringResource(R.string.plugin_preview_consent),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    item {
                         AccentButton(
                             onClick = {
-                                if (uri == null || installing) return@AccentButton
+                                if (uri == null || installing || !consentChecked) return@AccentButton
                                 installing = true
                                 installFailure = null
                                 scope.launch {
@@ -147,7 +167,7 @@ fun PluginPreviewScreen(uriString: String?, onBack: () -> Unit) {
                                     }
                                 }
                             },
-                            enabled = !installing,
+                            enabled = !installing && consentChecked,
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                         ) {
                             if (installing) {

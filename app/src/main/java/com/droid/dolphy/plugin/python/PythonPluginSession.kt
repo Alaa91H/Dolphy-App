@@ -61,6 +61,7 @@ class PythonPluginSession(
                     stateVersion += 1
                     requestUiRefresh?.invoke()
                 },
+                permissions = manifest.permissions,
             )
             bridge = localBridge
             try {

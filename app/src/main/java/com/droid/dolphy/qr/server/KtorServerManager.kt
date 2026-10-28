@@ -2,6 +2,7 @@ package com.droid.dolphy.qr.server
 
 import android.content.Context
 import io.ktor.http.*
+import com.droid.dolphy.core.security.LocalRequestPolicy
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -39,6 +40,7 @@ class KtorServerManager(private val context: Context) {
     val logs = _logs.asSharedFlow()
 
     private var actualPort = 8080
+    private var bindHost = "127.0.0.1"
 
     private var _serverUrl: String? = null
     fun getServerUrl(): String? = _serverUrl
@@ -102,9 +104,9 @@ class KtorServerManager(private val context: Context) {
         }
     }
 
-    private fun verifyLocalHealth(port: Int): Boolean {
+    private fun verifyLocalHealth(port: Int, host: String): Boolean {
         return try {
-            val conn = (URL("http://127.0.0.1:$port/health").openConnection() as HttpURLConnection).apply {
+            val conn = (URL("http://$host:$port/health").openConnection() as HttpURLConnection).apply {
                 connectTimeout = 2000
                 readTimeout = 2000
                 requestMethod = "GET"
@@ -126,11 +128,14 @@ class KtorServerManager(private val context: Context) {
         }
     }
 
-    fun start(port: Int = 8080): Int {
+    fun start(port: Int = 8080, host: String? = null): Int {
         if (server != null) {
             log("Сервер уже запущен на порту $actualPort")
             return actualPort
         }
+
+        val serverHost = host?.trim()?.takeIf { it.isNotEmpty() } ?: "127.0.0.1"
+        bindHost = serverHost
 
 
         try {
@@ -144,7 +149,7 @@ class KtorServerManager(private val context: Context) {
                 actualPort = tryPort
                 val engine = embeddedServer(Netty, configure = {
                     connector {
-                        host = "0.0.0.0"
+                        this.host = serverHost
                         this.port = tryPort
                     }
                     connectionGroupSize = 2
@@ -157,11 +162,43 @@ class KtorServerManager(private val context: Context) {
                     install(WebSockets) {
                         pingPeriod = kotlin.time.Duration.parse("15s")
                         timeout = kotlin.time.Duration.parse("30s")
-                        maxFrameSize = Long.MAX_VALUE
+                        maxFrameSize = 64L * 1024L
                         masking = false
                     }
                     install(ContentNegotiation) { json() }
                     intercept(ApplicationCallPipeline.Call) {
+                        call.response.header("X-Content-Type-Options", "nosniff")
+                        call.response.header("X-Frame-Options", "DENY")
+                        call.response.header("Referrer-Policy", "no-referrer")
+                        call.response.header(
+                            "Permissions-Policy",
+                            "camera=(), microphone=(), geolocation=()",
+                        )
+
+                        val hostHeader = call.request.headers[HttpHeaders.Host]
+                        if (!LocalRequestPolicy.isAllowedHost(hostHeader, serverHost, tryPort)) {
+                            log("Отклонён неверный Host: $hostHeader")
+                            call.respondText(
+                                "Invalid host",
+                                ContentType.Text.Plain,
+                                HttpStatusCode.Forbidden,
+                            )
+                            return@intercept
+                        }
+
+                        if (call.request.path() == "/ws") {
+                            val origin = call.request.headers[HttpHeaders.Origin]
+                            if (!LocalRequestPolicy.isAllowedOrigin(origin, serverHost, tryPort)) {
+                                log("Отклонён WebSocket Origin: $origin")
+                                call.respondText(
+                                    "Invalid origin",
+                                    ContentType.Text.Plain,
+                                    HttpStatusCode.Forbidden,
+                                )
+                                return@intercept
+                            }
+                        }
+
                         val remoteHost = call.request.local.remoteHost
                         if (!isLocalClient(remoteHost)) {
                             log("Отклонено внешнее подключение: $remoteHost")
@@ -276,13 +313,13 @@ class KtorServerManager(private val context: Context) {
                                             text.startsWith("CLIENT:TEXT:") -> {
                                                 val payload = text.removePrefix("CLIENT:TEXT:")
                                                 if (payload.isNotBlank()) {
-                                                    log("Ввод: $payload")
+                                                    log("Ввод: ${payload.length} символов (содержимое скрыто)")
                                                 }
                                             }
                                             text.startsWith("CLIENT:INPUT:") -> {
                                                 val payload = text.removePrefix("CLIENT:INPUT:")
                                                 if (payload.isNotBlank()) {
-                                                    log("Ввод: $payload")
+                                                    log("Ввод: ${payload.length} символов (содержимое скрыто)")
                                                 }
                                             }
                                         }
@@ -306,7 +343,7 @@ class KtorServerManager(private val context: Context) {
                 var healthy = false
                 repeat(20) {
                     Thread.sleep(100)
-                    if (verifyLocalHealth(tryPort)) {
+                    if (verifyLocalHealth(tryPort, serverHost)) {
                         healthy = true
                         return@repeat
                     }
@@ -346,7 +383,8 @@ class KtorServerManager(private val context: Context) {
                 "default-src 'self' data: blob:; " +
                     "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
                     "img-src 'self' data: blob:; media-src 'self' data: blob:; " +
-                    "connect-src 'self' ws:; font-src 'self' data:; frame-src 'none'",
+                    "connect-src 'self'; font-src 'self' data:; frame-src 'none'; " +
+                    "frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
             )
             if (html.isBlank()) {
                 call.respondText(FALLBACK_HTML, ContentType.Text.Html.withCharset(Charsets.UTF_8))

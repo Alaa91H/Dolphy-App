@@ -51,8 +51,8 @@ class JsPluginSession(
     private val sourceCode: String,
 ) : PluginSession {
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val device = PluginDeviceApis(appContext, manifest.id)
-    private val androidApis = PluginAndroidApis(appContext, manifest.id)
+    private val device = PluginDeviceApis(appContext, manifest.id, manifest.permissions)
+    private val androidApis = PluginAndroidApis(appContext, manifest.id, manifest.permissions)
     private val uiBuilder = JsUiBuilder()
     private val prefs = appContext.getSharedPreferences("plugin_prefs_${manifest.id}", Context.MODE_PRIVATE)
     private val state = ConcurrentHashMap<String, Any?>()

@@ -85,6 +85,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.droid.dolphy.core.security.SecurePreferences
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.res.stringResource
@@ -283,13 +284,13 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
     var lanScanJob by remember { mutableStateOf<Job?>(null) }
     var selectedTargetLabel by remember { mutableStateOf("") }
 
-    val prefs = remember { context.getSharedPreferences("wifi_passwords", Context.MODE_PRIVATE) }
+    val prefs = remember { SecurePreferences(context, "wifi_passwords") }
 
     fun saveGroups(groups: List<PasswordGroup>) {
         val dtos = groups.map { PasswordGroupDto(it.name, it.passwords, it.selected) }
         try {
             val json = Json.encodeToString(dtos)
-            prefs.edit().putString("groups", json).apply()
+            prefs.putString("groups", json)
         } catch (e: Exception) {
 
         }

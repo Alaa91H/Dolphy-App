@@ -55,6 +55,8 @@ import java.io.File
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.UUID
+import com.droid.dolphy.plugin.PluginPermission
+import com.droid.dolphy.plugin.PluginPermissions
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -75,10 +77,14 @@ import android.os.ParcelUuid
 class PluginAndroidApis(
     private val context: Context,
     private val pluginId: String,
+    private val permissions: Set<PluginPermission> = emptySet(),
 ) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val io = Executors.newCachedThreadPool()
     private val appCtx = context.applicationContext
+
+    private val filesGranted: Boolean
+        get() = PluginPermissions.has(permissions, PluginPermission.FILES)
 
     private val filesDir by lazy {
         File(appCtx.filesDir, "dolphy_plugins_data/$pluginId").apply { mkdirs() }
@@ -590,7 +596,7 @@ class PluginAndroidApis(
     fun cryptoUuid(): String = UUID.randomUUID().toString()
 
     
-    fun pluginFilesDir(): File = filesDir
+    fun pluginFilesDir(): File = if (filesGranted) filesDir else File("/dev/null/dolphy-denied")
 
     
     fun importUriToSandbox(
@@ -832,6 +838,7 @@ class PluginAndroidApis(
 
 
     private fun resolvePath(path: String, dirOnly: Boolean = false): File? {
+        if (!filesGranted) return null
         val clean = path.trim().removePrefix("/").replace("..", "")
         val f = if (clean.isEmpty()) filesDir else File(filesDir, clean)
         val canon = try {

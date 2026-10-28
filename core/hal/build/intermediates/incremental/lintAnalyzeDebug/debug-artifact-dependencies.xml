@@ -1,0 +1,32 @@
+<dependencies>
+  <compile
+      roots=":@@:core:model::debug,org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0@jar,org.jetbrains.kotlin:kotlin-stdlib:2.1.0@jar,org.jetbrains:annotations:23.0.0@jar">
+    <dependency
+        name=":@@:core:model::debug"
+        simpleName="Dolphy.core:model"/>
+    <dependency
+        name="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0@jar"
+        simpleName="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm"/>
+    <dependency
+        name="org.jetbrains.kotlin:kotlin-stdlib:2.1.0@jar"
+        simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
+    <dependency
+        name="org.jetbrains:annotations:23.0.0@jar"
+        simpleName="org.jetbrains:annotations"/>
+  </compile>
+  <package
+      roots=":@@:core:model::debug,org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0@jar,org.jetbrains.kotlin:kotlin-stdlib:2.1.0@jar,org.jetbrains:annotations:23.0.0@jar">
+    <dependency
+        name=":@@:core:model::debug"
+        simpleName="Dolphy.core:model"/>
+    <dependency
+        name="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0@jar"
+        simpleName="org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm"/>
+    <dependency
+        name="org.jetbrains.kotlin:kotlin-stdlib:2.1.0@jar"
+        simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
+    <dependency
+        name="org.jetbrains:annotations:23.0.0@jar"
+        simpleName="org.jetbrains:annotations"/>
+  </package>
+</dependencies>

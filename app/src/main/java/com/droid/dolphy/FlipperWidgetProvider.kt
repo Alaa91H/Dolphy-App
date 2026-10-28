@@ -6,7 +6,9 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.util.Log
 import android.widget.RemoteViews
+import com.droid.dolphy.widget.WidgetSecurity
 
 class FlipperWidgetProvider : AppWidgetProvider() {
 
@@ -17,10 +19,14 @@ class FlipperWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        val action = intent.action ?: return
+        if (action in PROTECTED_ACTIONS && !WidgetSecurity.isValid(context, intent)) {
+            Log.w(TAG, "Rejected unauthorized widget broadcast: $action")
+            return
+        }
         super.onReceive(context, intent)
         BleSpamRuntime.init(context)
         IrWidgetRuntime.init(context)
-        val action = intent.action ?: return
         val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -32,6 +38,7 @@ class FlipperWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val PREFS = "FlipperWidgetPrefs"
+        private const val TAG = "FlipperWidget"
 
         private const val KEY_SCREEN = "flipper_widget_screen"
         private const val KEY_INDEX = "flipper_widget_index"
@@ -50,15 +57,28 @@ class FlipperWidgetProvider : AppWidgetProvider() {
         const val ACTION_BLE_ANDROID = "com.droid.dolphy.action.FLIPPER_WIDGET_BLE_ANDROID"
         const val ACTION_BLE_WINDOWS = "com.droid.dolphy.action.FLIPPER_WIDGET_BLE_WINDOWS"
 
+        private val PROTECTED_ACTIONS = setOf(
+            ACTION_UP,
+            ACTION_DOWN,
+            ACTION_LEFT,
+            ACTION_RIGHT,
+            ACTION_OK,
+            ACTION_BACK,
+            ACTION_BLE_IOS,
+            ACTION_BLE_SAMSUNG,
+            ACTION_BLE_ANDROID,
+            ACTION_BLE_WINDOWS,
+        )
+
         private val mainItems = listOf("BLE", "IR")
 
         private val irMenuItems = listOf(
-            "Óí. ÒÂ",
-            "Óí. Audio",
-            "Óí. AC",
-            "Óí. Proj",
-            "ÈÊ øòîðì",
-            "ÈÊ ãëóøèëêà"
+            "ï¿½ï¿½. ï¿½ï¿½",
+            "ï¿½ï¿½. Audio",
+            "ï¿½ï¿½. AC",
+            "ï¿½ï¿½. Proj",
+            "ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½",
+            "ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
         )
 
         private val bleSections = listOf(BleSection.IOS, BleSection.SAMSUNG, BleSection.ANDROID, BleSection.WINDOWS)
@@ -159,7 +179,7 @@ class FlipperWidgetProvider : AppWidgetProvider() {
                 )
 
                 if (screen == WidgetScreen.IR && irMode == IrMode.MENU) {
-                    views.setTextViewText(R.id.ir_header_title, "IR ìåíþ")
+                    views.setTextViewText(R.id.ir_header_title, "IR ï¿½ï¿½ï¿½ï¿½")
                     irIds.forEachIndexed { i, viewId ->
                         val label = irMenuItems.getOrNull(i).orEmpty()
                         views.setTextViewText(viewId, label)
@@ -176,10 +196,10 @@ class FlipperWidgetProvider : AppWidgetProvider() {
                     }
                 } else if (screen == WidgetScreen.IR) {
                     val title = when (irCategory) {
-                        UniversalCategory.TV -> "Óí. ÒÂ"
-                        UniversalCategory.AUDIO -> "Óí. Audio"
-                        UniversalCategory.AC -> "Óí. AC"
-                        UniversalCategory.PROJECTOR -> "Óí. Proj"
+                        UniversalCategory.TV -> "ï¿½ï¿½. ï¿½ï¿½"
+                        UniversalCategory.AUDIO -> "ï¿½ï¿½. Audio"
+                        UniversalCategory.AC -> "ï¿½ï¿½. AC"
+                        UniversalCategory.PROJECTOR -> "ï¿½ï¿½. Proj"
                     }
                     views.setTextViewText(R.id.ir_header_title, title)
                     val actions = actionsForCategory(irCategory)
@@ -218,6 +238,7 @@ class FlipperWidgetProvider : AppWidgetProvider() {
             val intent = Intent(context, FlipperWidgetProvider::class.java).apply {
                 this.action = action
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+                putExtra(WidgetSecurity.EXTRA_TOKEN, WidgetSecurity.token(context))
             }
             return PendingIntent.getBroadcast(
                 context,
