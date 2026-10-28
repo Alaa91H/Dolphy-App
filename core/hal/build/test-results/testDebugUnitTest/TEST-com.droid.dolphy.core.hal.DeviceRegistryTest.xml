@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.droid.dolphy.core.hal.DeviceRegistryTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-28T03:52:57" hostname="Alaa-LT" time="0.018">
-  <properties/>
-  <testcase name="removedDeviceIsNoLongerAvailable" classname="com.droid.dolphy.core.hal.DeviceRegistryTest" time="0.016"/>
-  <testcase name="stateTransitionsAreVisibleInSnapshots" classname="com.droid.dolphy.core.hal.DeviceRegistryTest" time="0.001"/>
-  <testcase name="registersAndFiltersReadyDevices" classname="com.droid.dolphy.core.hal.DeviceRegistryTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
