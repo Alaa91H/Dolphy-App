@@ -66,3 +66,4 @@
 تم إضافة lint-baseline احترافي
 تم إضافة Driver DSL (Parser)
 تم إضافة RootdService (daemon)
+تم إضافة الترجمة الكاملة للعربية (values-ar/strings.xml) — 203 سلسلة
