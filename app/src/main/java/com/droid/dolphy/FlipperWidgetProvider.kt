@@ -72,13 +72,15 @@ class FlipperWidgetProvider : AppWidgetProvider() {
 
         private val mainItems = listOf("BLE", "IR")
 
-        private val irMenuItems = listOf(
-            "��. ��",
-            "��. Audio",
-            "��. AC",
-            "��. Proj",
-            "�� �����",
-            "�� ��������"
+        private const val IR_MENU_COUNT = 6
+
+        private fun irMenuItems(context: Context): List<String> = listOf(
+            "IR TV",
+            "IR Audio",
+            "IR AC",
+            "IR Proj",
+            "IR " + context.getString(R.string.ir_storm),
+            "IR " + context.getString(R.string.ir_jammer),
         )
 
         private val bleSections = listOf(BleSection.IOS, BleSection.SAMSUNG, BleSection.ANDROID, BleSection.WINDOWS)
@@ -179,9 +181,12 @@ class FlipperWidgetProvider : AppWidgetProvider() {
                 )
 
                 if (screen == WidgetScreen.IR && irMode == IrMode.MENU) {
-                    views.setTextViewText(R.id.ir_header_title, "IR ����")
+                    views.setTextViewText(
+                        R.id.ir_header_title,
+                        "IR " + context.getString(R.string.ir_widget_menu),
+                    )
                     irIds.forEachIndexed { i, viewId ->
-                        val label = irMenuItems.getOrNull(i).orEmpty()
+                        val label = irMenuItems(context).getOrNull(i).orEmpty()
                         views.setTextViewText(viewId, label)
                         views.setViewVisibility(viewId, android.view.View.VISIBLE)
                         val isSelected = index == i
@@ -196,10 +201,10 @@ class FlipperWidgetProvider : AppWidgetProvider() {
                     }
                 } else if (screen == WidgetScreen.IR) {
                     val title = when (irCategory) {
-                        UniversalCategory.TV -> "��. ��"
-                        UniversalCategory.AUDIO -> "��. Audio"
-                        UniversalCategory.AC -> "��. AC"
-                        UniversalCategory.PROJECTOR -> "��. Proj"
+                        UniversalCategory.TV -> "IR TV"
+                        UniversalCategory.AUDIO -> "IR Audio"
+                        UniversalCategory.AC -> "IR AC"
+                        UniversalCategory.PROJECTOR -> "IR Proj"
                     }
                     views.setTextViewText(R.id.ir_header_title, title)
                     val actions = actionsForCategory(irCategory)
@@ -329,7 +334,7 @@ class FlipperWidgetProvider : AppWidgetProvider() {
         private fun moveDown(screen: WidgetScreen, irMode: IrMode, irCategory: UniversalCategory, index: Int): Int = when (screen) {
             WidgetScreen.MAIN -> (index + 1).coerceAtMost(mainItems.lastIndex)
             WidgetScreen.IR -> {
-                val max = if (irMode == IrMode.MENU) irMenuItems.lastIndex else actionsForCategory(irCategory).lastIndex
+                val max = if (irMode == IrMode.MENU) IR_MENU_COUNT - 1 else actionsForCategory(irCategory).lastIndex
                 (index + 1).coerceAtMost(max)
             }
             WidgetScreen.BLE -> if (index <= 1) index + 2 else index

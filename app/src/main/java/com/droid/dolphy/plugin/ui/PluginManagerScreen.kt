@@ -1,6 +1,7 @@
 package com.droid.dolphy.plugin.ui
 
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -46,20 +49,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.droid.dolphy.AccentButton
 import com.droid.dolphy.DolphyIconButton
 import com.droid.dolphy.DolphySwitch
 import com.droid.dolphy.MaterialBackground
 import com.droid.dolphy.MaterialCard
 import com.droid.dolphy.R
 import com.droid.dolphy.SectionTopBar
+import com.droid.dolphy.plugin.CatalogPlugin
+import com.droid.dolphy.plugin.PLUGIN_CATALOG
+import com.droid.dolphy.plugin.PluginCatalog
 import com.droid.dolphy.plugin.PluginIcons
 import com.droid.dolphy.plugin.PluginManager
+import com.droid.dolphy.plugin.isCatalogVersionNewer
 import com.droid.dolphy.plugin.model.LoadedPlugin
 
 @Composable
 fun PluginManagerScreen(navController: NavController) {
     val plugins by PluginManager.plugins.collectAsState()
     val safeMode by PluginManager.safeMode.collectAsState()
+    val catalogStates by PluginCatalog.states.collectAsState()
+    val installedById = remember(plugins) { plugins.associateBy { it.manifest.id } }
+    val updateCount = PLUGIN_CATALOG.count { entry ->
+        val installed = installedById[entry.id]
+        installed != null && isCatalogVersionNewer(entry.version, installed.manifest.version)
+    }
 
     MaterialBackground(accentColor = MaterialTheme.colorScheme.primary) {
         Column(Modifier.fillMaxSize()) {
@@ -83,6 +97,31 @@ fun PluginManagerScreen(navController: NavController) {
                     item("safe_mode") {
                         SafeModeAnimated(safeMode)
                     }
+                    item("catalog_header") {
+                        CatalogHeader(updateCount, installedById, safeMode)
+                    }
+                    items(PLUGIN_CATALOG, key = { "catalog_${it.id}" }) { entry ->
+                        CatalogCard(
+                            entry = entry,
+                            installed = installedById[entry.id],
+                            state = catalogStates[entry.id],
+                            safeMode = safeMode,
+                        )
+                    }
+                    item("installed_header") {
+                        SectionHeader(stringResource(R.string.plugin_catalog_installed_section))
+                    }
+                    if (plugins.isEmpty()) {
+                        item("no_plugins") {
+                            Text(
+                                stringResource(R.string.plugin_empty_center),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
                     items(plugins, key = { it.manifest.id }) { plugin ->
                         PluginCard(plugin, safeMode)
                     }
@@ -96,18 +135,283 @@ fun PluginManagerScreen(navController: NavController) {
                         )
                     }
                 }
-                if (plugins.isEmpty()) {
-                    Text(
-                        stringResource(R.string.plugin_empty_center),
-                        modifier = Modifier.align(Alignment.Center).padding(horizontal = 36.dp),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
             }
         }
     }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp, start = 4.dp),
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Composable
+private fun CatalogHeader(
+    updateCount: Int,
+    installedById: Map<String, LoadedPlugin>,
+    safeMode: Boolean,
+) {
+    val context = LocalContext.current
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp, start = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.plugin_catalog_available_section),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            if (updateCount > 0 && !safeMode) {
+                AccentButton(
+                    onClick = {
+                        PLUGIN_CATALOG.forEach { entry ->
+                            val installed = installedById[entry.id] ?: return@forEach
+                            if (isCatalogVersionNewer(entry.version, installed.manifest.version)) {
+                                PluginCatalog.install(context, entry)
+                            }
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                ) {
+                    Text(stringResource(R.string.plugin_catalog_update_all))
+                }
+            }
+        }
+        Text(
+            text = stringResource(R.string.plugin_catalog_subtitle),
+            modifier = Modifier.padding(horizontal = 4.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun CatalogCard(
+    entry: CatalogPlugin,
+    installed: LoadedPlugin?,
+    state: PluginCatalog.State?,
+    safeMode: Boolean,
+) {
+    val context = LocalContext.current
+    var confirm by remember(entry.id) { mutableStateOf(false) }
+    val busy = state?.phase == PluginCatalog.Phase.Downloading || state?.phase == PluginCatalog.Phase.Installing
+    val hasUpdate = installed != null && isCatalogVersionNewer(entry.version, installed.manifest.version)
+    val permissionsLine = permissionSummary(entry.permissions)
+    val sizeLabel = remember(entry.sizeBytes) { formatSize(entry.sizeBytes) }
+
+    MaterialCard(
+        modifier = Modifier.fillMaxWidth(),
+        accentColor = MaterialTheme.colorScheme.primary,
+        contentPadding = 14.dp,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    modifier = Modifier.size(52.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primaryFixed,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryFixed,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(PluginIcons.resolve(entry.icon), null, modifier = Modifier.size(28.dp))
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        entry.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                    Text(
+                        "${entry.author} · v${entry.version} · $sizeLabel",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                when {
+                    busy -> CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    installed == null -> AccentButton(
+                        onClick = { confirm = true },
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                    ) {
+                        Text(stringResource(R.string.plugin_catalog_install))
+                    }
+                    else -> DolphySwitch(
+                        checked = installed.enabled,
+                        onCheckedChange = { PluginManager.setEnabled(entry.id, it) },
+                        enabled = !safeMode,
+                    )
+                }
+            }
+
+            Text(
+                text = stringResource(entry.descriptionRes),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Text(
+                text = permissionsLine,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (installed != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.plugin_catalog_installed_version, installed.manifest.version),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (hasUpdate) {
+                        Text(
+                            text = stringResource(R.string.plugin_catalog_version_available, entry.version),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        AccentButton(
+                            onClick = { confirm = true },
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                            enabled = !safeMode && !busy,
+                        ) {
+                            Text(stringResource(R.string.plugin_catalog_update))
+                        }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.plugin_catalog_up_to_date),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            when (state?.phase) {
+                PluginCatalog.Phase.Downloading -> CatalogStatus(
+                    text = stringResource(R.string.plugin_catalog_downloading, state.progress),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                PluginCatalog.Phase.Installing -> CatalogStatus(
+                    text = stringResource(R.string.plugin_catalog_installing),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                PluginCatalog.Phase.Failed -> CatalogStatus(
+                    text = state.message ?: stringResource(R.string.plugin_catalog_error_generic),
+                    color = MaterialTheme.colorScheme.error,
+                )
+                PluginCatalog.Phase.Done -> state.message?.let { message ->
+                    CatalogStatus(text = message, color = MaterialTheme.colorScheme.primary)
+                }
+                null -> Unit
+            }
+        }
+    }
+
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            icon = { Icon(PluginIcons.resolve(entry.icon), null) },
+            title = {
+                Text(
+                    stringResource(
+                        if (hasUpdate) R.string.plugin_catalog_update_title else R.string.plugin_catalog_install_title,
+                        entry.name,
+                    ),
+                )
+            },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.plugin_catalog_install_body,
+                        stringResource(entry.descriptionRes),
+                        entry.version,
+                        sizeLabel,
+                        permissionsLine,
+                    ),
+                )
+            },
+            confirmButton = {
+                AccentButton(
+                    onClick = {
+                        confirm = false
+                        PluginCatalog.install(context, entry)
+                    },
+                ) {
+                    Text(
+                        stringResource(
+                            if (hasUpdate) R.string.plugin_catalog_update else R.string.plugin_catalog_install,
+                        ),
+                    )
+                }
+            },
+            dismissButton = {
+                AccentButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CatalogStatus(text: String, color: androidx.compose.ui.graphics.Color) {
+    Text(
+        text = text,
+        modifier = Modifier.fillMaxWidth(),
+        style = MaterialTheme.typography.bodySmall,
+        color = color,
+    )
+}
+
+@Composable
+private fun permissionSummary(ids: List<String>): String {
+    val labels = ids.mapNotNull { id -> permissionLabelRes(id)?.let { stringResource(it) } }
+    return if (labels.isEmpty()) {
+        stringResource(R.string.plugin_catalog_no_permissions)
+    } else {
+        stringResource(R.string.plugin_catalog_permissions, labels.joinToString(" · "))
+    }
+}
+
+@StringRes
+private fun permissionLabelRes(id: String): Int? = when (id.lowercase()) {
+    "wifi" -> R.string.plugin_capability_wifi
+    "bluetooth" -> R.string.plugin_capability_bluetooth
+    "ble_spam" -> R.string.plugin_capability_ble_spam
+    "dex" -> R.string.plugin_capability_dex
+    "download" -> R.string.plugin_capability_download
+    "files" -> R.string.plugin_capability_files
+    "infrared" -> R.string.plugin_capability_infrared
+    "network" -> R.string.plugin_capability_network
+    "usb" -> R.string.plugin_capability_usb
+    "root" -> R.string.plugin_capability_root
+    "shizuku" -> R.string.plugin_capability_shizuku
+    "shell" -> R.string.plugin_capability_shell
+    else -> null
+}
+
+private fun formatSize(bytes: Long): String = when {
+    bytes >= 1024 * 1024 -> String.format(java.util.Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
+    bytes >= 1024 -> String.format(java.util.Locale.US, "%.1f KB", bytes / 1024.0)
+    else -> "$bytes B"
 }
 
 @Composable

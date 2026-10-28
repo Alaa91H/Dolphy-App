@@ -84,6 +84,7 @@ fun MyCamScreen(navController: NavController) {
         statusText = context.getString(R.string.my_cam_status_searching)
 
         val result = MyCamEngine.findCamera(
+            context = context,
             onStatus = { st ->
                 statusText = when (st) {
                     MyCamEngine.Status.Searching -> context.getString(R.string.my_cam_status_searching)
@@ -189,10 +190,11 @@ private fun ScanningCenter(status: String) {
 
 @Composable
 private fun MjpegView(url: String, authHeader: String?, onInterrupted: (String) -> Unit) {
+    val context = LocalContext.current
     var frame by remember { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(url, authHeader) {
         MyCamEngine.mjpegFrames(url, authHeader)
-            .catch { e -> onInterrupted("Поток прерван: ${e.message ?: "нет ответа"}") }
+            .catch { e -> onInterrupted(context.getString(R.string.my_cam_stream_interrupted, e.message ?: context.getString(R.string.my_cam_stream_no_reply))) }
             .collect { frame = it }
     }
     Box(
@@ -217,10 +219,11 @@ private fun MjpegView(url: String, authHeader: String?, onInterrupted: (String) 
 
 @Composable
 private fun SnapshotView(url: String, authHeader: String?, onInterrupted: (String) -> Unit) {
+    val context = LocalContext.current
     var frame by remember { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(url, authHeader) {
         MyCamEngine.snapshotFrames(url, authHeader)
-            .catch { e -> onInterrupted("Поток снимков прерван: ${e.message ?: "нет ответа"}") }
+            .catch { e -> onInterrupted(context.getString(R.string.my_cam_snapshot_interrupted, e.message ?: context.getString(R.string.my_cam_stream_no_reply))) }
             .collect { frame = it }
     }
     Box(
@@ -254,7 +257,7 @@ private fun RtspView(url: String, onError: (String) -> Unit) {
             setMediaSource(source)
             addListener(object : Player.Listener {
                 override fun onPlayerError(error: PlaybackException) {
-                    onError("Ошибка воспроизведения RTSP: ${error.errorCodeName}")
+                    onError(context.getString(R.string.my_cam_rtsp_error, error.errorCodeName))
                 }
             })
             playWhenReady = true

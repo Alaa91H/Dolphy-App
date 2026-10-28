@@ -17,6 +17,7 @@ import com.droid.dolphy.plugin.model.PluginManifest
 import com.droid.dolphy.plugin.model.PluginMediaRequest
 import com.droid.dolphy.plugin.model.PluginPermissionRequest
 import com.droid.dolphy.plugin.model.PluginSnackbarSpec
+import com.droid.dolphy.R
 import com.droid.dolphy.plugin.model.UiNode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -189,7 +190,7 @@ class PythonPluginSession(
 
     private fun errorNode(message: String): UiNode = UiNode.Column(
         children = listOf(
-            UiNode.Text("Ошибка плагина", "headlineSmall"),
+            UiNode.Text(appContext.getString(R.string.plugin_error_title), "headlineSmall"),
             UiNode.Spacer(8f),
             UiNode.Text(message, "bodyMedium"),
         ),

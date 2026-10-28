@@ -1231,7 +1231,7 @@ fun IRFlipperHome(navController: NavController) {
         Triple(Icons.Default.FolderOpen, userRemotesTitle, "other/user_ir_remotes"),
     )
     val catRows = buildList {
-        add(Triple(Icons.Default.Tv, "Телевизоры", "other/ir_tv_home"))
+        add(Triple(Icons.Default.Tv, res.getString(R.string.ir_tv_quick_link), "other/ir_tv_home"))
         categories!!.forEach { catId ->
             add(
                 Triple(
@@ -3966,7 +3966,7 @@ fun IRJammerScreen(navController: NavController? = null) {
                                             withContext(Dispatchers.Main) {
                                                 sentCommands = index + 1
                                                 statusMessage = context.getString(R.string.ir_jammer_sending_signals) +
-                                                    " · цикл $cycle"
+                                                    " · " + context.getString(R.string.ir_jammer_cycle, cycle)
                                             }
                                             delay(8)
                                         }

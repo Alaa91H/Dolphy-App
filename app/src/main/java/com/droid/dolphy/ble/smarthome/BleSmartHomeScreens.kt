@@ -203,7 +203,7 @@ fun BleSmartHomeScanScreen(navController: NavController) {
                     return@Column
                 }
                 if (bluetoothAdapter.isEnabled != true) {
-                    Text("Bluetooth выключен. Включите Bluetooth.", color = MaterialTheme.colorScheme.onBackground)
+                    Text(stringResource(R.string.ble_smarthome_bluetooth_disabled), color = MaterialTheme.colorScheme.onBackground)
                     return@Column
                 }
 

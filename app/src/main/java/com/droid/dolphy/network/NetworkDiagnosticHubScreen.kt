@@ -434,14 +434,14 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
         val isHostTarget = !targetIp.isNullOrBlank()
         val isRouterMode = !isHostTarget || primaryIp == gateway
         if (isHostTarget && !isRouterMode) {
-            appendLog("Подготовка L3/L4 flood → $primaryIp")
-            appendLog("Режим: устройство + DNS/NAT роутера")
+            appendLog(context.getString(R.string.nethub_log_flood_prepare, primaryIp))
+            appendLog(context.getString(R.string.nethub_log_device_router))
         } else {
             appendLog(context.getString(R.string.network_hub_log_prepare))
-            appendLog("Режим: роутер — DNS-резолвер + NAT + канал")
+            appendLog(context.getString(R.string.nethub_log_router_mode))
         }
         if (selectedTargetLabel.isNotBlank()) {
-            appendLog("Цель: $selectedTargetLabel")
+            appendLog(context.getString(R.string.nethub_log_target, selectedTargetLabel))
         }
         if (dhcpDns.isNotEmpty()) {
             appendLog("DHCP DNS: ${dhcpDns.joinToString()}")
@@ -457,7 +457,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                 .apply { acquire() }
         }.getOrNull()
         if (wakeLock != null || wifiLock != null) {
-            appendLog("Удержание радио: WakeLock/WifiLock активны")
+            appendLog(context.getString(R.string.nethub_log_hold_radio))
         }
 
         val job = scope.launch(Dispatchers.IO) {
@@ -466,7 +466,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
             val primaryAddr = runCatching { InetAddress.getByName(primaryIp) }.getOrNull()
             if (primaryAddr == null) {
                 withContext(Dispatchers.Main) {
-                    appendLog("Не удалось резолвить $primaryIp")
+                    appendLog(context.getString(R.string.nethub_log_resolve_failed, primaryIp))
                 }
                 return@launch
             }
@@ -510,7 +510,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                 if (isRouterMode) {
                     appendLog("NAT exhaust → ${externalHosts.size} WAN hosts · bandwidth streams")
                 }
-                appendLog("Half-open SYN × ${if (isRouterMode) 10 else 18} · SSDP/mDNS/SNMP рефлексия")
+                appendLog(context.getString(R.string.nethub_log_syn, if (isRouterMode) 10 else 18))
             }
 
             val localUdpPorts = intArrayOf(53, 67, 68, 123, 1900, 5353, 161, 137, 138)
@@ -848,16 +848,16 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
             if (gateway != null) {
                 hosts[gateway] = HubLanHost(
                     ip = gateway,
-                    title = "Шлюз / роутер",
-                    subtitle = "DNS · DHCP · интернет",
+                    title = context.getString(R.string.nethub_gateway_router),
+                    subtitle = context.getString(R.string.nethub_gateway_sub),
                     isGateway = true,
                 )
             }
             if (self != null) {
                 hosts[self] = HubLanHost(
                     ip = self,
-                    title = "Это устройство",
-                    subtitle = "вы",
+                    title = context.getString(R.string.nethub_this_device),
+                    subtitle = context.getString(R.string.nethub_you),
                     isSelf = true,
                 )
             }
@@ -938,7 +938,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                         ),
                 )
                 lanScanning = false
-                appendLog("Найдено устройств: ${lanHosts.size}")
+                appendLog(context.getString(R.string.nethub_found_devices, lanHosts.size))
             }
         }
     }
@@ -1310,8 +1310,8 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 contentPadding = 0.dp
                             ) {
                                 SignalRow(
-                                    title = "DoS устройства",
-                                    description = "DoS конкретного устройства в сети",
+                                    title = stringResource(R.string.nethub_dos_device),
+                                    description = stringResource(R.string.nethub_dos_device_desc),
                                     icon = Icons.Default.WifiOff,
                                     accentColor = Color(0xFFFF6D00),
                                     onClick = {
@@ -1370,12 +1370,12 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "DoS устройства",
+                                text = stringResource(R.string.nethub_dos_device),
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                             )
                             Text(
-                                text = "Выберите устройство в сети «${currentDialogNetwork.ssid}»",
+                                text = stringResource(R.string.nethub_select_device_in_network, currentDialogNetwork.ssid),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1386,14 +1386,14 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 ) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                     Text(
-                                        "Сканирование сети… ${lanHosts.size}",
+                                        stringResource(R.string.nethub_scanning_network, lanHosts.size),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                     )
                                 }
                             } else {
                                 Text(
-                                    "Найдено: ${lanHosts.size}",
+                                    stringResource(R.string.nethub_found_count, lanHosts.size),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -1409,7 +1409,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                 if (lanHosts.isEmpty() && !lanScanning) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Text(
-                                            "Устройства не найдены.\nПодключитесь к этой Wi‑Fi сети.",
+                                            stringResource(R.string.nethub_no_devices),
                                             textAlign = TextAlign.Center,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
@@ -1493,7 +1493,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                                     enabled = !lanScanning,
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Text("Обновить")
+                                    Text(stringResource(R.string.cd_refresh))
                                 }
                             }
                         }

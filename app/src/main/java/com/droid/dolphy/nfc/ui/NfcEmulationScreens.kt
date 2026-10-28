@@ -451,7 +451,7 @@ private fun EmulationTopBar(
             DolphyIconButton(onClick = onToggleEditMode) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
-                    contentDescription = if (editMode) "Выйти из режима редактирования" else "Редактировать"
+                    contentDescription = stringResource(if (editMode) R.string.nfc_exit_edit_mode else R.string.cd_edit)
                 )
             }
             if (editMode) {

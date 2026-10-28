@@ -214,7 +214,7 @@ class NfcViewModel(private val app: Application) : AndroidViewModel(app) {
         if (RootNfcHelper.hasRoot()) {
             withContext(Dispatchers.IO) { RootNfcHelper.prepareForRead(app) }
         }
-        val analyzed = NfcTagAnalyzer.analyzeIntent(intent) ?: return
+        val analyzed = NfcTagAnalyzer.analyzeIntent(intent, getApplication()) ?: return
         vibrateNfcSuccess(app)
         val id = dao.insert(analyzed)
         trackNfcRead(app)

@@ -1773,7 +1773,7 @@ fun BluetoothContainerScreen(viewModel: SpamViewModel, navController: NavControl
     val context = LocalContext.current
     val savedTabIndex by viewModel.bleTabIndex.collectAsState()
     var tabIndex by remember { mutableIntStateOf(savedTabIndex) }
-    val tabs = listOf("All", "BLE", "Advert")
+    val tabs = listOf(stringResource(R.string.ble_tab_all), "BLE", stringResource(R.string.ble_tab_advert))
     val tabRoutes = listOf("all", "ble", "advert")
     val btEnableLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
     val bluetoothAdapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
@@ -2127,7 +2127,7 @@ private fun AdvertiseSpamScreen(viewModel: SpamViewModel) {
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = "Start",
+                                            contentDescription = stringResource(R.string.start),
                                             tint = accent
                                         )
                                     }
@@ -2138,7 +2138,7 @@ private fun AdvertiseSpamScreen(viewModel: SpamViewModel) {
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.Stop,
-                                            contentDescription = "Stop",
+                                            contentDescription = stringResource(R.string.stop),
                                             tint = accent
                                         )
                                     }
@@ -2493,7 +2493,7 @@ internal fun RandomExternalDolphinAnimation(modifier: Modifier = Modifier) {
         if (frameBitmap != null) {
             Image(
                 bitmap = frameBitmap,
-                contentDescription = "Random dolphin animation",
+                contentDescription = stringResource(R.string.random_dolphin_animation),
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(2f),
@@ -2573,7 +2573,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
                             )
                         }
                         Text(
-                            text = "$bleDelay мс",
+                            text = stringResource(R.string.settings_ble_delay_ms, bleDelay),
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.onBackground,
                             style = MaterialTheme.typography.titleLarge
@@ -2746,7 +2746,7 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
 
         item {
             AnimatedBleButton(
-                text = "Swift Pair на Windows",
+                text = stringResource(R.string.ble_swift_pair_windows),
                 isActive = spammingStates[Pair(SpamType.SWIFT_PAIR, null)] == true,
                 onClick = { ensureBluetoothEnabled { viewModel.toggleBleSpam(SpamType.SWIFT_PAIR, null) } },
                 blinkIntervalMs = bleDelay.toLong(),
@@ -3001,7 +3001,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
-                    M3SegmentedListSectionHeader(title = "PASSPORT")
+                    M3SegmentedListSectionHeader(title = stringResource(R.string.passport_title).uppercase())
 
 
                     MaterialCard(
@@ -3044,18 +3044,21 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
+                            val languages = listOf(
+                                stringResource(R.string.language_auto) to AppLocale.AUTO,
+                                stringResource(R.string.language_arabic) to "ar",
+                                stringResource(R.string.language_russian) to "ru",
+                                stringResource(R.string.language_english) to "en",
+                            )
                             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                listOf(
-                                    stringResource(R.string.language_russian) to "ru",
-                                    "English" to "en",
-                                ).forEachIndexed { index, (label, language) ->
+                                languages.forEachIndexed { index, (label, language) ->
                                     SegmentedButton(
                                         selected = appLanguage == language,
                                         onClick = {
                                             spamViewModel.setAppLanguage(language)
                                             applyInAppLocale(context)
                                         },
-                                        shape = SegmentedButtonDefaults.itemShape(index, 2),
+                                        shape = SegmentedButtonDefaults.itemShape(index, languages.size),
                                         label = { Text(label) },
                                     )
                                 }
@@ -3669,7 +3672,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Dolphy ($appVersion)\nЗащищено GNU GPL",
+                    text = stringResource(R.string.about_license_text, appVersion),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth(),
@@ -3686,7 +3689,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Спасибо:",
+                        text = stringResource(R.string.about_thanks),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
@@ -4865,7 +4868,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
 
                 Image(
                     painter = painterResource(id = portrait),
-                    contentDescription = "Portrait",
+                    contentDescription = stringResource(R.string.avatar_portrait),
                     modifier = Modifier
                         .size(90.dp)
                         .clip(RoundedCornerShape(12.dp))
@@ -4924,7 +4927,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
                             ) {
                                 Icon(
                                     Icons.Filled.Info,
-                                    contentDescription = "Stats",
+                                    contentDescription = stringResource(R.string.passport_stats),
                                     tint = if (isLiquidGlassChrome()) Color.Black
                                     else accentColor.copy(alpha = 0.6f),
                                     modifier = Modifier.size(18.dp)
@@ -4949,7 +4952,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
                         )
                         Icon(
                             Icons.Filled.Edit,
-                            contentDescription = "Rename",
+                            contentDescription = stringResource(R.string.passport_rename_title),
                             tint = accentColor.copy(alpha = 0.5f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -5822,7 +5825,7 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
     val animatedBackgroundEnabled: StateFlow<Boolean> = _animatedBackgroundEnabled
     private val _expressiveEnabled = MutableStateFlow(prefs.getBoolean("md3_expressive", false))
     val expressiveEnabled: StateFlow<Boolean> = _expressiveEnabled
-    private val _appLanguage = MutableStateFlow(prefs.getString("app_language", "ru") ?: "ru")
+    private val _appLanguage = MutableStateFlow(prefs.getString("app_language", AppLocale.AUTO) ?: AppLocale.AUTO)
     val appLanguage: StateFlow<String> = _appLanguage
     private val _cyclicDolphinAnimationEnabled = MutableStateFlow(prefs.getBoolean("cyclic_dolphin_animation_enabled", false))
     val cyclicDolphinAnimationEnabled: StateFlow<Boolean> = _cyclicDolphinAnimationEnabled
@@ -6044,7 +6047,10 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
     }
 
     fun setAppLanguage(language: String) {
-        val normalized = if (language == "en") "en" else "ru"
+        val normalized = when (language) {
+            "en", "ar", "ru" -> language
+            else -> AppLocale.AUTO
+        }
         prefs.edit { putString("app_language", normalized) }
         _appLanguage.value = normalized
     }

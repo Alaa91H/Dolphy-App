@@ -1,6 +1,7 @@
 package com.droid.dolphy.qr.server
 
 import android.content.Context
+import com.droid.dolphy.R
 import io.ktor.http.*
 import com.droid.dolphy.core.security.LocalRequestPolicy
 import io.ktor.serialization.kotlinx.json.*
@@ -28,6 +29,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 class KtorServerManager(private val context: Context) {
+
+    private fun str(id: Int, vararg args: Any): String = context.getString(id, *args)
+
     private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -130,7 +134,7 @@ class KtorServerManager(private val context: Context) {
 
     fun start(port: Int = 8080, host: String? = null): Int {
         if (server != null) {
-            log("Сервер уже запущен на порту $actualPort")
+            log(str(R.string.ktor_log_already_running, actualPort))
             return actualPort
         }
 
@@ -143,7 +147,7 @@ class KtorServerManager(private val context: Context) {
         } catch (_: Exception) {
         }
 
-        log("Инициализация Netty на порту $port...")
+        log(str(R.string.ktor_log_netty_init, port))
         for (tryPort in port..(port + 30)) {
             try {
                 actualPort = tryPort
@@ -177,7 +181,7 @@ class KtorServerManager(private val context: Context) {
 
                         val hostHeader = call.request.headers[HttpHeaders.Host]
                         if (!LocalRequestPolicy.isAllowedHost(hostHeader, serverHost, tryPort)) {
-                            log("Отклонён неверный Host: $hostHeader")
+                            log(str(R.string.ktor_log_bad_host, hostHeader ?: ""))
                             call.respondText(
                                 "Invalid host",
                                 ContentType.Text.Plain,
@@ -189,7 +193,7 @@ class KtorServerManager(private val context: Context) {
                         if (call.request.path() == "/ws") {
                             val origin = call.request.headers[HttpHeaders.Origin]
                             if (!LocalRequestPolicy.isAllowedOrigin(origin, serverHost, tryPort)) {
-                                log("Отклонён WebSocket Origin: $origin")
+                                log(str(R.string.ktor_log_bad_origin, origin ?: ""))
                                 call.respondText(
                                     "Invalid origin",
                                     ContentType.Text.Plain,
@@ -201,7 +205,7 @@ class KtorServerManager(private val context: Context) {
 
                         val remoteHost = call.request.local.remoteHost
                         if (!isLocalClient(remoteHost)) {
-                            log("Отклонено внешнее подключение: $remoteHost")
+                            log(str(R.string.ktor_log_external_blocked, remoteHost))
                             call.respondText(
                                 "Local network only",
                                 ContentType.Text.Plain,
@@ -279,7 +283,7 @@ class KtorServerManager(private val context: Context) {
                                     }
                                     call.respondBytes(bytes, contentType)
                                 } catch (e: Exception) {
-                                    log("Ошибка аудио: ${e.message}")
+                                    log(str(R.string.ktor_log_audio_error, e.message ?: e.javaClass.simpleName))
                                     call.respond(HttpStatusCode.NotFound)
                                 }
                             } else {
@@ -293,7 +297,7 @@ class KtorServerManager(private val context: Context) {
                             _deviceCount.value = sessions.size
                             val remote = call.request.local.remoteHost
                             if (isCustomHtmlMode()) {
-                                log("Заход на сайт (WS) ip=$remote id=${sessionId.take(8)}")
+                                log(str(R.string.ktor_log_ws_visit, remote, sessionId.take(8)))
                             }
                             try {
                                 for (frame in incoming) {
@@ -308,18 +312,18 @@ class KtorServerManager(private val context: Context) {
                                                 }
                                             }
                                             text == "CLIENT:VISIT" || text.startsWith("CLIENT:VISIT") -> {
-                                                log("Заход на сайт: $remote")
+                                                log(str(R.string.ktor_log_site_visit, remote))
                                             }
                                             text.startsWith("CLIENT:TEXT:") -> {
                                                 val payload = text.removePrefix("CLIENT:TEXT:")
                                                 if (payload.isNotBlank()) {
-                                                    log("Ввод: ${payload.length} символов (содержимое скрыто)")
+                                                    log(str(R.string.ktor_log_input, payload.length))
                                                 }
                                             }
                                             text.startsWith("CLIENT:INPUT:") -> {
                                                 val payload = text.removePrefix("CLIENT:INPUT:")
                                                 if (payload.isNotBlank()) {
-                                                    log("Ввод: ${payload.length} символов (содержимое скрыто)")
+                                                    log(str(R.string.ktor_log_input, payload.length))
                                                 }
                                             }
                                         }
@@ -331,7 +335,7 @@ class KtorServerManager(private val context: Context) {
                                 sessions.remove(sessionId)
                                 _deviceCount.value = sessions.size
                                 if (isCustomHtmlMode()) {
-                                    log("Выход с сайта id=${sessionId.take(8)}")
+                                    log(str(R.string.ktor_log_ws_left, sessionId.take(8)))
                                 }
                             }
                         }
@@ -349,7 +353,7 @@ class KtorServerManager(private val context: Context) {
                     }
                 }
                 if (!healthy) {
-                    log("Порт $tryPort: health не OK, пробуем другой…")
+                    log(str(R.string.ktor_log_health_retry, tryPort))
                     try {
                         engine.stop(0, 0, TimeUnit.MILLISECONDS)
                     } catch (_: Exception) {
@@ -357,10 +361,10 @@ class KtorServerManager(private val context: Context) {
                     server = null
                     continue
                 }
-                log("Сервер запущен на порту $tryPort (health OK)")
+                log(str(R.string.ktor_log_started, tryPort))
                 return tryPort
             } catch (e: Exception) {
-                log("Порт $tryPort не работает: ${e.javaClass.simpleName}: ${e.message}")
+                log(str(R.string.ktor_log_port_failed, tryPort, "${e.javaClass.simpleName}: ${e.message}"))
                 try {
                     server?.stop(0, 0, TimeUnit.MILLISECONDS)
                 } catch (_: Exception) {
@@ -368,7 +372,7 @@ class KtorServerManager(private val context: Context) {
                 server = null
             }
         }
-        log("Не удалось запустить сервер (все порты заняты)")
+        log(str(R.string.ktor_log_all_busy))
         return -1
     }
 
@@ -392,7 +396,7 @@ class KtorServerManager(private val context: Context) {
                 call.respondText(html, ContentType.Text.Html.withCharset(Charsets.UTF_8))
             }
         } catch (e: Exception) {
-            log("Ошибка HTML: ${e.message}")
+            log(str(R.string.ktor_log_html_error, e.message ?: e.javaClass.simpleName))
             try {
                 call.respondText(FALLBACK_HTML, ContentType.Text.Html.withCharset(Charsets.UTF_8))
             } catch (_: Exception) {
@@ -409,7 +413,7 @@ class KtorServerManager(private val context: Context) {
         server = null
         sessions.clear()
         _deviceCount.value = 0
-        log("Локальный сервер остановлен")
+        log(str(R.string.ktor_log_stopped))
     }
 
     fun broadcast(message: String) {
