@@ -1481,5 +1481,20 @@
     <string name="plugin_catalog_desc_radio_lab">تشخيصات Bluetooth وWi-Fi مع مسح BLE مباشر وقائمة أجهزة حيّة.</string>
     <string name="plugin_catalog_desc_integration_hooks">مثال تكامل يضيف زرًا عائمًا وخطّافًا لإرسال الأشعة تحت الحمراء داخل شاشات Dolphy.</string>
     <string name="plugin_catalog_desc_ble_asset_pack">وضع إعلان BLE مخصص وتنزيل ملفات الإضافة مع مراعاة الأذونات قبل التنزيل.</string>
+    <string name="plugin_catalog_desc_ir_signal_lab">مختبر الأشعة تحت الحمراء: حالة الباعث والترددات الحاملة وإرسال أنماط نبضية خام.</string>
+    <string name="plugin_catalog_desc_ble_gatt_explorer">الاتصال بأجهزة BLE الطرفية واستعراض الخدمات وقراءة خصائص GATT.</string>
+    <string name="plugin_catalog_desc_ble_advert_lab">تركيب حزمة BLE مخصصة مع بيانات المُصنّع وبثّها.</string>
+    <string name="plugin_catalog_desc_bt_classic_lab">الأجهزة المقترنة والاكتشاف الكلاسيكي وبطاقة تفاصيل كاملة للجهاز.</string>
+    <string name="plugin_catalog_desc_wifi_analyzer">تفاصيل الاتصال وعقد DHCP وتحليل ازدحام قنوات Wi-Fi.</string>
+    <string name="plugin_catalog_desc_lan_scanner">اكتشاف الأجهزة الحيّة في الشبكة المحلية وفحص منافذ TCP.</string>
+    <string name="plugin_catalog_desc_nfc_toolkit">حالة محول NFC والتقاط البطاقات واستعراض تقنياتها.</string>
+    <string name="plugin_catalog_desc_device_inspector">معلومات البناء والبطارية والاتصال وميزات العتاد المدعومة.</string>
+    <string name="plugin_catalog_desc_sensor_monitor">استعراض كل المستشعرات وبثّ القيم الحيّة من المستشعر المحدد.</string>
+    <string name="plugin_catalog_desc_crypto_toolbox">تجزئات SHA/MD5 وتحويلات Base64 وHex ومعرّفات عشوائية.</string>
+    <string name="plugin_catalog_desc_file_browser">متصفح ملفات الإضافة مع المعاينة والمشاركة والحذف.</string>
+    <string name="plugin_catalog_desc_root_console">أوامر Root مع إعدادات جاهزة والمخرجات على الشاشة.</string>
+    <string name="plugin_catalog_desc_shizuku_console">أوامر صدفة مميزة عبر Shizuku دون root.</string>
+    <string name="plugin_catalog_desc_shell_console">أوامر صدفة عادية باسم تطبيق Dolphy.</string>
+    <string name="plugin_catalog_desc_usb_inspector">أجهزة USB المتصلة مع المعرّفات وأصناف الواجهات.</string>
     <string name="plugin_catalog_update_title">تحديث %1$s؟</string>
 </resources>

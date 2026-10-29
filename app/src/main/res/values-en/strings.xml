@@ -1510,6 +1510,21 @@ The file is downloaded from the official Dolphy GitHub repository. Plugins run w
     <string name="plugin_catalog_desc_radio_lab">Bluetooth and Wi-Fi diagnostics with live BLE scanning and a real-time device list.</string>
     <string name="plugin_catalog_desc_integration_hooks">Integration example that adds a floating action and an IR transmit hook inside Dolphy screens.</string>
     <string name="plugin_catalog_desc_ble_asset_pack">Custom BLE advertising mode plus permission-aware asset downloads for the plugin.</string>
+    <string name="plugin_catalog_desc_ir_signal_lab">Infrared lab: emitter status, carrier frequencies and raw pulse-pattern transmission.</string>
+    <string name="plugin_catalog_desc_ble_gatt_explorer">Connect to BLE peripherals, browse services and read GATT characteristics.</string>
+    <string name="plugin_catalog_desc_ble_advert_lab">Build a custom BLE packet with manufacturer data and broadcast it.</string>
+    <string name="plugin_catalog_desc_bt_classic_lab">Bonded devices, classic discovery and a full device detail card.</string>
+    <string name="plugin_catalog_desc_wifi_analyzer">Connection details, DHCP lease and Wi-Fi channel congestion analysis.</string>
+    <string name="plugin_catalog_desc_lan_scanner">Discover live hosts on the local subnet and scan their TCP ports.</string>
+    <string name="plugin_catalog_desc_nfc_toolkit">NFC adapter status, live tag capture and technology inspection.</string>
+    <string name="plugin_catalog_desc_device_inspector">Build information, battery state, connectivity and hardware features.</string>
+    <string name="plugin_catalog_desc_sensor_monitor">Browse every sensor and stream live values from the selected one.</string>
+    <string name="plugin_catalog_desc_crypto_toolbox">SHA/MD5 hashes, Base64, hexadecimal conversion and random identifiers.</string>
+    <string name="plugin_catalog_desc_file_browser">Plugin sandbox browser with preview, share and delete.</string>
+    <string name="plugin_catalog_desc_root_console">Root commands with one-tap presets and on-screen output.</string>
+    <string name="plugin_catalog_desc_shizuku_console">Privileged shell commands through Shizuku without root.</string>
+    <string name="plugin_catalog_desc_shell_console">Unprivileged shell commands running as the Dolphy app.</string>
+    <string name="plugin_catalog_desc_usb_inspector">Attached USB devices with descriptors and interface classes.</string>
     <string name="plugin_catalog_update_title">Update %1$s?</string>
 </resources>
 

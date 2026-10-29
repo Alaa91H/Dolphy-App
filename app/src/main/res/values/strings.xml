@@ -1430,6 +1430,21 @@
     <string name="plugin_catalog_desc_radio_lab">Диагностика Bluetooth и Wi-Fi с живым BLE-сканированием и списком устройств в реальном времени.</string>
     <string name="plugin_catalog_desc_integration_hooks">Пример интеграции: плавающая кнопка и перехват передачи ИК внутри экранов Dolphy.</string>
     <string name="plugin_catalog_desc_ble_asset_pack">Пользовательский режим BLE-рекламы и загрузка файлов плагина с учётом разрешений.</string>
+    <string name="plugin_catalog_desc_ir_signal_lab">ИК-лаборатория: статус излучателя, несущие частоты и передача необработанных импульсных шаблонов.</string>
+    <string name="plugin_catalog_desc_ble_gatt_explorer">Подключение к BLE-периферии, просмотр сервисов и чтение характеристик GATT.</string>
+    <string name="plugin_catalog_desc_ble_advert_lab">Сборка пользовательского BLE-пакета с manufacturer data и запуск широковещания.</string>
+    <string name="plugin_catalog_desc_bt_classic_lab">Сопряжённые устройства, обнаружение по классическому Bluetooth и подробная карточка устройства.</string>
+    <string name="plugin_catalog_desc_wifi_analyzer">Подробности подключения, аренда DHCP и загруженность каналов Wi-Fi.</string>
+    <string name="plugin_catalog_desc_lan_scanner">Обнаружение активных узлов локальной подсети и сканирование их TCP-портов.</string>
+    <string name="plugin_catalog_desc_nfc_toolkit">Состояние NFC-адаптера, перехват меток и просмотр их технологий.</string>
+    <string name="plugin_catalog_desc_device_inspector">Сборка устройства, батарея, сеть и поддерживаемые аппаратные функции.</string>
+    <string name="plugin_catalog_desc_sensor_monitor">Список всех датчиков и поток живых значений выбранного датчика.</string>
+    <string name="plugin_catalog_desc_crypto_toolbox">Хеши SHA/MD5, Base64, hex-преобразования и случайные идентификаторы.</string>
+    <string name="plugin_catalog_desc_file_browser">Песочница плагина: просмотр, предпросмотр, отправка и удаление файлов.</string>
+    <string name="plugin_catalog_desc_root_console">Root-команды с готовыми наборами и выводом прямо на экране.</string>
+    <string name="plugin_catalog_desc_shizuku_console">Привилегированные команды через Shizuku без root.</string>
+    <string name="plugin_catalog_desc_shell_console">Обычные shell-команды от имени приложения Dolphy.</string>
+    <string name="plugin_catalog_desc_usb_inspector">Подключённые USB-устройства с идентификаторами и классами интерфейсов.</string>
     <string name="plugin_catalog_update_title">Обновить %1$s?</string>
 </resources>
 
