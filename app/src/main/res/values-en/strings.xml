@@ -862,23 +862,6 @@
     <string name="root_required_title">Root rights not found</string>
     <string name="root_required_message">This feature requires Root rights</string>
 
-    
-    <string name="other_chat">Dolphy Chat</string>
-    <string name="other_chat_desc">Global chat for Dolphy users</string>
-
-    <string name="chat_title">Dolphy Chat</string>
-    <string name="chat_connecting">Connecting to chat...</string>
-    <string name="chat_connected">Connected</string>
-    <string name="chat_disconnected">Disconnected</string>
-    <string name="chat_send_message">Send message</string>
-    <string name="chat_message_hint">Type a message…</string>
-    <string name="chat_no_messages">No messages yet</string>
-    <string name="chat_error">Chat error: %s</string>
-    <string name="chat_user_joined">%s joined the chat</string>
-    <string name="chat_user_left">%s left the chat</string>
-    <string name="global_chat">Global Chat</string>
-    <string name="global_chat_title">Global Chat</string>
-    <string name="global_chat_desc">Chat with all Dolphy users</string>
     <string name="lan_tools_title">LAN Tools</string>
     <string name="lan_tools_subtitle">Local network tools</string>
     <string name="lan_tools_item_scanner">LAN scanner</string>
@@ -994,8 +977,6 @@
     <string name="audio_quiet_connect_title">About Quiet Connect</string>
     <string name="audio_quiet_connect_text">This feature allows connecting to speakers and headphones without confirmation</string>
 
-    
-    <string name="nfc_troll_no_desc" />
     <string name="wifi_print_title">Wi-Fi Print</string>
     <string name="wifi_print_hero_title">Print without the system dialog</string>
     <string name="wifi_print_hero_desc">Discover IPP printers, verify capabilities, and send documents directly</string>
