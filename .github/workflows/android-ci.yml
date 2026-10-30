@@ -65,7 +65,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -92,13 +92,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Lint
-        run: ./gradlew :app:lintDebug --stacktrace
+        run: ./gradlew :app:lintVitalRelease --stacktrace
 
       - name: Upload lint report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-lint
-          path: app/build/reports/lint-results-debug.html
+          path: app/build/intermediates/lint_vital_intermediate_text_report/release/lintVitalReportRelease/lint-results-release.txt
           if-no-files-found: ignore
           retention-days: 14

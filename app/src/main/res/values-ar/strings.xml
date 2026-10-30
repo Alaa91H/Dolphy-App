@@ -1124,6 +1124,17 @@
     <string name="plugin_download_unknown_size">الحجم غير معروف</string>
     <string name="plugin_documentation_site">التوثيق على الموقع</string>
     <string name="plugin_open_with_hint">افتح ملف الإضافة عبر «فتح باستخدام» واختر Dolphy للتثبيت</string>
+    <string name="plugin_import_title">استيراد إضافة</string>
+    <string name="plugin_import_subtitle">ثبّت ملف .dolphyplugin من التخزين أو عبر رابط</string>
+    <string name="plugin_import_choose_file">اختيار ملف</string>
+    <string name="plugin_import_paste_link">لصق رابط</string>
+    <string name="plugin_import_url_title">التثبيت عبر رابط</string>
+    <string name="plugin_import_url_body">ألصق رابطًا مباشرًا لملف .dolphyplugin. الروابط بدون https:// تُفتح عبر اتصال آمن.</string>
+    <string name="plugin_import_url_hint">https://example.com/plugin.dolphyplugin</string>
+    <string name="plugin_import_url_action">تنزيل</string>
+    <string name="plugin_import_url_downloading">جارٍ تنزيل الإضافة…</string>
+    <string name="plugin_import_url_failed">تعذّر تنزيل الإضافة</string>
+    <string name="plugin_import_url_invalid">رابط غير صالح</string>
     <string name="plugin_system_warning_title">نظام إضافات Dolphy 2.5</string>
     <string name="plugin_system_warning_text">في الإصدار الجديد صُمّم نظام إضافات قوي بحرية واسعة. ثمن هذه الحرية والإمكانات الواسعة هو الأمان. يرجى تثبيت الإضافات من مصادر موثوقة فقط وفحصها بحثًا عن شيفرة ضارة. لا يتحمّل المطوّر مسؤولية أي ضرر تسبّبه شيفرة ضارة في إضافة المستخدم.</string>
     <string name="plugin_system_warning_countdown">حسنًا (%1$d)</string>

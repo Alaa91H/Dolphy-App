@@ -1075,6 +1075,17 @@
     <string name="plugin_download_unknown_size">unknown size</string>
     <string name="plugin_documentation_site">Documentation website</string>
     <string name="plugin_open_with_hint">Open the plugin file with “Open with” and select Dolphy to install it</string>
+    <string name="plugin_import_title">Import a plugin</string>
+    <string name="plugin_import_subtitle">Install a .dolphyplugin file from storage or from a link</string>
+    <string name="plugin_import_choose_file">Choose file</string>
+    <string name="plugin_import_paste_link">Paste link</string>
+    <string name="plugin_import_url_title">Install from link</string>
+    <string name="plugin_import_url_body">Paste a direct link to a .dolphyplugin file. Links without https:// open over a secure connection.</string>
+    <string name="plugin_import_url_hint">https://example.com/plugin.dolphyplugin</string>
+    <string name="plugin_import_url_action">Download</string>
+    <string name="plugin_import_url_downloading">Downloading plugin…</string>
+    <string name="plugin_import_url_failed">Could not download the plugin</string>
+    <string name="plugin_import_url_invalid">Invalid link</string>
     <string name="plugin_system_warning_title">Dolphy 2.5 plugin system</string>
     <string name="plugin_system_warning_text">This version introduces a powerful plugin system with broad freedom of action. The price of that freedom and extensive capability is security. Install plugins only from trusted sources and check them for malicious code. The developer is not responsible for damage caused by malicious code in a user plugin.</string>
     <string name="plugin_system_warning_countdown">OK (%1$d)</string>

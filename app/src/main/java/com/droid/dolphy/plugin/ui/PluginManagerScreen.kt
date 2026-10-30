@@ -1,6 +1,9 @@
 package com.droid.dolphy.plugin.ui
 
+import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -18,11 +21,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Share
@@ -33,6 +41,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,13 +49,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.droid.dolphy.AccentButton
@@ -63,6 +76,9 @@ import com.droid.dolphy.plugin.PluginIcons
 import com.droid.dolphy.plugin.PluginManager
 import com.droid.dolphy.plugin.isCatalogVersionNewer
 import com.droid.dolphy.plugin.model.LoadedPlugin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun PluginManagerScreen(navController: NavController) {
@@ -96,6 +112,9 @@ fun PluginManagerScreen(navController: NavController) {
                 ) {
                     item("safe_mode") {
                         SafeModeAnimated(safeMode)
+                    }
+                    item("import_card") {
+                        PluginImportCard(navController)
                     }
                     item("catalog_header") {
                         CatalogHeader(updateCount, installedById, safeMode)
@@ -138,6 +157,202 @@ fun PluginManagerScreen(navController: NavController) {
             }
         }
     }
+}
+
+@Composable
+private fun PluginImportCard(navController: NavController) {
+    val context = LocalContext.current
+    var showUrlDialog by remember { mutableStateOf(false) }
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+        }
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.set("plugin_preview_uri", uri.toString())
+        navController.navigate("plugin_file_preview")
+    }
+
+    MaterialCard(
+        modifier = Modifier.fillMaxWidth(),
+        accentColor = MaterialTheme.colorScheme.primary,
+        contentPadding = 14.dp,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Surface(
+                    modifier = Modifier.size(44.dp),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.primaryFixed,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryFixed,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.AutoMirrored.Filled.InsertDriveFile, null, modifier = Modifier.size(24.dp))
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(R.string.plugin_import_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(R.string.plugin_import_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AccentButton(
+                    onClick = { filePicker.launch(arrayOf("*/*")) },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.InsertDriveFile, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.plugin_import_choose_file),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                AccentButton(
+                    onClick = { showUrlDialog = true },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                ) {
+                    Icon(Icons.Default.Link, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.plugin_import_paste_link),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+
+    if (showUrlDialog) {
+        PluginUrlDialog(
+            onDismiss = { showUrlDialog = false },
+            onImported = { uri ->
+                showUrlDialog = false
+                navController.currentBackStackEntry
+                    ?.savedStateHandle
+                    ?.set("plugin_preview_uri", uri)
+                navController.navigate("plugin_file_preview")
+            },
+        )
+    }
+}
+
+@Composable
+private fun PluginUrlDialog(
+    onDismiss: () -> Unit,
+    onImported: (String) -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var url by remember { mutableStateOf("") }
+    var downloading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val startDownload = {
+        if (!downloading && url.isNotBlank()) {
+            downloading = true
+            error = null
+            scope.launch {
+                val result = withContext(Dispatchers.IO) { PluginManager.importFromUrl(url) }
+                downloading = false
+                result.fold(
+                    onSuccess = { uri -> onImported(uri.toString()) },
+                    onFailure = { failure ->
+                        error = failure.message ?: context.getString(R.string.plugin_import_url_failed)
+                    },
+                )
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!downloading) onDismiss() },
+        containerColor = MaterialTheme.colorScheme.surface,
+        icon = { Icon(Icons.Default.Link, null) },
+        title = { Text(stringResource(R.string.plugin_import_url_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = stringResource(R.string.plugin_import_url_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = {
+                        url = it
+                        error = null
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !downloading,
+                    singleLine = true,
+                    placeholder = { Text(stringResource(R.string.plugin_import_url_hint)) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Go,
+                    ),
+                    keyboardActions = KeyboardActions(onGo = { startDownload() }),
+                )
+                if (downloading) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                        Text(
+                            text = stringResource(R.string.plugin_import_url_downloading),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                error?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            AccentButton(
+                onClick = startDownload,
+                enabled = !downloading && url.isNotBlank(),
+            ) {
+                Text(stringResource(R.string.plugin_import_url_action))
+            }
+        },
+        dismissButton = {
+            AccentButton(onClick = onDismiss, enabled = !downloading) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable

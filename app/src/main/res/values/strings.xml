@@ -1076,6 +1076,17 @@
     <string name="plugin_download_unknown_size">размер неизвестен</string>
     <string name="plugin_documentation_site">Документация на сайте</string>
     <string name="plugin_open_with_hint">Откройте файл плагина через «Открыть с помощью» и выберите Dolphy для установки</string>
+    <string name="plugin_import_title">Импорт плагина</string>
+    <string name="plugin_import_subtitle">Установите файл .dolphyplugin из памяти или по ссылке</string>
+    <string name="plugin_import_choose_file">Выбрать файл</string>
+    <string name="plugin_import_paste_link">Вставить ссылку</string>
+    <string name="plugin_import_url_title">Установка по ссылке</string>
+    <string name="plugin_import_url_body">Вставьте прямую ссылку на файл .dolphyplugin. Ссылки без https:// откроются по защищённому протоколу.</string>
+    <string name="plugin_import_url_hint">https://example.com/plugin.dolphyplugin</string>
+    <string name="plugin_import_url_action">Загрузить</string>
+    <string name="plugin_import_url_downloading">Загрузка плагина…</string>
+    <string name="plugin_import_url_failed">Не удалось загрузить плагин</string>
+    <string name="plugin_import_url_invalid">Некорректная ссылка</string>
     <string name="plugin_system_warning_title">Система плагинов Dolphy 2.5</string>
     <string name="plugin_system_warning_text">В новой версии разработана мощная система плагинов с широкой свободой действий. Цена этой свободы и обширных возможностей — безопасность. Пожалуйста, устанавливайте плагины только из доверенных источников и проверяйте их на наличие вредоносного кода. Разработчик не несёт ответственности за ущерб, нанесённый вредоносным кодом в пользовательском плагине.</string>
     <string name="plugin_system_warning_countdown">OK (%1$d)</string>

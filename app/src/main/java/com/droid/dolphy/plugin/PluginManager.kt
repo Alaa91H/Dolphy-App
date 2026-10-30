@@ -19,6 +19,9 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileOutputStream
 import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLDecoder
 import androidx.core.content.FileProvider
 
 
@@ -241,6 +244,102 @@ object PluginManager {
                 spacing = 8f,
                 fillMaxSize = true,
             )
+    }
+
+    /**
+     * Downloads a `.dolphyplugin` file from [rawUrl] into the app cache and returns a
+     * FileProvider URI that [previewFromUri] can read. Accepts links with or without a scheme.
+     */
+    fun importFromUrl(rawUrl: String): Result<Uri> {
+        return try {
+            val trimmed = rawUrl.trim()
+            if (trimmed.isEmpty()) {
+                return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_invalid)))
+            }
+            val normalized = if (trimmed.startsWith("http://", true) || trimmed.startsWith("https://", true)) {
+                trimmed
+            } else {
+                "https://$trimmed"
+            }
+            val url = runCatching { URL(normalized) }.getOrElse {
+                return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_invalid)))
+            }
+            if (url.protocol.lowercase() !in setOf("http", "https") || url.host.isNullOrBlank()) {
+                return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_invalid)))
+            }
+            val importDir = File(appContext.cacheDir, "plugin_imports").apply { mkdirs() }
+            prunePluginImports(importDir)
+            val target = File(importDir, importFileName(url))
+            val connection = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 15_000
+                readTimeout = 30_000
+                instanceFollowRedirects = true
+                setRequestProperty("User-Agent", "Dolphy-Android")
+            }
+            try {
+                val code = connection.responseCode
+                if (code !in 200..299) {
+                    return Result.failure(
+                        IllegalStateException(str(R.string.plugin_catalog_download_failed, code)),
+                    )
+                }
+                if (connection.contentLengthLong > MAX_PLUGIN_SOURCE_BYTES) {
+                    return Result.failure(IllegalArgumentException(str(R.string.plugin_catalog_download_too_large)))
+                }
+                var received = 0L
+                connection.inputStream.use { input ->
+                    target.outputStream().use { output ->
+                        val buffer = ByteArray(16 * 1024)
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            received += read
+                            if (received > MAX_PLUGIN_SOURCE_BYTES) {
+                                target.delete()
+                                return Result.failure(
+                                    IllegalArgumentException(str(R.string.plugin_catalog_download_too_large)),
+                                )
+                            }
+                            output.write(buffer, 0, read)
+                        }
+                    }
+                }
+                if (target.length() == 0L) {
+                    target.delete()
+                    return Result.failure(IllegalStateException(str(R.string.plugin_catalog_download_empty)))
+                }
+                Result.success(
+                    FileProvider.getUriForFile(appContext, "${appContext.packageName}.provider", target),
+                )
+            } finally {
+                connection.disconnect()
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "importFromUrl", t)
+            val message = if (t is java.io.IOException) {
+                str(R.string.plugin_import_url_failed)
+            } else {
+                t.message ?: str(R.string.plugin_import_url_failed)
+            }
+            Result.failure(Exception(message, t))
+        }
+    }
+
+    private fun importFileName(url: URL): String {
+        val decoded = runCatching {
+            URLDecoder.decode(url.path.orEmpty(), "UTF-8")
+        }.getOrDefault(url.path.orEmpty())
+        val rawName = decoded.substringAfterLast('/')
+        val safe = rawName.replace(Regex("[^A-Za-z0-9._-]"), "_").trim('.', '_')
+        val base = safe.ifBlank { "plugin_${System.currentTimeMillis()}" }
+        return if (base.endsWith(".dolphyplugin", true)) base else "$base.dolphyplugin"
+    }
+
+    private fun prunePluginImports(dir: File) {
+        val cutoff = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
+        dir.listFiles()?.forEach { file ->
+            if (file.isFile && file.lastModified() < cutoff) file.delete()
+        }
     }
 
     fun installFromUri(uri: Uri): Result<PluginManifest> {
