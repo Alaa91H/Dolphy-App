@@ -41,6 +41,11 @@ val hasReleaseSigning = listOf(
     releaseKeyPassword,
 ).all { it != null }
 
+// CI passes these so every published APK has a predictable, monotonic version.
+// Local builds fall back to the values below.
+val dolphyVersionCode = providers.gradleProperty("dolphy.versionCode").orNull?.toIntOrNull() ?: 20600
+val dolphyVersionName = providers.gradleProperty("dolphy.versionName").orNull ?: "2.6.0"
+
 android {
     namespace = "com.droid.dolphy"
     compileSdk = 36
@@ -63,8 +68,8 @@ android {
         applicationId = "com.droid.dolphy"
         minSdk = 26
         targetSdk = 36
-        versionCode = 26
-        versionName = "2.6"
+        versionCode = dolphyVersionCode
+        versionName = dolphyVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
