@@ -24,8 +24,8 @@ Actions secrets. Never commit these values.
 | `DOLPHY_KEY_PASSWORD` | Key password |
 
 The `.github/workflows/release.yml` workflow decodes the keystore into
-`$RUNNER_TEMP` and exports `DOLPHY_KEYSTORE_FILE` for Gradle. Nothing is written
-into the repository or uploaded as an artifact.
+`$RUNNER_TEMP` and exports `DOLPHY_KEYSTORE_FILE` for Gradle. The keystore is
+never written into the repository or uploaded as an artifact.
 
 ## Publishing a release
 
