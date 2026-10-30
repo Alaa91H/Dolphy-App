@@ -31,6 +31,10 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default "tools" package no longer exists on current
+          # runner images; install only the packages the build actually needs.
+          packages: ""
 
       - name: Install platform 36
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
