@@ -91,6 +91,21 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Create temporary lint keystore
+        run: |
+          set -euo pipefail
+          keytool -genkeypair \
+            -keystore "$RUNNER_TEMP/lint.jks" \
+            -storepass lintpass -keypass lintpass \
+            -alias lint -keyalg RSA -keysize 2048 -validity 1 \
+            -dname "CN=Dolphy CI Lint, OU=CI, O=Dolphy, L=NA, ST=NA, C=NA"
+          {
+            echo "DOLPHY_KEYSTORE_FILE=$RUNNER_TEMP/lint.jks"
+            echo "DOLPHY_KEYSTORE_PASSWORD=lintpass"
+            echo "DOLPHY_KEY_ALIAS=lint"
+            echo "DOLPHY_KEY_PASSWORD=lintpass"
+          } >> "$GITHUB_ENV"
+
       - name: Lint
         run: ./gradlew :app:lintVitalRelease --stacktrace
 
