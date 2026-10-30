@@ -1,10 +1,8 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.droid.dolphy
 
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.CircularProgressIndicator
 
 import android.content.Context
 import android.content.res.Resources
@@ -3631,27 +3629,23 @@ fun IrExpressivePowerButton(
     size: Dp = 220.dp,
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val frozenPolygons = remember {
-        listOf(MaterialShapes.Cookie9Sided, MaterialShapes.Cookie9Sided)
-    }
 
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center,
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(colorScheme.surfaceContainerHigh),
+        )
         if (active) {
-            ContainedLoadingIndicator(
-                modifier = Modifier.fillMaxSize(),
-                containerColor = colorScheme.surfaceContainerHigh,
-                indicatorColor = colorScheme.primaryFixed,
-            )
-        } else {
-            ContainedLoadingIndicator(
-                progress = { 0f },
-                modifier = Modifier.fillMaxSize(),
-                containerColor = colorScheme.surfaceContainerHigh,
-                indicatorColor = colorScheme.primaryFixed,
-                polygons = frozenPolygons,
+            CircularProgressIndicator(
+                modifier = Modifier.fillMaxSize().padding(size * 0.08f),
+                color = colorScheme.primaryFixed,
+                trackColor = colorScheme.surfaceContainerHigh,
+                strokeWidth = 8.dp,
             )
         }
 

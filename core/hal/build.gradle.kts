@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.droid.dolphy.core.hal"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26

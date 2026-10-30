@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.droid.dolphy
 
@@ -255,10 +255,9 @@ fun DolphyTheme(
         LocalAnimatedBackgroundEnabled provides animatedBackgroundEnabled,
         LocalDensity provides scaledDensity,
     ) {
-        MaterialExpressiveTheme(
+        MaterialTheme(
             colorScheme = expressiveScheme,
             typography = typography,
-            motionScheme = MotionScheme.expressive(),
             content = content
         )
     }
@@ -1511,36 +1510,35 @@ private fun DolphyUnifiedBottomBar(
             }
         }
 
-        if (fabEnabled) {
-            HorizontalFloatingToolbar(
-                expanded = true,
-                floatingActionButton = {
-                    FloatingToolbarDefaults.VibrantFloatingActionButton(
+        Surface(
+            modifier = Modifier.widthIn(max = 480.dp),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 6.dp,
+            shadowElevation = 8.dp,
+        ) {
+            Row(
+                modifier = Modifier.padding(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (fabEnabled) {
+                    FilledIconButton(
                         onClick = onFabClick,
-                        containerColor = MaterialTheme.colorScheme.primaryFixed,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryFixed,
+                        modifier = Modifier.size(52.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryFixed,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryFixed,
+                        ),
                     ) {
                         Icon(
                             imageVector = fabIcon,
                             contentDescription = fabTitle,
                         )
                     }
-                },
-                modifier = Modifier.widthIn(max = 480.dp),
-                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
-                    toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                ),
-                content = { contentRow() }
-            )
-        } else {
-            HorizontalFloatingToolbar(
-                expanded = true,
-                modifier = Modifier.widthIn(max = 480.dp),
-                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
-                    toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                ),
-                content = { contentRow() }
-            )
+                }
+                contentRow()
+            }
         }
     }
 }
@@ -5044,13 +5042,15 @@ fun ConnectedButtonGroup(
     accentColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    ButtonGroup(modifier = modifier.fillMaxWidth()) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         options.forEach { (label, value) ->
-            toggleableItem(
-                selectedValue == value,
-                label,
-                { if (it) onValueSelected(value) },
-                {
+            FilterChip(
+                selected = selectedValue == value,
+                onClick = { onValueSelected(value) },
+                label = {
                     Text(
                         text = label,
                         style = MaterialTheme.typography.labelLarge,
@@ -5058,8 +5058,7 @@ fun ConnectedButtonGroup(
                         maxLines = 1,
                     )
                 },
-                1f,
-                true,
+                modifier = Modifier.weight(1f),
             )
         }
     }

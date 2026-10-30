@@ -142,7 +142,8 @@ fun BleSmartHomeScanScreen(navController: NavController) {
     fun startScan() {
         if (!hasPerm) return
         if (bluetoothAdapter.isEnabled != true) return
-        runCatching { scanner.stopScan(callback) }
+        val activeScanner = scanner ?: return
+        runCatching { activeScanner.stopScan(callback) }
         items = emptyList()
         noDevicesFound = false
         val settings = ScanSettings.Builder()
@@ -150,11 +151,11 @@ fun BleSmartHomeScanScreen(navController: NavController) {
             .build()
         isScanning = true
         scanSessionId++
-        scanner.startScan(null, settings, callback)
+        activeScanner.startScan(null, settings, callback)
     }
 
     fun stopScan() {
-        runCatching { scanner.stopScan(callback) }
+        scanner?.let { active -> runCatching { active.stopScan(callback) } }
         isScanning = false
     }
 

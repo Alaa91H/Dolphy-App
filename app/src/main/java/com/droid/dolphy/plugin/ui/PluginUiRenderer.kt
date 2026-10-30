@@ -683,10 +683,6 @@ fun PluginUiRenderer(
         }
 
         is UiNode.Empty -> {}
-        is UiNode.TopBar -> {
-
-            SectionTopBar(title = node.title, onBack = if (node.showBack) onBack else null, accentColor = accent)
-        }
     }
 }
 

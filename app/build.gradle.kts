@@ -5,7 +5,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
@@ -48,7 +47,7 @@ val dolphyVersionName = providers.gradleProperty("dolphy.versionName").orNull ?:
 
 android {
     namespace = "com.droid.dolphy"
-    compileSdk = 36
+    compileSdk = 37
 
     signingConfigs {
         if (hasReleaseSigning) {
@@ -136,6 +135,8 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/license/**"
+            excludes += "/META-INF/native-image/**"
             excludes += "/META-INF/INDEX.LIST"
             excludes += "/META-INF/io.netty.versions.properties"
             excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
@@ -173,17 +174,17 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation("androidx.compose.material3:material3:1.5.0-alpha15")
-    implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("androidx.compose.material:material-icons-extended:1.6.8")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.compose.material3:material3")
+    implementation("com.google.android.material:material:1.14.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+    implementation("androidx.navigation:navigation-compose:2.10.2")
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.datastore:datastore-preferences:1.3.0")
     implementation("androidx.biometric:biometric:1.1.0")
 
-    implementation("no.nordicsemi.android:ble:2.7.2")
-    implementation("no.nordicsemi.android:ble-ktx:2.7.2")
+    implementation("no.nordicsemi.android:ble:2.11.0")
+    implementation("no.nordicsemi.android:ble-ktx:2.11.0")
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.websockets)
@@ -194,13 +195,13 @@ dependencies {
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)
 
-    implementation("org.mozilla:rhino:1.7.15")
+    implementation("org.mozilla:rhino:1.9.2")
     implementation("org.nanohttpd:nanohttpd:2.3.1")
     implementation("com.hp.jipp:jipp-core:0.7.18")
     implementation("com.hp.jipp:jipp-pdl:0.7.18")
-    implementation("androidx.media3:media3-exoplayer:1.3.1")
-    implementation("androidx.media3:media3-exoplayer-rtsp:1.3.1")
-    implementation("androidx.media3:media3-ui:1.3.1")
+    implementation("androidx.media3:media3-exoplayer:1.11.1")
+    implementation("androidx.media3:media3-exoplayer-rtsp:1.11.1")
+    implementation("androidx.media3:media3-ui:1.11.1")
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.datetime)

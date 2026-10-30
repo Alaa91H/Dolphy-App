@@ -146,6 +146,7 @@ class DolphyChatManager(private val context: Context) {
             offset: Int,
             value: ByteArray?
         ) {
+            val targetDevice = device ?: return
             value?.let { data ->
                 try {
 
@@ -169,7 +170,7 @@ class DolphyChatManager(private val context: Context) {
             }
 
 
-            gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
+            gattServer?.sendResponse(targetDevice, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
         }
     }
 

@@ -36,8 +36,8 @@ jobs:
           # runner images; install only the packages the build actually needs.
           packages: ""
 
-      - name: Install platform 36
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Install platform 37
+        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -82,8 +82,8 @@ jobs:
         with:
           packages: ""
 
-      - name: Install platform 36
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Install platform 37
+        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4

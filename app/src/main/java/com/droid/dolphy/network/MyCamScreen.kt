@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
-
 package com.droid.dolphy.network
 
 import android.graphics.Bitmap
@@ -21,9 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -176,7 +172,10 @@ fun MyCamScreen(navController: NavController) {
 @Composable
 private fun ScanningCenter(status: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        LoadingIndicator(modifier = Modifier.size(280.dp))
+        CircularProgressIndicator(
+            modifier = Modifier.size(120.dp),
+            strokeWidth = 6.dp,
+        )
         Text(
             text = status,
             modifier = Modifier
