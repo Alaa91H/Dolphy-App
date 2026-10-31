@@ -422,7 +422,9 @@ object CameraNetworkScanner {
         for (port in listOf(80, 8080, 8000)) {
             try {
                 if (!anyPortOpen(ip, intArrayOf(port), 150)) continue
-                val conn = URL("http://$ip:$port/").openConnection() as HttpURLConnection
+                val conn = com.droid.dolphy.core.security.LocalHttpPolicy
+                    .requireLocal("http://$ip:$port/")
+                    .openConnection() as HttpURLConnection
                 conn.connectTimeout = 400
                 conn.readTimeout = 400
                 conn.instanceFollowRedirects = true
@@ -459,7 +461,9 @@ object CameraNetworkScanner {
         for (port in listOf(80, 8080)) {
             try {
                 if (!anyPortOpen(ip, intArrayOf(port), 150)) continue
-                val conn = URL("http://$ip:$port/").openConnection() as HttpURLConnection
+                val conn = com.droid.dolphy.core.security.LocalHttpPolicy
+                    .requireLocal("http://$ip:$port/")
+                    .openConnection() as HttpURLConnection
                 conn.connectTimeout = 400
                 conn.readTimeout = 400
                 val body = conn.inputStream.bufferedReader().use { it.readText().take(3000) }

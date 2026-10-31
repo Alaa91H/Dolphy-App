@@ -1,5 +1,6 @@
 package com.droid.dolphy.core.security
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,5 +33,23 @@ class LocalHttpPolicyTest {
         assertFalse(LocalHttpPolicy.isLocalUrl("ftp://192.168.1.20/file"))
         assertFalse(LocalHttpPolicy.isLocalUrl("http://8.8.8.8/"))
         assertFalse(LocalHttpPolicy.isLocalUrl("not a url"))
+    }
+
+    @Test
+    fun requireLocalReturnsTheUrlForLanDevices() {
+        val url = LocalHttpPolicy.requireLocal("http://192.168.0.1:8080/reboot")
+        assertEquals("http", url.protocol)
+        assertEquals("192.168.0.1", url.host)
+        assertEquals(8080, url.port)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun requireLocalRefusesPublicHosts() {
+        LocalHttpPolicy.requireLocal("http://example.com/steal")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun requireLocalRefusesNonHttpSchemes() {
+        LocalHttpPolicy.requireLocal("file:///data/local/tmp/secret")
     }
 }

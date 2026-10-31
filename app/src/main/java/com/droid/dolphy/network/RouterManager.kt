@@ -5,8 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.OutputStreamWriter
+import com.droid.dolphy.core.security.LocalHttpPolicy
 import java.net.HttpURLConnection
-import java.net.URL
 import java.util.Base64
 import java.io.File
 
@@ -59,7 +59,7 @@ class RouterManager(private val context: Context) {
         for ((user, pass) in config.allLogins) {
             onLog("Trying $user / ${pass.ifEmpty { "<blank>" }}")
             try {
-                val url = URL("http://$ip${config.authEndpoint}")
+                val url = LocalHttpPolicy.requireLocal("http://$ip${config.authEndpoint}")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.connectTimeout = 3000
                 conn.readTimeout = 3000
@@ -123,7 +123,7 @@ class RouterManager(private val context: Context) {
 
         try {
             val endpoint = config.rebootEndpoint.replace("\$STOK", authStok ?: "")
-            val url = URL("http://$ip$endpoint")
+            val url = LocalHttpPolicy.requireLocal("http://$ip$endpoint")
             val conn = url.openConnection() as HttpURLConnection
             conn.connectTimeout = 5000
             conn.readTimeout = 5000
@@ -161,7 +161,7 @@ class RouterManager(private val context: Context) {
         for (endpoint in endpointsToTry) {
             try {
                 val resolved = endpoint.replace("\$STOK", authStok ?: "")
-                val url = URL("http://$ip$resolved")
+                val url = LocalHttpPolicy.requireLocal("http://$ip$resolved")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.connectTimeout = 3000
                 conn.readTimeout = 3000
@@ -192,7 +192,7 @@ class RouterManager(private val context: Context) {
         }
         try {
             val endpoint = config.wifiEndpoint.replace("\$STOK", authStok ?: "")
-            val url = URL("http://$ip$endpoint")
+            val url = LocalHttpPolicy.requireLocal("http://$ip$endpoint")
             val conn = url.openConnection() as HttpURLConnection
             conn.connectTimeout = 3000
             conn.readTimeout = 3000

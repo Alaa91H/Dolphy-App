@@ -117,6 +117,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.FileReader
+import com.droid.dolphy.core.security.LocalHttpPolicy
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.HttpURLConnection
@@ -777,7 +778,7 @@ fun NetworkDiagnosticHubScreen(navController: NavController) {
                     while (isActive) {
                         val urlStr = bandwidthUrls[random.nextInt(bandwidthUrls.size)]
                         runCatching {
-                            val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+                            val conn = (LocalHttpPolicy.requireLocal(urlStr).openConnection() as HttpURLConnection).apply {
                                 connectTimeout = 2500
                                 readTimeout = 4000
                                 instanceFollowRedirects = true

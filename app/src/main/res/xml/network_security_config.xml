@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Dolphy talks to devices on the local network (routers, cameras, printers, TVs)
+    over plain HTTP, so cleartext stays enabled for the app as a whole. The
+    restriction to private/link-local addresses is enforced in code by
+    com.droid.dolphy.core.security.LocalHttpPolicy, which every LAN HTTP call site
+    goes through, because Android cannot express "RFC1918 only" declaratively.
+
+    Trust anchors are pinned to the system store: a user-installed CA (for example
+    a proxy or a "certificate installer" app) must not be able to silently
+    intercept Dolphy's HTTPS traffic.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

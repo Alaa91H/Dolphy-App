@@ -77,6 +77,7 @@ import com.droid.dolphy.SectionTopBar
 import fi.iki.elonen.NanoHTTPD
 import java.io.File
 import java.io.FileInputStream
+import com.droid.dolphy.core.security.LocalHttpPolicy
 import java.net.InetAddress
 import java.net.NetworkInterface
 import kotlinx.coroutines.Dispatchers
@@ -664,7 +665,7 @@ private fun sendDialRequest(device: CastDevice, videoUrl: String) {
     try {
 
         val launchUrl = "http://${device.host}:${device.port}/apps/YouTube"
-        val connection = java.net.URL(launchUrl).openConnection() as java.net.HttpURLConnection
+        val connection = LocalHttpPolicy.requireLocal(launchUrl).openConnection() as java.net.HttpURLConnection
         connection.requestMethod = "POST"
         connection.setRequestProperty("Content-Type", "text/plain")
         connection.doOutput = true
@@ -684,7 +685,7 @@ private fun sendDialRequest(device: CastDevice, videoUrl: String) {
             val instanceUrl = connection.getHeaderField("Location")
             if (instanceUrl != null) {
 
-                val playConnection = java.net.URL(instanceUrl).openConnection() as java.net.HttpURLConnection
+                val playConnection = LocalHttpPolicy.requireLocal(instanceUrl).openConnection() as java.net.HttpURLConnection
                 playConnection.requestMethod = "POST"
                 playConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
                 playConnection.doOutput = true
@@ -782,7 +783,7 @@ private fun buildDlnaMetaData(videoUrl: String): String {
 
 private fun dlnaSoap(url: String, soapAction: String, bodyInner: String): Int {
     return try {
-        val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+        val connection = LocalHttpPolicy.requireLocal(url).openConnection() as java.net.HttpURLConnection
         connection.requestMethod = "POST"
         connection.setRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"")
         connection.setRequestProperty("SOAPACTION", "\"$soapAction\"")
@@ -810,7 +811,7 @@ private fun sendGoogleCastRequest(device: CastDevice, videoUrl: String) {
         for (app in listOf("YouTube", "ChromeCast", "DefaultMediaReceiver")) {
             try {
                 val castUrl = "http://${device.host}:8008/apps/$app"
-                val connection = java.net.URL(castUrl).openConnection() as java.net.HttpURLConnection
+                val connection = LocalHttpPolicy.requireLocal(castUrl).openConnection() as java.net.HttpURLConnection
                 connection.requestMethod = "POST"
                 connection.setRequestProperty("Content-Type", "text/plain")
                 connection.doOutput = true
@@ -844,7 +845,7 @@ private fun sendGenericCastRequest(device: CastDevice, videoUrl: String) {
         for (endpoint in endpoints) {
             try {
                 val url = "http://${device.host}:${device.port}$endpoint"
-                val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                val connection = LocalHttpPolicy.requireLocal(url).openConnection() as java.net.HttpURLConnection
                 connection.requestMethod = "POST"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.doOutput = true

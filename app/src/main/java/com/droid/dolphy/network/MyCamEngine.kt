@@ -20,12 +20,12 @@ import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
+import com.droid.dolphy.core.security.LocalHttpPolicy
 import java.net.Inet4Address
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.Socket
 import java.net.URI
-import java.net.URL
 import java.util.Base64
 import java.util.Locale
 
@@ -359,7 +359,7 @@ object MyCamEngine {
     private fun httpGet(urlStr: String, authHeader: String?, maxBodyBytes: Int = 256 * 1024): HttpResult? {
         var conn: HttpURLConnection? = null
         return try {
-            conn = URL(urlStr).openConnection() as HttpURLConnection
+            conn = LocalHttpPolicy.requireLocal(urlStr).openConnection() as HttpURLConnection
             conn.connectTimeout = HTTP_TIMEOUT_MS
             conn.readTimeout = HTTP_TIMEOUT_MS
             conn.instanceFollowRedirects = false
@@ -399,7 +399,7 @@ object MyCamEngine {
     private fun isMjpegStream(urlStr: String, authHeader: String?): Boolean {
         var conn: HttpURLConnection? = null
         return try {
-            conn = URL(urlStr).openConnection() as HttpURLConnection
+            conn = LocalHttpPolicy.requireLocal(urlStr).openConnection() as HttpURLConnection
             conn.connectTimeout = HTTP_TIMEOUT_MS
             conn.readTimeout = HTTP_TIMEOUT_MS
             conn.instanceFollowRedirects = false
@@ -420,7 +420,7 @@ object MyCamEngine {
     private fun isJpegSnapshot(urlStr: String, authHeader: String?): Boolean {
         var conn: HttpURLConnection? = null
         return try {
-            conn = URL(urlStr).openConnection() as HttpURLConnection
+            conn = LocalHttpPolicy.requireLocal(urlStr).openConnection() as HttpURLConnection
             conn.connectTimeout = HTTP_TIMEOUT_MS
             conn.readTimeout = HTTP_TIMEOUT_MS
             conn.instanceFollowRedirects = false
@@ -531,7 +531,7 @@ object MyCamEngine {
     }
 
     fun mjpegFrames(url: String, authHeader: String?): Flow<Bitmap> = flow {
-        val conn = URL(url).openConnection() as HttpURLConnection
+        val conn = LocalHttpPolicy.requireLocal(url).openConnection() as HttpURLConnection
         try {
             conn.connectTimeout = HTTP_TIMEOUT_MS
             conn.readTimeout = 15000
@@ -574,7 +574,7 @@ object MyCamEngine {
             var bmp: Bitmap? = null
             var conn: HttpURLConnection? = null
             try {
-                conn = URL(url).openConnection() as HttpURLConnection
+                conn = LocalHttpPolicy.requireLocal(url).openConnection() as HttpURLConnection
                 conn.connectTimeout = HTTP_TIMEOUT_MS
                 conn.readTimeout = HTTP_TIMEOUT_MS
                 conn.instanceFollowRedirects = false

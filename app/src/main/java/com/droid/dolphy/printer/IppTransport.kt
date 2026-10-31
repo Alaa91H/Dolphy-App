@@ -15,16 +15,17 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.IOException
+import com.droid.dolphy.core.security.LocalHttpPolicy
 import java.net.HttpURLConnection
 import java.net.URI
-import java.net.URL
 
 class IppHttpTransport : IppClientTransport {
     override fun sendData(uri: URI, request: IppPacketData): IppPacketData {
         val httpUri = uri.toString()
             .replaceFirst("ipps://", "https://")
             .replaceFirst("ipp://", "http://")
-        val connection = URL(httpUri).openConnection() as HttpURLConnection
+        // Printers are discovered on the LAN; never let an IPP job leave it.
+        val connection = LocalHttpPolicy.requireLocal(httpUri).openConnection() as HttpURLConnection
         connection.connectTimeout = 8_000
         connection.readTimeout = 90_000
         connection.requestMethod = "POST"

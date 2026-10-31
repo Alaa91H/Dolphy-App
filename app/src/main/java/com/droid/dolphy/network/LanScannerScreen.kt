@@ -273,7 +273,7 @@ fun LanScannerScreen(navController: NavController) {
 
         for (port in portsToCheck) {
             try {
-                val url = URL("http://$ip:$port/")
+                val url = com.droid.dolphy.core.security.LocalHttpPolicy.requireLocal("http://$ip:$port/")
                 val connection = url.openConnection() as HttpURLConnection
                 connection.connectTimeout = 1000
                 connection.readTimeout = 1000

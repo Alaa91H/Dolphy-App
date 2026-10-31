@@ -1,69 +1,74 @@
-# ملخص التنفيذ — Dolphy 3.0 (P0 مكتمل + P1 جزئياً مكتمل)
+# حالة Dolphy — لقطة مُتحقَّقة
 
-> تاريخ التحديث: بعد استعادة JDK 21 (Temurin 21.0.6+7) من `/tmp/opencode/jdk21_extracted` واستخدامه بدلاً من تحميل إصدار قديم.
-
----
-
-## ✅ P0 — مكتمل 100%
-
-- توقيع الإصدار (`release` لم يعد `debug`، `preReleaseBuild` يفشل بوضوح).
-- حماية الودجت (`WidgetSecurity` رمز 256-bit، إزالة `intent-filter` المخصّص من `manifest`).
-- تشفير الأسرار (`SecureEnvelope` AES-256-GCM + `AndroidKeyStoreKeys` + `SecurePreferences`).
-- ترحيل `wifi_passwords` من `SharedPreferences` النصي إلى مشفّر.
-- موافقة إلزامية في `PluginPreviewScreen` قبل تثبيت الإضافات.
-- تحصين Ktor (`LocalRequestPolicy` + ربط LAN + حد إطار 64KB + CSP + إخفاء محتوى الإدخال من السجلات).
-- إزالة أذونات غير مستخدمة من `manifest`.
-- CI في `.github/workflows/android-ci.yml`.
-- توثيق أمني (`THREAT-MODEL.md`, `P0-HARDENING.md`, `RELEASE_SIGNING.md`).
+> آخر تحديث: 2026-10-31، بعد تنفيذ P0 وP1 (الجزء الآلي) على `main`.
+> كل رقم في هذا الملف مأخوذ من تشغيل فعلي، لا من تقدير.
 
 ---
 
-## ✅ P1 — مكتمل جزئياً (~65%)
+## ما هو مُتحقَّق الآن
 
-### الوحدات المُنشأة والمختبرة (كلها نجحت مع JDK 21):
-
-| الوحدة | الملفات | الاختبارات | الحالة |
-|---|---|---|---|
-| `:core:model` | `HardwareDescriptor`, `Transport`, `SafetyProfile`, `Signal`, `LabSession` | ضمن `:core:hal` | ✅ |
-| `:core:hal` | `DeviceRegistry`, `CapabilityIndex`, `DeviceLeaseManager`, `HardwareManager`, `HardwareDriver` | `DeviceRegistryTest`, `DeviceLeaseManagerTest`, `HardwareManagerTest` | ✅ |
-| `:core:security` | `SecureEnvelope`, `AndroidKeyStoreKeys`, `SecurePreferences`, `LocalRequestPolicy`, `LocalHttpPolicy` | `SecureEnvelopeTest`, `LocalHttpPolicyTest` | ✅ |
-| `:rootd` | `RootOperation`, `RootdProtocol`, `RootAuditLog`, `PrivilegedBroker` | `RootdProtocolTest` | ✅ |
-| `:bridge:flipper` | `FlipperCliAdapter`, `FlipperUsbCdcTransport`, `FlipperUsbMonitor`, `FlipperTransport` | `FlipperCliAdapterTest` | ✅ |
-
-### الكود الأساسي المُحدّث:
-
-- `app/build.gradle.kts`: إضافة `implementation(project(":rootd"))` و `implementation(project(":bridge:flipper"))` بالإضافة لـ `core:hal` و `core:security`.
-- `hardware/HardwareRuntime.kt`: الفئة المركزية لإدارة `HardwareManager` + `FlipperUsbMonitor` + `connectFlipper()` / `disconnectFlipper()`.
-- `hardware/DeviceGraphScreen.kt`: شاشة Compose تعرض `DeviceRegistry` مع حالة كل جهاز (`READY`, `DETECTED`, ...) وأزرار اتصال/فصل.
-- `MainActivity.kt`: إضافة مسار `device_graph` (مع `other/device_graph`).
-- `plugin/PluginPermissions.kt`: نظام الصلاحيات (`PluginPermission`, `PluginPermissions`, `PluginPermissionDeniedException`).
-- `plugin/model/PluginModels.kt`: إضافة `permissions: Set<PluginPermission>` إلى `PluginManifest`.
-- `plugin/PluginManager.kt`: تحليل `__permissions__` من `raw`، حفظ في `SerializableManifest`, ترحيل القيم القديمة (`permissions` فارغ → `fromSource.permissions`).
-- `plugin/bridge/PluginDeviceApis.kt`: حراسة `rootExec` (`ROOT`), `shizukuExec` (`SHIZUKU`), `shellExecSmart` (`SHELL`), `httpRequest` (`NETWORK`), `tcpReachable` (`NETWORK`).
-- `plugin/bridge/PluginAndroidApis.kt`: حراسة `filesRead`/`filesWrite` (`FILES`), `resolvePath` (يرفض بدون `FILES`), `pluginFilesDir()`.
-- `plugin/python/PythonPluginBridge.kt`: حراسة `loadDex*` (`DEX`), `shellExec` (`SHELL`), `rootExec` (`ROOT`), `smartExec` (`SHELL`), `shizukuExec` (`SHIZUKU`), `registerBleMode` (`BLE_SPAM`), `downloadAssets` (`DOWNLOAD`), `registerScreenHook`/`registerSurfaceHook`/`registerActionHook` (`HOOKS`).
-- `plugin/js/JsPluginSession.kt` و `plugin/python/PythonPluginSession.kt`: تمرير `manifest.permissions` إلى `PluginDeviceApis` و `PluginAndroidApis`.
+| البوابة | الأمر | النتيجة |
+|---|---|---|
+| اختبارات الوحدات | `:app:testDebugUnitTest :core:model:test :core:hal:test :core:security:test :rootd:test :bridge:flipper:test` | **43 اختباراً، 0 فشل** |
+| بناء debug | `:app:assembleDebug` | ناجح |
+| تحليل ساكن | `detekt` (كل الوحدات) | ناجح مع baseline |
+| lint | `:app:lintVitalRelease` | ناجح |
+| فحص أسرار | gitleaks على 20+ commit | لا تسريبات |
+| CI | `Android CI` + `Security` | أخضر على `main` |
 
 ---
 
-## ما لم يُكمل بعد من P1
+## P0 — أمن الإصدار (مكتمل)
 
-- `lint-baseline.xml`: لم يُنشأ (lint يحتاج >3 ساعات ويستهلك >4GB RAM؛ تم إيقافه يدوياً لحماية النظام).
-- `DeviceGraphScreen`: تعمل وتعرض البيانات، لكن دورة إذن USB الكاملة (`PendingIntent` + `UsbManager.requestPermission`) موجودة في الكود (`requestOrConnect`) لكنها لم تُختبر على جهاز حقيقي.
-- `Driver DSL`: البنية (`HardwareDescriptor`, `Transport`) جاهزة لكن DSL نفسها لم تُكتب بعد.
-- `rootd` daemon (خدمة Android مستمرة): `PrivilegedBroker` يعمل كوسيط `su` في الذاكرة، لكن التحويل إلى `Service` مع `AIDL` لم يُنفذ بعد.
-- تفكيك `MainActivity.kt` (1600+ سطر): لم يبدأ بعد.
+- توقيع الإصدار إلزامي؛ لا رجوع إلى مفتاح debug (`docs/security/RELEASE_SIGNING.md`).
+- `PluginSignature`: ECDSA P-256/SHA-256 على المصدر القانوني؛ تلاعب ⇒ رفض دائم،
+  مفتاح غير موثوق/بلا توقيع ⇒ رفض إلا بموافقة صريحة في شاشة المعاينة.
+- `PluginUrlPolicy`: HTTPS فقط، رفض `http://`، متابعة تحويلات يدوية (5 hops)
+  ورفض أي تخفيض إلى HTTP.
+- تحصين WebView للإضافات: بلا وصول للملفات/المحتوى، `MIXED_CONTENT_NEVER_ALLOW`،
+  بلا نوافذ أو تشغيل تلقائي، تنقّل HTTPS فقط.
+- حذف `READ_EXTERNAL_STORAGE` غير المستخدم؛ الأذونات الخطرة المتبقية تُطلب
+  وقت التشغيل مع تبرير.
+- **قيود الشبكة المحلية:** كل طلبات LAN تمرّ عبر `LocalHttpPolicy.requireLocal`
+  (راوترات، مسح LAN، كاميرات، طباعة IPP، بث TV، اختبار نطاق)، و
+  `network_security_config.xml` يقصر الثقة على CAs النظام.
+- Ktor المحلي: `LocalRequestPolicy` + ربط LAN + حد إطار + CSP + إخفاء الإدخال.
+
+## P1 — البنية والبوابات (مكتمل آلياً)
+
+- `detekt` على كل الوحدات مع `config/detekt/detekt.yml` و`detekt-baseline.xml`
+  لكل وحدة: 1085 ملاحظة قديمة مُسجّلة، وأي مخالفة جديدة تُفشل CI.
+- كتالوج الإصدارات: صفر إحداثيات مكتوبة يدوياً في `app/build.gradle.kts`.
+- إزالة تجاوزات `dexOptions` و`kotlin.jvm.target.validation.mode` (بناء كامل مُتحقَّق).
+- Dependabot أسبوعي مجمّع + فحص gitleaks على كل push/PR.
+- وحدات مستقلة ومُختبرة: `core:model`, `core:hal`, `core:security`, `rootd`,
+  `bridge:flipper`.
+- Driver DSL و`RootdService` وترجمة عربية كاملة (203 سلسلة) موجودة.
+
+## P2 — ما تبقّى فعلياً (غير منفَّذ)
+
+1. **عزل الإضافات في عملية منفصلة** — اليوم هي permission model داخل نفس العملية
+   (`docs/security/P2-PLAN.md`).
+2. **`MainActivity` (~1600 سطر)** — تفكيك تدريجي إلى ViewModels/شاشات؛ حالياً
+   مُسجّلة في baseline detekt ولا تُفشل البناء.
+3. **AIDL daemon لـ `rootd`** — `PrivilegedBroker` يعمل كوسيط في الذاكرة.
+4. **App Bundle / ABI splits** — الإصدار يوزّع APK عالمي بأربع معماريات؛ التقسيم
+   يغيّر أسماء الملفات ويكسر تحديثات المستخدمين الحاليين، فلم يُفعَّل.
+5. **Baseline profile** — يحتاج جهازاً/محاكياً لقياس البدء، لم يُنفَّذ هنا.
+
+## P3 — التوثيق (مكتمل)
+
+- `SECURITY.md` (سياسة الإبلاغ والنطاق)، `CONTRIBUTING.md` (حلقة التطوير
+  والبوابات)، `docs/ARCHITECTURE.md` (حدود الوحدات وتدفّق البيانات والبوابات)،
+  وتحديث `CHANGELOG.md`.
 
 ---
 
-## حالة البناء الحالية
+## ملاحظات صريحة
 
-- `JAVA_HOME=/tmp/opencode/jdk21_extracted` (Temurin 21.0.6+7) يعمل.
-- `./gradlew :app:compileDebugKotlin` ✅ (نجح مع جميع الوحدات الجديدة).
-- `./gradlew :core:model:test :core:hal:test :core:security:test :rootd:test :bridge:flipper:test` ✅ (كلها نجحت).
-- `./gradlew :app:assembleDebug` يعمل لكن يحتاج وقتاً طويلاً (>5 دقائق) بسبب حجم المشروع؛ لم ينتهِ في المحاولة الأخيرة لكن لم يُظهر أي خطأ في `compileDebugKotlin`.
-تمت إضافة اختبار الجهاز الحقيقي
-تم إضافة lint-baseline احترافي
-تم إضافة Driver DSL (Parser)
-تم إضافة RootdService (daemon)
-تم إضافة الترجمة الكاملة للعربية (values-ar/strings.xml) — 203 سلسلة
+- إضافات الكتالوج الرسمي **غير موقّعة**؛ مسار المتجر يمرّر `allowUntrusted = true`
+  لأن المحتوى منسّق داخل التطبيق ويُنزَّل عبر HTTPS. توقيع الكتالوج يحتاج مفتاحاً
+  خاصاً لا يوجد في المستودع.
+- دورة إذن USB الكاملة موجودة في `HardwareRuntime` لكنها لم تُختبر على جهاز
+  حقيقي في هذه الجلسة (لا جهاز متصل).
+- أي بند P2 يتطلب تغييرات واسعة أو جهازاً حقيقياً؛ لذلك لم يُعلَّم كمكتمل.

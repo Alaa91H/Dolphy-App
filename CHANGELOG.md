@@ -22,8 +22,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Local-network egress:** every LAN HTTP call site (router manager, LAN and
+  camera scanning, IPP printing, TV cast, bandwidth test) now goes through
+  `LocalHttpPolicy.requireLocal`, so a bug or a malicious plugin cannot point
+  these features at a public host. `network_security_config.xml` pins trust to
+  the system CA store, blocking interception through user-installed CAs.
+- **Kotlin quality gate:** `detekt` runs on every module with a reviewed
+  per-module baseline; new findings fail CI, legacy ones are recorded.
+- All 18 hand-written dependency coordinates moved into
+  `gradle/libs.versions.toml`.
+- Removed the obsolete `android.dexOptions.javaMaxHeapSize` and
+  `kotlin.jvm.target.validation.mode=ignore` build overrides; a full debug build
+  was verified without them.
 - CI now runs the unit tests of every module. The previous step executed
   `:app:testDebugUnitTest`, which had no sources, so no test ever ran.
+- Added `SECURITY.md`, `CONTRIBUTING.md` and `docs/ARCHITECTURE.md`.
 
 ## [1.0.0] - 2026-10-30
 
