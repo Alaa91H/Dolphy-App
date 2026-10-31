@@ -1518,5 +1518,11 @@ The file is downloaded from the official Dolphy GitHub repository. Plugins run w
     <string name="plugin_catalog_desc_shell_console">Unprivileged shell commands running as the Dolphy app.</string>
     <string name="plugin_catalog_desc_usb_inspector">Attached USB devices with descriptors and interface classes.</string>
     <string name="plugin_catalog_update_title">Update %1$s?</string>
+    <string name="plugin_signature_invalid">Plugin signature is invalid — installation stopped.</string>
+    <string name="plugin_signature_untrusted">This plugin is unsigned or signed by an untrusted key.</string>
+    <string name="plugin_signature_unknown_key">Signed by an untrusted key: %1$s</string>
+    <string name="plugin_signature_verified">Signed by %1$s · %2$s</string>
+    <string name="plugin_signature_missing">Unsigned</string>
+    <string name="plugin_import_url_https_only">Plugin import requires an HTTPS link.</string>
 </resources>
 

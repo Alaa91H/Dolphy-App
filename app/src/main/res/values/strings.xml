@@ -1457,5 +1457,11 @@
     <string name="plugin_catalog_desc_shell_console">Обычные shell-команды от имени приложения Dolphy.</string>
     <string name="plugin_catalog_desc_usb_inspector">Подключённые USB-устройства с идентификаторами и классами интерфейсов.</string>
     <string name="plugin_catalog_update_title">Обновить %1$s?</string>
+    <string name="plugin_signature_invalid">Подпись плагина недействительна — установка остановлена.</string>
+    <string name="plugin_signature_untrusted">Плагин не подписан или подписан недоверенным ключом.</string>
+    <string name="plugin_signature_unknown_key">Подписан недоверенным ключом: %1$s</string>
+    <string name="plugin_signature_verified">Подписано: %1$s · %2$s</string>
+    <string name="plugin_signature_missing">Без подписи</string>
+    <string name="plugin_import_url_https_only">Для импорта плагина нужна ссылка HTTPS.</string>
 </resources>
 

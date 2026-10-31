@@ -1508,4 +1508,10 @@
     <string name="plugin_catalog_desc_shell_console">أوامر صدفة عادية باسم تطبيق Dolphy.</string>
     <string name="plugin_catalog_desc_usb_inspector">أجهزة USB المتصلة مع المعرّفات وأصناف الواجهات.</string>
     <string name="plugin_catalog_update_title">تحديث %1$s؟</string>
+    <string name="plugin_signature_invalid">توقيع الإضافة غير صالح — تم إيقاف التثبيت.</string>
+    <string name="plugin_signature_untrusted">هذه الإضافة غير موقّعة أو موقّعة بمفتاح غير موثوق.</string>
+    <string name="plugin_signature_unknown_key">موقّعة بمفتاح غير موثوق: %1$s</string>
+    <string name="plugin_signature_verified">موقّعة من %1$s · %2$s</string>
+    <string name="plugin_signature_missing">غير موقّعة</string>
+    <string name="plugin_import_url_https_only">يجب استخدام رابط HTTPS لاستيراد الإضافات.</string>
 </resources>

@@ -5,6 +5,26 @@ All notable changes to Dolphy are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Plugin integrity:** `.dolphyplugin` packages can carry an ECDSA P-256
+  signature over their canonical source. A signature that does not match the
+  payload is always rejected, and unsigned or untrusted-key packages require an
+  explicit opt-in that is now surfaced in the install preview.
+- **Plugin transport:** imports are HTTPS-only. Plain-HTTP links are rejected
+  rather than upgraded, redirects are followed manually so a downgrade cannot
+  slip through, and the download policy is covered by unit tests.
+- **Plugin WebView:** file and content access are disabled, mixed content is
+  blocked, popups and autoplay are off, and navigation is restricted to HTTPS.
+- Removed the unused `READ_EXTERNAL_STORAGE` permission.
+
+### Changed
+
+- CI now runs the unit tests of every module. The previous step executed
+  `:app:testDebugUnitTest`, which had no sources, so no test ever ran.
+
 ## [1.0.0] - 2026-10-30
 
 Dolphy 1.0.0 establishes the stable release baseline for the plugin-enabled

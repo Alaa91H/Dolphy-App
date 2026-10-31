@@ -307,7 +307,9 @@ object PluginCatalog {
                     update(entry.id, State(Phase.Downloading, progress))
                 }
                 update(entry.id, State(Phase.Installing, 100))
-                val result = PluginManager.installFromFile(target)
+                // Catalog entries are curated in this build and fetched over HTTPS; they are not
+                // signed yet, so the store install path allows untrusted packages explicitly.
+                val result = PluginManager.installFromFile(target, allowUntrusted = true)
                 target.delete()
                 result.fold(
                     onSuccess = { manifest ->

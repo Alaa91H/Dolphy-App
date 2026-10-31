@@ -208,6 +208,7 @@ object PluginManager {
                     runtime = "python",
                     installed = loaded.containsKey(manifest.id),
                     capabilities = inferCapabilities(raw),
+                    signature = PluginSignature.verify(raw, PluginTrustStore.keys),
                 ),
             )
         } catch (t: Throwable) {
@@ -252,30 +253,19 @@ object PluginManager {
      */
     fun importFromUrl(rawUrl: String): Result<Uri> {
         return try {
-            val trimmed = rawUrl.trim()
-            if (trimmed.isEmpty()) {
+            if (rawUrl.trim().isEmpty()) {
                 return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_invalid)))
             }
-            val normalized = if (trimmed.startsWith("http://", true) || trimmed.startsWith("https://", true)) {
-                trimmed
-            } else {
-                "https://$trimmed"
-            }
-            val url = runCatching { URL(normalized) }.getOrElse {
-                return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_invalid)))
-            }
-            if (url.protocol.lowercase() !in setOf("http", "https") || url.host.isNullOrBlank()) {
-                return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_invalid)))
+            // Plugin payloads are executable: TLS is mandatory and a downgrade is never followed.
+            val url = PluginUrlPolicy.normalize(rawUrl)
+                ?: return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_https_only)))
+            if (!PluginUrlPolicy.isAllowed(url)) {
+                return Result.failure(IllegalArgumentException(str(R.string.plugin_import_url_https_only)))
             }
             val importDir = File(appContext.cacheDir, "plugin_imports").apply { mkdirs() }
             prunePluginImports(importDir)
             val target = File(importDir, importFileName(url))
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 15_000
-                readTimeout = 30_000
-                instanceFollowRedirects = true
-                setRequestProperty("User-Agent", "Dolphy-Android")
-            }
+            val connection = openHttpsConnection(url)
             try {
                 val code = connection.responseCode
                 if (code !in 200..299) {
@@ -325,6 +315,34 @@ object PluginManager {
         }
     }
 
+    /**
+     * Opens [url] without letting the HTTP stack follow redirects on our behalf, then follows up
+     * to [PluginUrlPolicy.MAX_REDIRECTS] hops manually so every hop is validated as HTTPS.
+     */
+    private fun openHttpsConnection(url: URL): HttpURLConnection {
+        var current = url
+        var hops = 0
+        while (true) {
+            val connection = (current.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 15_000
+                readTimeout = 30_000
+                instanceFollowRedirects = false
+                setRequestProperty("User-Agent", "Dolphy-Android")
+            }
+            val code = connection.responseCode
+            if (code !in 300..399) return connection
+
+            val location = connection.getHeaderField("Location")
+            connection.disconnect()
+            if (location.isNullOrBlank() || hops >= PluginUrlPolicy.MAX_REDIRECTS) {
+                throw IllegalStateException(str(R.string.plugin_import_url_failed))
+            }
+            current = PluginUrlPolicy.resolveRedirect(current, location)
+                ?: throw SecurityException(str(R.string.plugin_import_url_https_only))
+            hops++
+        }
+    }
+
     private fun importFileName(url: URL): String {
         val decoded = runCatching {
             URLDecoder.decode(url.path.orEmpty(), "UTF-8")
@@ -342,7 +360,7 @@ object PluginManager {
         }
     }
 
-    fun installFromUri(uri: Uri): Result<PluginManifest> {
+    fun installFromUri(uri: Uri, allowUntrusted: Boolean = false): Result<PluginManifest> {
         return try {
             val name = queryDisplayName(uri)
                 ?: uri.lastPathSegment?.substringAfterLast('/')
@@ -362,7 +380,7 @@ object PluginManager {
                     }
                 }
             } ?: return Result.failure(IllegalStateException(str(R.string.file_read_failed)))
-            val result = installFromFile(tmp)
+            val result = installFromFile(tmp, allowUntrusted = allowUntrusted)
             tmp.delete()
             result
         } catch (t: Throwable) {
@@ -371,11 +389,21 @@ object PluginManager {
         }
     }
 
-    fun installFromFile(sourceFile: File): Result<PluginManifest> {
+    fun installFromFile(sourceFile: File, allowUntrusted: Boolean = false): Result<PluginManifest> {
         if (!sourceFile.exists()) return Result.failure(IllegalArgumentException(str(R.string.plugin_err_file_missing)))
         return try {
             val raw = sourceFile.readText(Charsets.UTF_8)
             if (raw.isBlank()) return Result.failure(IllegalArgumentException(str(R.string.plugin_err_empty)))
+            when (PluginSignature.verify(raw, PluginTrustStore.keys)) {
+                is PluginSignatureStatus.Invalid ->
+                    return Result.failure(SecurityException(str(R.string.plugin_signature_invalid)))
+                is PluginSignatureStatus.Trusted -> Unit
+                is PluginSignatureStatus.UnknownKey,
+                is PluginSignatureStatus.Unsigned,
+                -> if (!allowUntrusted) {
+                    return Result.failure(SecurityException(str(R.string.plugin_signature_untrusted)))
+                }
+            }
             val fallbackId = sourceFile.nameWithoutExtension
                 .replace(Regex("[^A-Za-z0-9_-]"), "_")
                 .lowercase()

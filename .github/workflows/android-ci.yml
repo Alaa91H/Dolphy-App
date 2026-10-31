@@ -46,7 +46,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: |
+          ./gradlew \
+            :app:testDebugUnitTest \
+            :core:model:test \
+            :core:hal:test \
+            :core:security:test \
+            :rootd:test \
+            :bridge:flipper:test \
+            --stacktrace
 
       - name: Assemble debug
         run: ./gradlew :app:assembleDebug --stacktrace
@@ -58,6 +66,9 @@ jobs:
           name: android-build
           path: |
             app/build/reports/tests/
+            core/*/build/reports/tests/
+            rootd/build/reports/tests/
+            bridge/*/build/reports/tests/
             app/build/outputs/apk/debug/
           if-no-files-found: ignore
           retention-days: 14
