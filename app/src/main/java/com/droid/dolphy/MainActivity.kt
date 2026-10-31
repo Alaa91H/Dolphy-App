@@ -540,7 +540,11 @@ class MainActivity : ComponentActivity() {
         PluginRuntimeAccess.attach(this)
         PluginManager.dispatchEvent("activity_create", this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Bar colors are deprecated on API 35+, but edge-to-edge apps must still
+        // paint them on older releases.
+        @Suppress("DEPRECATION")
         window.statusBarColor = android.graphics.Color.BLACK
+        @Suppress("DEPRECATION")
         window.navigationBarColor = android.graphics.Color.BLACK
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
@@ -604,7 +608,9 @@ class MainActivity : ComponentActivity() {
                 val backgroundColor = MaterialTheme.colorScheme.background
 
                 SideEffect {
+                    @Suppress("DEPRECATION")
                     window.statusBarColor = backgroundColor.toArgb()
+                    @Suppress("DEPRECATION")
                     window.navigationBarColor = backgroundColor.toArgb()
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         window.isNavigationBarContrastEnforced = false
@@ -4038,7 +4044,7 @@ fun BleSectionScreen(section: BleSection, onBack: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+                                imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = "Expand",
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
@@ -4968,7 +4974,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
 
                     val progress = (dolphyState.icounter % 100) / 100f
                     LinearProgressIndicator(
-                        progress = progress,
+                        progress = { progress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
@@ -4984,13 +4990,7 @@ fun DolphyScreen(viewModel: DolphyViewModel, navController: NavController? = nul
 }
 fun vibrate(context: Context) {
     try {
-        val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager)?.defaultVibrator
-                ?: (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        }
+        val vibrator = context.getSystemService(Vibrator::class.java)
         if (vibrator != null && vibrator.hasVibrator()) {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 try {
@@ -6427,7 +6427,7 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
             return AdvertiseStartResult.Error(application.getString(R.string.error_enable_bluetooth_first))
         }
 
-        if (bluetoothAdapter?.isMultipleAdvertisementSupported != true) {
+        if (bluetoothAdapter.isMultipleAdvertisementSupported != true) {
             return AdvertiseStartResult.Error(application.getString(R.string.error_ble_advertising_unsupported))
         }
 

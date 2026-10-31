@@ -1,3 +1,7 @@
+// WiFi diagnostics rely on legacy WifiManager fields (dhcpInfo, connectionInfo, SSID,
+// startScan, disconnect) that have no drop-in replacement for minSdk 26.
+@file:Suppress("DEPRECATION")
+
 package com.droid.dolphy.network
 
 import com.droid.dolphy.DolphyIconButton
@@ -1997,7 +2001,7 @@ private fun testPasswordViaSuggestion(
             builder.setPriority(Int.MAX_VALUE)
         }
         suggestion = builder.build()
-        val addStatus = wifiManager.addNetworkSuggestions(listOf(suggestion!!))
+        val addStatus = wifiManager.addNetworkSuggestions(listOf(suggestion))
         if (addStatus != WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
             return false
         }
@@ -2005,7 +2009,7 @@ private fun testPasswordViaSuggestion(
         val request = NetworkRequest.Builder()
             .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
             .build()
-        runCatching { connectivityManager.registerNetworkCallback(request, callback!!) }
+        runCatching { connectivityManager.registerNetworkCallback(request, callback) }
         success = waitForStableConnection(
             wifiManager = wifiManager,
             cleanSsid = cleanSsid,
@@ -2091,6 +2095,9 @@ private fun BrutePasswordDialog(
                             val validCount = group.passwords.count { it.length >= 8 }
                             val canDismiss = group.isImported
 
+                            // The veto-style confirmValueChange has no direct replacement until
+                            // the call site migrates to dynamic anchors.
+                            @Suppress("DEPRECATION")
                             val dismissState = rememberSwipeToDismissBoxState(
                                 confirmValueChange = { value ->
                                     if (canDismiss && value == SwipeToDismissBoxValue.EndToStart) {

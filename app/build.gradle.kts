@@ -42,8 +42,8 @@ val hasReleaseSigning = listOf(
 
 // CI passes these so every published APK has a predictable, monotonic version.
 // Local builds fall back to the values below.
-val dolphyVersionCode = providers.gradleProperty("dolphy.versionCode").orNull?.toIntOrNull() ?: 20600
-val dolphyVersionName = providers.gradleProperty("dolphy.versionName").orNull ?: "2.6.0"
+val dolphyVersionCode = providers.gradleProperty("dolphy.versionCode").orNull?.toIntOrNull() ?: 30000
+val dolphyVersionName = providers.gradleProperty("dolphy.versionName").orNull ?: "1.0.0"
 
 android {
     namespace = "com.droid.dolphy"
@@ -71,9 +71,6 @@ android {
         versionName = dolphyVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        multiDexEnabled = true
-
 
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")

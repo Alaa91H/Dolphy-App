@@ -585,7 +585,7 @@ private fun TwsTab(
                 }
                 ContextCompat.registerReceiver(
                     context,
-                    receiver!!,
+                    receiver,
                     IntentFilter().apply {
                         addAction(BluetoothDevice.ACTION_FOUND)
                         addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)

@@ -1,3 +1,7 @@
+// Legacy BLE GATT APIs (connectGatt, writeCharacteristic, characteristic.value) are
+// kept for minSdk 26; their replacements require API 33+ branches.
+@file:Suppress("DEPRECATION")
+
 package com.droid.dolphy.chat
 
 import com.droid.dolphy.DolphyIconButton
@@ -22,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -333,7 +338,7 @@ class DolphyChatManager(private val context: Context) {
             .build()
 
         try {
-            bluetoothLeScanner?.startScan(scanCallback)
+            bluetoothLeScanner.startScan(scanCallback)
             isScanning.value = true
         } catch (e: Exception) {
             e.printStackTrace()
@@ -600,7 +605,7 @@ fun DolphyChatWelcomeScreen(navController: NavController) {
             } else {
 
                 Icon(
-                    imageVector = Icons.Default.Chat,
+                    imageVector = Icons.AutoMirrored.Filled.Chat,
                     contentDescription = null,
                     tint = accentColor,
                     modifier = Modifier.size(80.dp)

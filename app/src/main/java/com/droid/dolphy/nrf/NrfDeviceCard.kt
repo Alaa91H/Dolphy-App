@@ -119,7 +119,7 @@ fun NrfDeviceCard(
                     modifier = Modifier.height(56.dp)
                 ) {
                     LinearProgressIndicator(
-                        progress = getSignalStrengthPercent(device.rssi),
+                        progress = { getSignalStrengthPercent(device.rssi) },
                         modifier = Modifier
                             .width(32.dp)
                             .height(4.dp),
@@ -137,7 +137,7 @@ fun NrfDeviceCard(
 
 
             if (expanded) {
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),

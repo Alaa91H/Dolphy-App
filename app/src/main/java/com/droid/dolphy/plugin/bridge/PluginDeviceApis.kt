@@ -1,3 +1,7 @@
+// Deprecated WiFi/NFC platform APIs are intentional: they are the only supported
+// way to expose these details to plugins on minSdk 26.
+@file:Suppress("DEPRECATION")
+
 package com.droid.dolphy.plugin.bridge
 
 import android.annotation.SuppressLint
@@ -1688,7 +1692,7 @@ class PluginDeviceApis(
         val svcUuids = JSONArray()
         record?.serviceUuids?.forEach { svcUuids.put(it.uuid.toString()) }
         return JSONObject()
-            .put("name", d?.name ?: record?.deviceName ?: "")
+            .put("name", d.name ?: record?.deviceName ?: "")
             .put("address", address)
             .put("rssi", result.rssi)
             .put("connectable", if (Build.VERSION.SDK_INT >= 26) result.isConnectable else true)

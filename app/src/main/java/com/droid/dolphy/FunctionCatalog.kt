@@ -2,6 +2,7 @@ package com.droid.dolphy
 
 import android.content.Intent
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Nfc
 import androidx.compose.runtime.Composable
@@ -109,7 +110,7 @@ fun functionDestinationSections(): List<Pair<String, List<FunctionDestination>>>
             FunctionDestination(Icons.Default.BluetoothAudio, audioScanTitle, audioScanDesc, "other/audio_scanner", OtherSections.BLUETOOTH),
             FunctionDestination(Icons.Default.ElectricScooter, scooterTitle, scooterDesc, "other/scooter_hack", OtherSections.BLUETOOTH),
             FunctionDestination(Icons.Default.Bluetooth, nrfTitle, nrfDesc, "other/nrf_scanner", OtherSections.BLUETOOTH),
-            FunctionDestination(Icons.Default.Chat, "Dolphy Chat", chatDesc, "other/dolphy_chat_global", OtherSections.BLUETOOTH),
+            FunctionDestination(Icons.AutoMirrored.Filled.Chat, "Dolphy Chat", chatDesc, "other/dolphy_chat_global", OtherSections.BLUETOOTH),
             FunctionDestination(Icons.Default.Keyboard, hidTitle, hidDesc, "hid", OtherSections.BLUETOOTH),
             FunctionDestination(Icons.Default.BluetoothDisabled, btJammerTitle, btJammerDesc, "other/bluetooth_jammer", OtherSections.BLUETOOTH),
         ) + plugins(OtherSections.BLUETOOTH)

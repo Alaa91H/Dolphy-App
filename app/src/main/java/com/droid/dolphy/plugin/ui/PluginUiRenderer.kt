@@ -711,7 +711,7 @@ private fun PluginDropdown(
             label = if (label.isNotBlank()) ({ Text(label) }) else null,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth(),
         )
         ExposedDropdownMenu(

@@ -4,7 +4,9 @@ import com.droid.dolphy.DolphyIconButton
 
 import android.app.Activity
 import android.nfc.NfcAdapter
+import android.content.ClipData
 import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,7 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -199,11 +202,14 @@ fun NfcAudioSpooferScreen(
             ) {
                 Text(spoofUrl, color = Color.Gray, fontSize = 12.sp)
                 if (isStarted && serverIp != null) {
-                    val clipboard = LocalClipboardManager.current
+                    val clipboard = LocalClipboard.current
+                    val clipboardScope = rememberCoroutineScope()
                     val context = LocalContext.current
                     DolphyIconButton(
                         onClick = {
-                            clipboard.setText(AnnotatedString(spoofUrl))
+                            clipboardScope.launch {
+                                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("url", spoofUrl)))
+                            }
                             Toast.makeText(context, R.string.url_copied, Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.size(32.dp)

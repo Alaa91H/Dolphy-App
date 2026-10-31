@@ -123,11 +123,11 @@ class PythonPluginSession(
         val action = Runnable {
             synchronized(this) {
                 try {
-                    val valueJson = when (value) {
+                    val valueJson = when (val arg = value) {
                         null -> null
-                        is String -> JSONObject.quote(value)
-                        is Number, is Boolean -> value.toString()
-                        else -> JSONObject.wrap(value).toString()
+                        is String -> JSONObject.quote(arg)
+                        is Number, is Boolean -> arg.toString()
+                        else -> JSONObject.wrap(arg)?.toString() ?: "null"
                     }
                     pythonSession?.callAttr("invoke", id, valueJson)
                     stateVersion += 1

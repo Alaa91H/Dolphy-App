@@ -1,3 +1,7 @@
+// The plugin bridge exposes legacy BLE/WiFi platform APIs to plugin authors; several
+// of them are deprecated on API 33+ but remain the only option on minSdk 26.
+@file:Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+
 package com.droid.dolphy.plugin.bridge
 
 import android.annotation.SuppressLint
@@ -1352,7 +1356,7 @@ class PluginAndroidApis(
             for (p in providers) {
                 try {
                     val loc = lm.getLastKnownLocation(p) ?: continue
-                    if (best == null || loc.time > best!!.time) best = loc
+                    if (best == null || loc.time > best.time) best = loc
                 } catch (_: Exception) {
                 }
             }
@@ -1835,8 +1839,8 @@ class PluginAndroidApis(
             val svc = gatt.getService(UUID.fromString(serviceUuid)) ?: return false
             val ch = svc.getCharacteristic(UUID.fromString(charUuid)) ?: return false
             val desc = ch.getDescriptor(UUID.fromString(descUuid)) ?: return false
-            @Suppress("DEPRECATION") desc.value = bytes
-            @Suppress("DEPRECATION") gatt.writeDescriptor(desc)
+            desc.value = bytes
+            gatt.writeDescriptor(desc)
         } catch (e: Exception) { Log.w(TAG, "gattWriteDescriptor", e); false }
     }
 
@@ -1858,9 +1862,9 @@ class PluginAndroidApis(
         return try {
             val svc = gatt.getService(UUID.fromString(serviceUuid)) ?: return false
             val ch = svc.getCharacteristic(UUID.fromString(charUuid)) ?: return false
-            @Suppress("DEPRECATION") ch.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-            @Suppress("DEPRECATION") ch.value = bytes
-            @Suppress("DEPRECATION") gatt.writeCharacteristic(ch)
+            ch.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+            ch.value = bytes
+            gatt.writeCharacteristic(ch)
         } catch (e: Exception) { Log.w(TAG, "gattWriteNoResponse", e); false }
     }
 
@@ -1978,8 +1982,8 @@ class PluginAndroidApis(
         return try {
             val svc = server.getService(UUID.fromString(serviceUuid)) ?: return false
             val ch = svc.getCharacteristic(UUID.fromString(charUuid)) ?: return false
-            @Suppress("DEPRECATION") ch.value = bytes
-            @Suppress("DEPRECATION") server.notifyCharacteristicChanged(device, ch, false)
+            ch.value = bytes
+            server.notifyCharacteristicChanged(device, ch, false)
             true
         } catch (e: Exception) { Log.w(TAG, "bleServerNotify", e); false }
     }

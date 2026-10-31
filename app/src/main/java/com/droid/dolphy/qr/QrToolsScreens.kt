@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,12 +26,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextAlign
+import android.content.ClipData
 import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -421,10 +425,13 @@ fun QrDetailScreen(qrId: String, navController: NavController) {
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        val clipboardManager = LocalClipboardManager.current
+                        val clipboard = LocalClipboard.current
+                        val clipboardScope = rememberCoroutineScope()
                         com.droid.dolphy.AccentButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(qr.content))
+                                clipboardScope.launch {
+                                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("qr", qr.content)))
+                                }
                                 Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = accentColor),
@@ -583,11 +590,14 @@ fun QrAudioSpooferScreen(
             ) {
                 Text(qrUrl, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 if (isStarted && serverIp != null) {
-                    val clipboardManager = LocalClipboardManager.current
+                    val clipboard = LocalClipboard.current
+                    val clipboardScope = rememberCoroutineScope()
                     val context = LocalContext.current
                     DolphyIconButton(
                         onClick = {
-                            clipboardManager.setText(AnnotatedString(qrUrl))
+                            clipboardScope.launch {
+                                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("url", qrUrl)))
+                            }
                             Toast.makeText(context, "URL copied to clipboard", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.size(32.dp)
@@ -676,7 +686,7 @@ fun QrAudioSpooferScreen(
             Text(stringResource(R.string.connected_devices_count, deviceCount), color = accentColor, fontSize = 11.sp, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SoundButton("", Icons.Default.Message, accentColor) { viewModel.sendCommand("PLAY:iphone_message.mp3") }
+                SoundButton("", Icons.AutoMirrored.Filled.Message, accentColor) { viewModel.sendCommand("PLAY:iphone_message.mp3") }
                 SoundButton("", Icons.Default.Call, accentColor) { viewModel.sendCommand("PLAY:ios_call.mp3") }
             }
 
