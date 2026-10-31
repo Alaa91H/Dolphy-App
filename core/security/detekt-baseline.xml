@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:LocalRequestPolicy.kt:LocalRequestPolicy$internal fun parseAuthority: ParsedAuthority?</ID>
+    <ID>ReturnCount:LocalRequestPolicy.kt:LocalRequestPolicy$fun isAllowedOrigin: Boolean</ID>
+    <ID>ReturnCount:LocalRequestPolicy.kt:LocalRequestPolicy$internal fun parseAuthority: ParsedAuthority?</ID>
+    <ID>TooGenericExceptionCaught:SecurePreferences.kt:SecurePreferences$error: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

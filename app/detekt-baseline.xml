@@ -1,0 +1,692 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:BluetoothAudioManager.kt:BluetoothAudioManager$isListening &amp;&amp; localRecord != null &amp;&amp; localTrack != null &amp;&amp; localRecord.state == AudioRecord.STATE_INITIALIZED &amp;&amp; localTrack.state == AudioTrack.STATE_INITIALIZED</ID>
+    <ID>ComplexCondition:CameraNetworkScanner.kt:CameraNetworkScanner$!epLow.contains("onvif") &amp;&amp; !epLow.contains("device_service") &amp;&amp; !epLow.contains("media") &amp;&amp; !xml.contains("NetworkVideoTransmitter", ignoreCase = true)</ID>
+    <ID>ComplexCondition:CameraNetworkScanner.kt:CameraNetworkScanner$prev == null || cam.source == "ONVIF" || (prev.mac == null &amp;&amp; cam.mac != null)</ID>
+    <ID>ComplexCondition:CameraNetworkScanner.kt:CameraNetworkScanner$t.contains("camera") || t.contains("nvr") || t.contains("dvr") || t.contains("ipcam") || t.contains("onvif") || t.contains("hikvision") || t.contains("dahua") || t.contains("reolink")</ID>
+    <ID>ComplexCondition:CameraNetworkScanner.kt:CameraNetworkScanner$t.contains("router") || t.contains("login") &amp;&amp; !t.contains("camera") &amp;&amp; !t.contains("nvr") &amp;&amp; !t.contains("dvr") &amp;&amp; !t.contains("ipcam")</ID>
+    <ID>ComplexCondition:HidKeyboardActivity.kt:HidKeyboardActivity$"airpods" in name || "earbuds" in name || "buds" in name || "headphones" in name || "headset" in name || "beats" in name</ID>
+    <ID>ComplexCondition:HidPcWorkspace.kt:ch in 'a'..'z' || ch in 'A'..'Z' || ch in '0'..'9' || ch == ' ' || ch == '\n' || ch == '-' || ch == '_' || ch == '=' || ch == '+' || ch == '.' || ch == ',' || ch == '/' || ch == ':' || ch == ';' || ch == '\\' || ch == '"' || ch == '\'' || ch == '(' || ch == ')' || ch == '!' || ch == '?' || ch == '@' || ch == '#' || ch == '$' || ch == '%' || ch == '^' || ch == '&amp;' || ch == '*'</ID>
+    <ID>ComplexCondition:IRRemotesScreen.kt:groups.dpadUp != null || groups.dpadDown != null || groups.dpadLeft != null || groups.dpadRight != null || groups.dpadOk != null</ID>
+    <ID>ComplexCondition:IRRemotesScreen.kt:groups.volUp != null || groups.volDown != null || groups.channelUp != null || groups.channelDown != null || groups.mute != null</ID>
+    <ID>ComplexCondition:IRRemotesScreen.kt:tokens.any { it in setOf("tv", "тв", "телевизор", "телек") } &amp;&amp; (catN.contains("tv") || catN.contains("tvs") || catN.contains("телевиз"))</ID>
+    <ID>ComplexCondition:LanScannerScreen.kt:h.contains("tv") || h.contains("smarttv") || h.contains("bravia") || h.contains("chromecast") || h.contains("tcl") || h.contains("hisense") || h.contains("kodi") || h.contains("firestick")</ID>
+    <ID>ComplexCondition:LanScannerScreen.kt:isFirstIp || (ports.contains(80) &amp;&amp; ip.endsWith(".1")) || ports.contains(8089)</ID>
+    <ID>ComplexCondition:LanScannerScreen.kt:ports.contains(445) || ports.contains(135) || ports.contains(3389) || h.contains("desktop") || h.contains("laptop") || h.contains("pc") || h.contains("macbook") || h.contains("win")</ID>
+    <ID>ComplexCondition:LanScannerScreen.kt:ports.contains(554) || h.contains("camera") || h.contains("cam") || h.contains("hikvision") || h.contains("dahua")</ID>
+    <ID>ComplexCondition:LanScannerScreen.kt:ports.contains(62078) || ports.contains(8008) || ports.contains(8009) || ports.contains(5555) || h.contains("android") || h.contains("phone") || h.contains("iphone") || h.contains("pixel") || h.contains("galaxy") || h.contains("huawei") || h.contains("xiaomi") || h.contains("samsung")</ID>
+    <ID>ComplexCondition:LanScannerScreen.kt:ports.contains(9100) || h.contains("printer") || h.contains("hp") || h.contains("epson") || h.contains("canon") || h.contains("brother")</ID>
+    <ID>ComplexCondition:MainActivity.kt:route == "plugin_manager" || route == "plugin_security" || route == "plugin_about" || route == "plugin_install_helper"</ID>
+    <ID>ComplexCondition:MainActivity.kt:route == "plugin_manager" || route == "plugin_security" || route == "plugin_about" || route == "plugin_install_helper" || route == "customize_animations"</ID>
+    <ID>ComplexCondition:NetworkDiagnosticHubScreen.kt:port == 80 || port == 8080 || port == 8008 || port == 8888</ID>
+    <ID>ComplexCondition:NfcEmulationScreens.kt:hasHce &amp;&amp; nfcOn &amp;&amp; !isDefault &amp;&amp; !rootMode</ID>
+    <ID>ComplexCondition:NfcEmulationScreens.kt:hasHce &amp;&amp; nfcOn &amp;&amp; isDefault &amp;&amp; tag != null</ID>
+    <ID>ComplexCondition:NfcTagAnalyzer.kt:NfcTagAnalyzer$raw.any { it.code &lt; 0x20 &amp;&amp; it != '\n' &amp;&amp; it != '\r' &amp;&amp; it != '\t' }</ID>
+    <ID>ComplexCondition:QrAudioSpooferViewModel.kt:QrAudioSpooferViewModel$name.startsWith("wlan") || name.startsWith("ap") || name.startsWith("swlan") || name.startsWith("eth")</ID>
+    <ID>ComplexCondition:TwsHijackEngine.kt:TwsHijackEngine$!hfpConnected &amp;&amp; !audioManager.isHfpConnected(address) &amp;&amp; now - lastHfpTry &gt; 10000 &amp;&amp; hfpRetries &lt; 5</ID>
+    <ID>ComplexCondition:UsbIrManager.kt:UsbIrManager.ElkSmartBulkEncoder$p0 == 0xFC &amp;&amp; p1 == 0xFC &amp;&amp; p2 == 0xFC &amp;&amp; p3 == 0xFC</ID>
+    <ID>CyclomaticComplexMethod:AudioScannerScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun AudioScannerScreen</ID>
+    <ID>CyclomaticComplexMethod:BleSmartHomeScreens.kt:@Composable fun BleSmartHomeScanScreen</ID>
+    <ID>CyclomaticComplexMethod:BluetoothAudioManager.kt:BluetoothAudioManager$@SuppressLint("MissingPermission") fun connectAudioProfile</ID>
+    <ID>CyclomaticComplexMethod:BluetoothAudioManager.kt:BluetoothAudioManager$@SuppressLint("MissingPermission") private fun openScoChannel</ID>
+    <ID>CyclomaticComplexMethod:BluetoothAudioManager.kt:BluetoothAudioManager$private fun convertPcmToM4a</ID>
+    <ID>CyclomaticComplexMethod:BluetoothAudioStress.kt:@Composable @OptIn(ExperimentalMaterial3Api::class) fun BtAudioStressScanScreen</ID>
+    <ID>CyclomaticComplexMethod:BluetoothAudioStress.kt:BluetoothStressService$private fun startCombo</ID>
+    <ID>CyclomaticComplexMethod:BluetoothSpamScreens.kt:@Composable fun BondSpamScreen</ID>
+    <ID>CyclomaticComplexMethod:CameraNetworkScanner.kt:CameraNetworkScanner$private fun detectHttpTitleStrict: String?</ID>
+    <ID>CyclomaticComplexMethod:CameraNetworkScanner.kt:CameraNetworkScanner$private fun runOnvifDiscovery</ID>
+    <ID>CyclomaticComplexMethod:CameraNetworkScanner.kt:CameraNetworkScanner$suspend fun scan: List&lt;FoundCamera&gt;</ID>
+    <ID>CyclomaticComplexMethod:DesignSystem.kt:@Composable fun VolumetricButton</ID>
+    <ID>CyclomaticComplexMethod:DolphyZeroScreen.kt:@Composable fun DolphyZeroScreen</ID>
+    <ID>CyclomaticComplexMethod:DuckyUtils.kt:DuckyUtils$fun parse: List&lt;DuckyCommand&gt;</ID>
+    <ID>CyclomaticComplexMethod:DuckyUtils.kt:DuckyUtils$private fun mapToken: String</ID>
+    <ID>CyclomaticComplexMethod:DuckyUtils.kt:DuckyUtils$suspend fun typeText</ID>
+    <ID>CyclomaticComplexMethod:FastPairExploit.kt:FastPairExploit$@SuppressLint("MissingPermission") fun exploitWithAudio</ID>
+    <ID>CyclomaticComplexMethod:FastPairExploit.kt:FastPairExploit$@SuppressLint("MissingPermission") private fun initiateBonding</ID>
+    <ID>CyclomaticComplexMethod:FastPairExploit.kt:FastPairExploit$private fun parseKbpResponse: String?</ID>
+    <ID>CyclomaticComplexMethod:FlipperWidgetProvider.kt:FlipperWidgetProvider.Companion$fun updateAll</ID>
+    <ID>CyclomaticComplexMethod:FlipperWidgetProvider.kt:FlipperWidgetProvider.Companion$private fun handleAction</ID>
+    <ID>CyclomaticComplexMethod:HidKeyboardActivity.kt:HidKeyboardActivity$override fun onCreate</ID>
+    <ID>CyclomaticComplexMethod:HidKeyboardActivity.kt:HidKeyboardActivity$override fun onHidStateChanged</ID>
+    <ID>CyclomaticComplexMethod:HidKeyboardActivity.kt:HidKeyboardActivity$private fun detectDeviceKind: BtDeviceKind</ID>
+    <ID>CyclomaticComplexMethod:HidKeyboardActivity.kt:HidKeyboardActivity$private fun synchronizeWithService</ID>
+    <ID>CyclomaticComplexMethod:HidPcWorkspace.kt:@Composable private fun PcMouseSection</ID>
+    <ID>CyclomaticComplexMethod:HidPcWorkspace.kt:@SuppressLint("MissingPermission") @OptIn(ExperimentalMaterial3Api::class) @Composable fun PcHidWorkspaceScreen</ID>
+    <ID>CyclomaticComplexMethod:HidPcWorkspace.kt:private fun loadPersistedScripts: List&lt;DuckyScriptItem&gt;</ID>
+    <ID>CyclomaticComplexMethod:HidPcWorkspace.kt:private fun sanitizeNotepadText: String</ID>
+    <ID>CyclomaticComplexMethod:HidUi.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun Axon</ID>
+    <ID>CyclomaticComplexMethod:HidUi.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun Plum</ID>
+    <ID>CyclomaticComplexMethod:HidUi.kt:@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT) @OptIn(ExperimentalMaterial3Api::class) @Composable private fun ScreenshotSpamScreen</ID>
+    <ID>CyclomaticComplexMethod:HidUi.kt:private fun loadMobilePersistedScripts: List&lt;MobileDuckyScriptItem&gt;</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:@Composable fun IRJammerScreen</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:@Composable fun IRStormScreen</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:@Composable fun UniversalRemoteCategoryScreen</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:@Composable fun UserIrRemotesScreen</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:@Composable private fun IrRemoteControlLayout</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:@Composable private fun categoryIcon: ImageVector</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:IrRepository$fun getFlipperIndex: Map&lt;String, Map&lt;String, String&gt;&gt;</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:IrRepository$private fun parseIrText: List&lt;IrButton&gt;</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:IrStormRepository$fun buildCommandsForCategory: List&lt;Pair&lt;String, IrButton&gt;&gt;</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:IrStormRepository$fun forEachTarget</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:UserIrRemoteStore$fun ensureLoaded</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:internal fun localizeFlipperCategory: String</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:private fun classifyIrButtons: IrRemoteGroups</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:private fun iconForRemoteButton: ImageVector?</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:private fun scoreMatch: Int</ID>
+    <ID>CyclomaticComplexMethod:IRRemotesScreen.kt:private fun universalAliases: Set&lt;String&gt;</ID>
+    <ID>CyclomaticComplexMethod:IrBackend.kt:IrBackend$fun transmit: Boolean</ID>
+    <ID>CyclomaticComplexMethod:IrWidgetRuntime.kt:IrWidgetRuntime$private fun universalAliases: Set&lt;String&gt;</ID>
+    <ID>CyclomaticComplexMethod:JsPluginSession.kt:JsPluginSession$private fun buildApi: Scriptable</ID>
+    <ID>CyclomaticComplexMethod:JsPluginSession.kt:JsPluginSession$private fun buildDolphyNamespace: Scriptable</ID>
+    <ID>CyclomaticComplexMethod:JsPluginSession.kt:JsPluginSession$private fun exportLibrary: Any</ID>
+    <ID>CyclomaticComplexMethod:JsPluginSession.kt:JsPluginSession$private fun requestMediaPick: Any?</ID>
+    <ID>CyclomaticComplexMethod:JsPluginSession.kt:JsPluginSession.Companion$fun parseManifest: PluginManifest</ID>
+    <ID>CyclomaticComplexMethod:JsUiBuilder.kt:JsUiBuilder$fun createUiObject: Scriptable</ID>
+    <ID>CyclomaticComplexMethod:JsUiBuilder.kt:JsUiBuilder$private fun buildConnectedButtonGroup: UiNode.ConnectedButtonGroup</ID>
+    <ID>CyclomaticComplexMethod:JsUiBuilder.kt:JsUiBuilder$private fun buildMaterial3Pack: Scriptable</ID>
+    <ID>CyclomaticComplexMethod:JsUiBuilder.kt:JsUiBuilder$private fun buildTabRow: UiNode.TabRow</ID>
+    <ID>CyclomaticComplexMethod:KtorServerManager.kt:KtorServerManager$fun start: Int</ID>
+    <ID>CyclomaticComplexMethod:KtorServerManager.kt:KtorServerManager$private fun isLocalClient: Boolean</ID>
+    <ID>CyclomaticComplexMethod:LanScannerScreen.kt:@Composable fun LanScannerScreen</ID>
+    <ID>CyclomaticComplexMethod:LanScannerScreen.kt:@Composable fun RouterControlPanel</ID>
+    <ID>CyclomaticComplexMethod:LanScannerScreen.kt:private fun guessDeviceType: LanDeviceType</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:@Composable fun BleSectionScreen</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:@Composable fun BluetoothContainerScreen</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:@Composable fun DolphyScreen</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:@Composable fun MainScaffold</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:@Composable fun SettingsScreen</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:@Composable internal fun RandomExternalDolphinAnimation</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:@OptIn(ExperimentalFoundationApi::class) @Composable private fun AdvertiseSpamScreen</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt:private fun generateTonalPalette: TonalPalette</ID>
+    <ID>CyclomaticComplexMethod:MyCamEngine.kt:MyCamEngine$private suspend fun findCameraInternal: ScanResult</ID>
+    <ID>CyclomaticComplexMethod:MyCamEngine.kt:MyCamEngine$private suspend fun probeCamera: CameraTarget?</ID>
+    <ID>CyclomaticComplexMethod:MyCamScreen.kt:@Composable fun MyCamScreen</ID>
+    <ID>CyclomaticComplexMethod:NdefParsing.kt:private fun decodeRecord: Pair&lt;String, String&gt;</ID>
+    <ID>CyclomaticComplexMethod:NdefParsing.kt:private fun decodeUri: String</ID>
+    <ID>CyclomaticComplexMethod:NetworkDiagnosticHubScreen.kt:@Composable fun NetworkDiagnosticHubScreen</ID>
+    <ID>CyclomaticComplexMethod:NetworkDiagnosticHubScreen.kt:private fun testPasswordLegacy: Boolean</ID>
+    <ID>CyclomaticComplexMethod:NfcAudioSpooferScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun NfcAudioSpooferScreen</ID>
+    <ID>CyclomaticComplexMethod:NfcEmulationScreens.kt:@Composable fun NfcTagEmulationRunScreen</ID>
+    <ID>CyclomaticComplexMethod:NfcScreens.kt:@Composable fun NfcResultScreen</ID>
+    <ID>CyclomaticComplexMethod:NfcTagAnalyzer.kt:NfcTagAnalyzer$private fun collectTlvValues</ID>
+    <ID>CyclomaticComplexMethod:NfcTagAnalyzer.kt:NfcTagAnalyzer$private fun detectPaymentSystem: String?</ID>
+    <ID>CyclomaticComplexMethod:NfcTagAnalyzer.kt:NfcTagAnalyzer$suspend fun analyzeIntent: NfcScanEntity?</ID>
+    <ID>CyclomaticComplexMethod:NfcWriteScreens.kt:@Composable fun NfcWriteFormScreen</ID>
+    <ID>CyclomaticComplexMethod:NrfDeviceCard.kt:@Composable fun NrfDeviceCard</ID>
+    <ID>CyclomaticComplexMethod:NrfDeviceModel.kt:fun getManufacturerName: String?</ID>
+    <ID>CyclomaticComplexMethod:NrfDeviceModel.kt:fun getServiceName: String</ID>
+    <ID>CyclomaticComplexMethod:NrfScannerScreen.kt:@Composable fun NrfScannerScreen</ID>
+    <ID>CyclomaticComplexMethod:NrfScannerViewModel.kt:NrfScannerViewModel$private fun processBleResult</ID>
+    <ID>CyclomaticComplexMethod:OtherScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun OtherScreen</ID>
+    <ID>CyclomaticComplexMethod:PluginAndroidApis.kt:PluginAndroidApis$@SuppressLint("MissingPermission") fun wifiDetailedInfoJson: String</ID>
+    <ID>CyclomaticComplexMethod:PluginAndroidApis.kt:PluginAndroidApis$fun assetsDataUri: String?</ID>
+    <ID>CyclomaticComplexMethod:PluginAndroidApis.kt:PluginAndroidApis$fun importUriToSandbox: String</ID>
+    <ID>CyclomaticComplexMethod:PluginAndroidApis.kt:PluginAndroidApis$fun openSettings: Boolean</ID>
+    <ID>CyclomaticComplexMethod:PluginDeviceApis.kt:PluginDeviceApis$fun httpDownloadApproved</ID>
+    <ID>CyclomaticComplexMethod:PluginDexRegistry.kt:PluginDexRegistry$fun loadBytes: ClassLoader</ID>
+    <ID>CyclomaticComplexMethod:PluginHostScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun PluginHostScreen</ID>
+    <ID>CyclomaticComplexMethod:PluginIcons.kt:PluginIcons$fun resolve: ImageVector</ID>
+    <ID>CyclomaticComplexMethod:PluginIcons.kt:PluginIcons$private fun resolveDynamic: ImageVector?</ID>
+    <ID>CyclomaticComplexMethod:PluginManager.kt:PluginManager$fun importFromUrl: Result&lt;Uri&gt;</ID>
+    <ID>CyclomaticComplexMethod:PluginManager.kt:PluginManager$private fun loadAllFromDisk</ID>
+    <ID>CyclomaticComplexMethod:PluginManagerScreen.kt:@Composable private fun CatalogCard</ID>
+    <ID>CyclomaticComplexMethod:PluginUiRenderer.kt:@Composable fun PluginUiRenderer</ID>
+    <ID>CyclomaticComplexMethod:PluginUiRenderer.kt:@Composable private fun PluginAssetImage</ID>
+    <ID>CyclomaticComplexMethod:PythonUiParser.kt:PythonUiParser$private fun parseNode: UiNode</ID>
+    <ID>CyclomaticComplexMethod:QrAudioSpooferViewModel.kt:QrAudioSpooferViewModel$private fun getLocalIpAddress: String?</ID>
+    <ID>CyclomaticComplexMethod:QrToolsScreens.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun QrAudioSpooferScreen</ID>
+    <ID>CyclomaticComplexMethod:RouterManager.kt:RouterManager$suspend fun authenticate: Boolean</ID>
+    <ID>CyclomaticComplexMethod:ScooterGattClient.kt:ScooterGattClient$private fun send</ID>
+    <ID>CyclomaticComplexMethod:ScooterHackViewModel.kt:ScooterHackViewModel.Companion$fun isHardScooterMatch: Boolean</ID>
+    <ID>CyclomaticComplexMethod:SmartTvCastScreen.kt:@Composable fun SmartTvCastScreen</ID>
+    <ID>CyclomaticComplexMethod:TwsHijackEngine.kt:TwsHijackEngine$@SuppressLint("MissingPermission") private suspend fun run</ID>
+    <ID>CyclomaticComplexMethod:UsbIrManager.kt:UsbIrManager$@Synchronized private fun openDevice</ID>
+    <ID>CyclomaticComplexMethod:UsbIrManager.kt:UsbIrManager.ElkSmartBulkEncoder$private fun encodeD226Payload: ByteArray</ID>
+    <ID>CyclomaticComplexMethod:VivoSingleSpam.kt:VivoSingleSpam$override fun start</ID>
+    <ID>CyclomaticComplexMethod:WhisperPairBluetoothScreen.kt:@Composable private fun ScannerTab</ID>
+    <ID>CyclomaticComplexMethod:WhisperPairBluetoothScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun WhisperPairBluetoothScreen</ID>
+    <ID>CyclomaticComplexMethod:WhisperPairBluetoothScreen.kt:@SuppressLint("MissingPermission") @Composable private fun TwsTab</ID>
+    <ID>CyclomaticComplexMethod:WifiPrintScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun WifiPrintScreen</ID>
+    <ID>DestructuringDeclarationWithTooManyEntries:PluginManager.kt:PluginManager$val (src, raw, manifest, enabled, runtime, pinned) = item</ID>
+    <ID>EmptyCatchBlock:BluetoothAudioManager.kt:BluetoothAudioManager${ }</ID>
+    <ID>EmptyCatchBlock:BluetoothJammerEngine.kt:BluetoothJammerEngine${ }</ID>
+    <ID>EmptyCatchBlock:DuckyUtils.kt:DuckyUtils${ }</ID>
+    <ID>EmptyCatchBlock:FastPairExploit.kt:FastPairExploit${ }</ID>
+    <ID>EmptyCatchBlock:HidPcWorkspace.kt:{ }</ID>
+    <ID>EmptyCatchBlock:HidPcWorkspace.kt:{}</ID>
+    <ID>EmptyCatchBlock:HidUi.kt:{ }</ID>
+    <ID>EmptyCatchBlock:JsPluginSession.kt:JsPluginSession${}</ID>
+    <ID>EmptyCatchBlock:LanScannerScreen.kt:{ }</ID>
+    <ID>EmptyCatchBlock:LanScannerScreen.kt:{}</ID>
+    <ID>EmptyCatchBlock:MainActivity.kt:MainActivity${ }</ID>
+    <ID>EmptyCatchBlock:MainActivity.kt:SpamViewModel${ }</ID>
+    <ID>EmptyCatchBlock:MainActivity.kt:{ }</ID>
+    <ID>EmptyCatchBlock:NetworkDiagnosticHubScreen.kt:{ }</ID>
+    <ID>EmptyCatchBlock:TwsHijackEngine.kt:TwsHijackEngine.&lt;no name provided&gt;${ }</ID>
+    <ID>EmptyElseBlock:GlobalChatScreen.kt:{ }</ID>
+    <ID>EmptyFunctionBlock:DolphyChatScreens.kt:DolphyChatManager.&lt;no name provided&gt;${ }</ID>
+    <ID>EmptyFunctionBlock:LanScannerScreen.kt:&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:LanScannerScreen.kt:&lt;no name provided&gt;.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:MainActivity.kt:MainActivity${ }</ID>
+    <ID>EmptyFunctionBlock:PluginAndroidApis.kt:PluginAndroidApis.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:PluginManager.kt:PluginManager${ }</ID>
+    <ID>EmptyFunctionBlock:ScooterGattClient.kt:ScooterGattClient.&lt;no name provided&gt;${ }</ID>
+    <ID>EmptyFunctionBlock:SmartLightManager.kt:SmartLightManager.&lt;no name provided&gt;${ }</ID>
+    <ID>EmptyFunctionBlock:SmartLightManager.kt:SmartLightManager.NoopCallback${}</ID>
+    <ID>EmptyIfBlock:DolphyChatScreens.kt:DolphyChatManager.&lt;no name provided&gt;${ }</ID>
+    <ID>EmptyIfBlock:LanScannerScreen.kt:{ }</ID>
+    <ID>EmptyIfBlock:NrfScannerViewModel.kt:NrfScannerViewModel.&lt;no name provided&gt;${ }</ID>
+    <ID>EmptyIfBlock:RootNfcHelper.kt:RootNfcHelper${ }</ID>
+    <ID>FunctionOnlyReturningConstant:ExpressiveLocals.kt:@Composable fun isLiquidGlassChrome: Boolean</ID>
+    <ID>FunctionOnlyReturningConstant:ExpressiveLocals.kt:@Composable fun isLiquidGlassNavChrome: Boolean</ID>
+    <ID>FunctionOnlyReturningConstant:ExpressiveLocals.kt:@Composable fun isLiquidGlassTopBarChrome: Boolean</ID>
+    <ID>LargeClass:BluetoothAudioManager.kt:BluetoothAudioManager</ID>
+    <ID>LargeClass:FastPairExploit.kt:FastPairExploit</ID>
+    <ID>LargeClass:HidKeyboardActivity.kt:HidKeyboardActivity : ComponentActivityListener</ID>
+    <ID>LargeClass:JsPluginSession.kt:JsPluginSession : PluginSession</ID>
+    <ID>LargeClass:JsUiBuilder.kt:JsUiBuilder</ID>
+    <ID>LargeClass:MainActivity.kt:SpamViewModel : AndroidViewModel</ID>
+    <ID>LargeClass:PluginAndroidApis.kt:PluginAndroidApis</ID>
+    <ID>LargeClass:PluginDeviceApis.kt:PluginDeviceApis</ID>
+    <ID>LargeClass:PluginManager.kt:PluginManager</ID>
+    <ID>LongMethod:AudioScannerScreen.kt:@Composable fun AudioDeviceRow</ID>
+    <ID>LongMethod:AudioScannerScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun AudioScannerScreen</ID>
+    <ID>LongMethod:BleSmartHomeScreens.kt:@Composable fun BleSmartHomeScanScreen</ID>
+    <ID>LongMethod:BluetoothAudioStress.kt:@Composable @OptIn(ExperimentalMaterial3Api::class) fun BtAudioStressScanScreen</ID>
+    <ID>LongMethod:BluetoothSpamScreens.kt:@Composable fun BondSpamScreen</ID>
+    <ID>LongMethod:CustomizeAnimationsScreen.kt:@Composable fun CustomizeAnimationsScreen</ID>
+    <ID>LongMethod:DolphyChatScreens.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun DolphyChatWelcomeScreen</ID>
+    <ID>LongMethod:DolphyZeroScreen.kt:@Composable fun DolphyZeroScreen</ID>
+    <ID>LongMethod:GlobalChatScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun GlobalChatScreen</ID>
+    <ID>LongMethod:HidConsumerControls.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable internal fun PcConsumerControlsSection</ID>
+    <ID>LongMethod:HidKeyboardActivity.kt:HidKeyboardActivity$override fun onCreate</ID>
+    <ID>LongMethod:HidPcWorkspace.kt:@Composable private fun BadHidSection</ID>
+    <ID>LongMethod:HidPcWorkspace.kt:@Composable private fun PcMouseSection</ID>
+    <ID>LongMethod:HidPcWorkspace.kt:@SuppressLint("MissingPermission") @OptIn(ExperimentalMaterial3Api::class) @Composable fun PcHidWorkspaceScreen</ID>
+    <ID>LongMethod:HidUi.kt:@OptIn(ExperimentalComposeUiApi::class) @Composable fun Axon</ID>
+    <ID>LongMethod:HidUi.kt:@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT) @OptIn(ExperimentalMaterial3Api::class) @Composable private fun ScreenshotSpamScreen</ID>
+    <ID>LongMethod:IRRemotesScreen.kt:@Composable fun IRFlipperHome</ID>
+    <ID>LongMethod:IRRemotesScreen.kt:@Composable fun IRStormScreen</ID>
+    <ID>LongMethod:IRRemotesScreen.kt:@Composable fun UniversalRemoteCategoryScreen</ID>
+    <ID>LongMethod:IRRemotesScreen.kt:@Composable fun UserIrRemotesScreen</ID>
+    <ID>LongMethod:IRRemotesScreen.kt:@Composable private fun IrRemoteControlLayout</ID>
+    <ID>LongMethod:IRRemotesScreen.kt:IrRepository$fun parseBlock</ID>
+    <ID>LongMethod:JsPluginSession.kt:JsPluginSession$private fun buildApi: Scriptable</ID>
+    <ID>LongMethod:JsUiBuilder.kt:JsUiBuilder$fun createUiObject: Scriptable</ID>
+    <ID>LongMethod:KtorServerManager.kt:KtorServerManager$fun start: Int</ID>
+    <ID>LongMethod:LanScannerScreen.kt:@Composable fun RouterControlPanel</ID>
+    <ID>LongMethod:LanScannerScreen.kt:fun startScan</ID>
+    <ID>LongMethod:LanToolsScreen.kt:@Composable fun CameraNetworkScanScreen</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable @OptIn(ExperimentalMaterial3Api::class) fun AccentColorScreen</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable fun AnimatedBleButton</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable fun BleSectionScreen</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable fun BleSpamScreen</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable fun DolphyScreen</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable fun MainScaffold</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable fun OnboardingSetupScreen</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable fun SettingsScreen</ID>
+    <ID>LongMethod:MainActivity.kt:@Composable internal fun RandomExternalDolphinAnimation</ID>
+    <ID>LongMethod:MainActivity.kt:@OptIn(ExperimentalFoundationApi::class) @Composable private fun AdvertiseSpamScreen</ID>
+    <ID>LongMethod:MainActivity.kt:private fun buildBleSectionModeGroups: List&lt;BleModeGroup&gt;</ID>
+    <ID>LongMethod:NetworkDiagnosticHubScreen.kt:@Composable fun NetworkDiagnosticHubScreen</ID>
+    <ID>LongMethod:NetworkDiagnosticHubScreen.kt:@Composable private fun BrutePasswordDialog</ID>
+    <ID>LongMethod:NetworkDiagnosticHubScreen.kt:fun startContinuousUdpTest: Job</ID>
+    <ID>LongMethod:NfcAudioSpooferScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun NfcAudioSpooferScreen</ID>
+    <ID>LongMethod:NfcEmulationScreens.kt:@Composable fun NfcTagEmulationListScreen</ID>
+    <ID>LongMethod:NfcEmulationScreens.kt:@Composable fun NfcTagEmulationRunScreen</ID>
+    <ID>LongMethod:NfcScreens.kt:@Composable fun NfcMasterKeyScreen</ID>
+    <ID>LongMethod:NfcScreens.kt:@Composable fun NfcResultScreen</ID>
+    <ID>LongMethod:NrfDeviceCard.kt:@Composable fun NrfDeviceCard</ID>
+    <ID>LongMethod:NrfScannerScreen.kt:@Composable fun NrfScannerScreen</ID>
+    <ID>LongMethod:OtherScreen.kt:@Composable private fun RenderTileCard</ID>
+    <ID>LongMethod:OtherScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun OtherScreen</ID>
+    <ID>LongMethod:PluginAboutScreen.kt:@Composable fun PluginAboutScreen</ID>
+    <ID>LongMethod:PluginHostScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun PluginHostScreen</ID>
+    <ID>LongMethod:PluginManagerScreen.kt:@Composable private fun CatalogCard</ID>
+    <ID>LongMethod:PluginPreviewScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun PluginPreviewScreen</ID>
+    <ID>LongMethod:PluginUiRenderer.kt:@Composable fun PluginUiRenderer</ID>
+    <ID>LongMethod:QrToolsScreens.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun QrAudioSpooferScreen</ID>
+    <ID>LongMethod:SmartTvCastScreen.kt:@Composable fun SmartTvCastScreen</ID>
+    <ID>LongMethod:WhisperPairBluetoothScreen.kt:@Composable private fun ScannerTab</ID>
+    <ID>LongMethod:WhisperPairBluetoothScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun WhisperPairBluetoothScreen</ID>
+    <ID>LongMethod:WhisperPairBluetoothScreen.kt:@SuppressLint("MissingPermission") @Composable private fun TwsTab</ID>
+    <ID>LongMethod:WifiPrintScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun WifiPrintScreen</ID>
+    <ID>LoopWithTooManyJumpStatements:CameraNetworkScanner.kt:CameraNetworkScanner$for</ID>
+    <ID>LoopWithTooManyJumpStatements:CameraNetworkScanner.kt:CameraNetworkScanner$while</ID>
+    <ID>LoopWithTooManyJumpStatements:FastPairSpam.kt:FastPairSpam$for</ID>
+    <ID>LoopWithTooManyJumpStatements:HidPcWorkspace.kt:for</ID>
+    <ID>LoopWithTooManyJumpStatements:HidUi.kt:for</ID>
+    <ID>LoopWithTooManyJumpStatements:IRRemotesScreen.kt:UserIrRemoteStore$for</ID>
+    <ID>LoopWithTooManyJumpStatements:LanScannerScreen.kt:for</ID>
+    <ID>LoopWithTooManyJumpStatements:MyCamEngine.kt:MyCamEngine$for</ID>
+    <ID>LoopWithTooManyJumpStatements:NetworkDiagnosticHubScreen.kt:for</ID>
+    <ID>LoopWithTooManyJumpStatements:NfcTagAnalyzer.kt:NfcTagAnalyzer$while</ID>
+    <ID>LoopWithTooManyJumpStatements:PluginBluetoothHooks.kt:PluginBluetoothHooks$for</ID>
+    <ID>LoopWithTooManyJumpStatements:PluginDeviceApis.kt:PluginDeviceApis$while</ID>
+    <ID>LoopWithTooManyJumpStatements:PluginManager.kt:PluginManager$for</ID>
+    <ID>LoopWithTooManyJumpStatements:QrAudioSpooferViewModel.kt:QrAudioSpooferViewModel$while</ID>
+    <ID>LoopWithTooManyJumpStatements:SmartLightManager.kt:SmartLightManager.&lt;no name provided&gt;$for</ID>
+    <ID>LoopWithTooManyJumpStatements:VivoSingleSpam.kt:VivoSingleSpam$while</ID>
+    <ID>MatchingDeclarationName:BluetoothJammerScreen.kt:JammerDevice</ID>
+    <ID>MatchingDeclarationName:HidUsageActions.kt:HidUsageAction</ID>
+    <ID>MatchingDeclarationName:NdefParsing.kt:NdefSummary</ID>
+    <ID>MatchingDeclarationName:NfcTrolls.kt:NfcTroll</ID>
+    <ID>MatchingDeclarationName:ProgressiveBlurModifier.kt:BlurDirection</ID>
+    <ID>MatchingDeclarationName:ScooterModels.kt:ScooterDevice</ID>
+    <ID>MaxLineLength:AudioScannerScreen.kt:Icon(imageVector = Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(40.dp).padding(20.dp), tint = if (isRecording) Color.Red else accentColor)</ID>
+    <ID>MaxLineLength:BleSpamRuntime.kt:BleSpamRuntime$JSONObject().put("type", type.name.lowercase()).put("subtype", subtype?.toString()).put("active", _spammingStates.value[Pair(type, subtype)] == true)</ID>
+    <ID>MaxLineLength:BleSpamRuntime.kt:BleSpamRuntime$val decision = PluginBluetoothHooks.action("bluetooth.ble.section.toggle", JSONObject().put("section", section.route).put("active", isSectionActive(section)))</ID>
+    <ID>MaxLineLength:BleSpamRuntime.kt:BleSpamRuntime$val decision = PluginBluetoothHooks.action("bluetooth.ble.stop_all", JSONObject().put("activeCount", spammers.size).put("kitchenSinkActive", kitchenSinkJob != null))</ID>
+    <ID>MaxLineLength:BluetoothAudioStress.kt:Text("MAC: ${device.address}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:BluetoothAudioStress.kt:Text("Source: ${device.source}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:BluetoothJammerScreen.kt:Text(stringResource(R.string.bt_jammer_activity_log), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:BluetoothJammerScreen.kt:Text(stringResource(R.string.bt_jammer_target), style = MaterialTheme.typography.labelSmall, color = accentColor.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)</ID>
+    <ID>MaxLineLength:ContinuitySpam.kt:ContinuitySpam.Companion$put("0620", arrayOf("00", "01", "06", "07", "08", "09", "0E", "0F", "12", "13", "14", "15", "1D", "20", "21", "22", "23", "25", "2A", "2E", "3D", "3E", "3F", "40", "5B", "5C"))</ID>
+    <ID>MaxLineLength:EasySetupDevice.kt:EasySetupDevice$Type.BUDS -&gt; "42098102141503210109${value.removePrefix("0x").removePrefix("0X").take(4)}01${value.removePrefix("0x").removePrefix("0X").drop(4)}063C948E00000000C700"</ID>
+    <ID>MaxLineLength:EasySetupDevice.kt:EasySetupDevice$type.BUDS -&gt; "42098102141503210109${value.removePrefix("0x").removePrefix("0X").take(4)}01${value.removePrefix("0x").removePrefix("0X").drop(4)}063C948E00000000C700"</ID>
+    <ID>MaxLineLength:FastPairSpam.kt:FastPairSpam$.</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$"airpods" in name || "earbuds" in name || "buds" in name || "headphones" in name || "headset" in name || "beats" in name || "sony wh" in name || "jbl tune" in name -&gt; BtDeviceKind.Headphones</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$"pc" in name || "desktop" in name || "laptop" in name || "windows" in name || "macbook" in name || "imac" in name || "notebook" in name -&gt; BtDeviceKind.Computer</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$Icon(d.kind.icon(!d.paired), contentDescription = null, tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$Row</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$Text(d.name, fontWeight = FontWeight.Medium, color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface)</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$Text(if (scanning) stringResource(R.string.hid_scanning_message) else stringResource(R.string.hid_no_devices), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$Text(stringResource(R.string.hid_connecting), color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodyMedium)</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$Text(stringResource(R.string.hid_reconnecting), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$else -&gt; (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$if</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$if (scanning) { Row(verticalAlignment = Alignment.CenterVertically) { DolphyCircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.hid_scanning), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity$title = stringResource(if (controlScreenMode.value == ControlScreenMode.BadHid) R.string.hid_bad_hid_mode else R.string.hid_title)</ID>
+    <ID>MaxLineLength:HidKeyboardActivity.kt:HidKeyboardActivity.&lt;no name provided&gt;$val hasConnect = ActivityCompat.checkSelfPermission(this@HidKeyboardActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED</ID>
+    <ID>MaxLineLength:JsPluginSession.kt:JsPluginSession$androidApis.btConnectRfcomm(addr, if (args.getOrNull(1) is org.mozilla.javascript.Function) "00001101-0000-1000-8000-00805F9B34FB" else uuid) { invokeJs(cb, it, refreshUi = false) }</ID>
+    <ID>MaxLineLength:JsUiBuilder.kt:JsUiBuilder$put("LazyColumn") { _, _, args -&gt; wrap(UiNode.LazyColumn(childrenOf(args), f(args, "padding", 0f), f(args, "spacing", 4f), b(args, "fillMaxSize", true))) }</ID>
+    <ID>MaxLineLength:JsUiBuilder.kt:JsUiBuilder$put("lazyColumn") { _, _, args -&gt; wrap(UiNode.LazyColumn(childrenOf(args), f(args, "padding", 0f), f(args, "spacing", 4f), b(args, "fillMaxSize", true))) }</ID>
+    <ID>MaxLineLength:LanScannerScreen.kt:server.contains("Apache", ignoreCase = true) || server.contains("nginx", ignoreCase = true) || server.contains("lighttpd", ignoreCase = true) -&gt; null</ID>
+    <ID>MaxLineLength:MainActivity.kt:.</ID>
+    <ID>MaxLineLength:MainActivity.kt:DropdownMenuItem(text = { Text(stringResource(R.string.settings_theme_auto)) }, onClick = { spamViewModel.setThemeMode(0); themeMenuExpanded = false })</ID>
+    <ID>MaxLineLength:MainActivity.kt:DropdownMenuItem(text = { Text(stringResource(R.string.settings_theme_dark)) }, onClick = { spamViewModel.setThemeMode(1); themeMenuExpanded = false })</ID>
+    <ID>MaxLineLength:MainActivity.kt:DropdownMenuItem(text = { Text(stringResource(R.string.settings_theme_light)) }, onClick = { spamViewModel.setThemeMode(2); themeMenuExpanded = false })</ID>
+    <ID>MaxLineLength:MainActivity.kt:SpamViewModel$JSONObject().put("name", name).put("companyCode", companyCode).put("payloadHex", payloadHex).put("randomizeMac", randomizeMac).put("intervalMs", intervalMs)</ID>
+    <ID>MaxLineLength:MainActivity.kt:SpamViewModel$_isDarkTheme.value = (application.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES</ID>
+    <ID>MaxLineLength:MainActivity.kt:SpamViewModel$else -&gt; (application.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES</ID>
+    <ID>MaxLineLength:MainActivity.kt:SpamViewModel.&lt;no name provided&gt;$if (ActivityCompat.checkSelfPermission(application, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return@forEach</ID>
+    <ID>MaxLineLength:MainActivity.kt:Text(text = sliderValue.toInt().toString(), color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)</ID>
+    <ID>MaxLineLength:MainActivity.kt:colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.onSurface)</ID>
+    <ID>MaxLineLength:MainActivity.kt:items(discoveredDevices.distinctBy { it.address }) { device -&gt; DeviceItem(device = device) { viewModel.selectDevice(it); showDeviceDialog = false } }</ID>
+    <ID>MaxLineLength:MainActivity.kt:listOf(Theme("Adaptive", MaterialTheme.colorScheme.primary, listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.tertiary), true)) + baseThemes</ID>
+    <ID>MaxLineLength:MainActivity.kt:text = if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) stringResource(R.string.hid_pair_permission_required) else selectedDevice?.name?.uppercase() ?: stringResource(R.string.hid_select_device_upper)</ID>
+    <ID>MaxLineLength:MyCamScreen.kt:.</ID>
+    <ID>MaxLineLength:NetworkDiagnosticHubScreen.kt:Icon(Icons.Filled.VpnKey, contentDescription = stringResource(R.string.wifi_brute_force_passwords), tint = MaterialTheme.colorScheme.primary)</ID>
+    <ID>MaxLineLength:NetworkDiagnosticHubScreen.kt:accentColor = if (group.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)</ID>
+    <ID>MaxLineLength:NfcAudioSpooferScreen.kt:Text(stringResource(R.string.nfc_select_page_type), color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:NfcAudioSpooferScreen.kt:Text(stringResource(R.string.qr_terminal_logs), color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:NfcAudioSpooferScreen.kt:Text(stringResource(R.string.text_to_speech), color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:NfcScreens.kt:KeyValue(stringResource(R.string.nfc_readonly), scan!!.isReadOnly?.let { if (it) stringResource(R.string.nfc_yes) else stringResource(R.string.nfc_no) } ?: "—")</ID>
+    <ID>MaxLineLength:NfcScreens.kt:KeyValue(stringResource(R.string.nfc_writable), scan!!.writable?.let { if (it) stringResource(R.string.nfc_yes) else stringResource(R.string.nfc_no) } ?: "—")</ID>
+    <ID>MaxLineLength:NfcScreens.kt:emulationName = context.getString(R.string.nfc_copy_tag_name, scan!!.type.ifBlank { context.getString(R.string.nfc_tag_label_unknown) })</ID>
+    <ID>MaxLineLength:NfcWriteScreens.kt:Text(stringResource(R.string.nfc_write_add_from_contacts_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:NfcWriteScreens.kt:Text(stringResource(R.string.nfc_write_add_phone_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:PluginAndroidApis.kt:PluginAndroidApis.&lt;no name provided&gt;$override</ID>
+    <ID>MaxLineLength:PluginDeviceApis.kt:PluginDeviceApis$"isodep" -&gt; { val t = IsoDep.get(tag) ?: throw Exception("no_isodep"); t.connect(); t.timeout = 5000; val r = t.transceive(cmdBytes); t.close(); r }</ID>
+    <ID>MaxLineLength:PluginDeviceApis.kt:PluginDeviceApis$if (data == null || data.size != 16) { mainHandler.post { callback(JSONObject().put("ok", false).put("error", "data_must_be_16_bytes").toString()) }; return }</ID>
+    <ID>MaxLineLength:PluginDeviceApis.kt:PluginDeviceApis$if (data == null || data.size != 4) { mainHandler.post { callback(JSONObject().put("ok", false).put("error", "data_must_be_4_bytes").toString()) }; return }</ID>
+    <ID>MaxLineLength:PythonPluginBridge.kt:PythonPluginBridge$"card" -&gt; items += SettingsItemContribution.CardItem(pluginId, item.optString("title"), item.optString("subtitle"), item.optString("icon", "extension"), item.optString("screen").ifBlank { null })</ID>
+    <ID>MaxLineLength:PythonPluginBridge.kt:PythonPluginBridge$"nav" -&gt; items += SettingsItemContribution.NavItem(pluginId, item.optString("title"), item.optString("subtitle"), item.optString("icon", "extension"), item.optString("screen", "main"))</ID>
+    <ID>MaxLineLength:PythonPluginBridge.kt:PythonPluginBridge$"slider" -&gt; items += SettingsItemContribution.SliderItem(pluginId, item.optString("key"), item.optString("title"), item.optString("subtitle"), item.optDouble("min", 0.0).toFloat(), item.optDouble("max", 100.0).toFloat(), item.optDouble("default", 50.0).toFloat(), item.optInt("steps"))</ID>
+    <ID>MaxLineLength:PythonPluginBridge.kt:PythonPluginBridge$"switch" -&gt; items += SettingsItemContribution.SwitchItem(pluginId, item.optString("key"), item.optString("title"), item.optString("subtitle"), item.optBoolean("default"))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"alertDialog" -&gt; UiNode.AlertDialog(b(o, "show"), o.optString("title"), o.optString("message"), o.optString("confirmText", "OK"), o.optString("dismissText", "Отмена"), nullable(o, "onConfirmId"), nullable(o, "onDismissId"), cancelable = b(o, "cancelable", true))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"button" -&gt; UiNode.Button(o.optString("text"), nullable(o, "onClickId"), o.optString("style", "filled"), b(o, "enabled", true), b(o, "fillMaxWidth"))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"functionRow" -&gt; UiNode.FunctionRow(o.optString("title"), o.optString("description"), o.optString("icon", "extension"), nullable(o, "iconTint"), nullable(o, "onClickId"))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"image" -&gt; UiNode.Image(o.optString("source"), nullableFloat(o, "width"), nullableFloat(o, "height"), o.optString("scale", "fit"), f(o, "cornerRadius"), b(o, "fillMaxWidth"), o.optString("contentDescription"))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"materialCard" -&gt; UiNode.MaterialCard(children(o), f(o, "contentPadding", 16f), nullableInt(o, "segmentedIndex"), nullableInt(o, "segmentedCount"), nullable(o, "onClickId"))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"settingsRow" -&gt; UiNode.SettingsRow(o.optString("title"), o.optString("subtitle"), nullable(o, "icon"), nullable(o, "onClickId"), o.optJSONObject("trailing")?.let(::parseNode))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"splitButton" -&gt; UiNode.SplitButton(o.optString("primaryText"), nullable(o, "onPrimaryId"), nullable(o, "onSecondaryId"), b(o, "enabled", true), b(o, "fillMaxWidth", true))</ID>
+    <ID>MaxLineLength:PythonUiParser.kt:PythonUiParser$"textField" -&gt; UiNode.TextField(o.optString("value"), nullable(o, "onChangeId"), o.optString("label"), b(o, "singleLine", true), b(o, "fillMaxWidth", true))</ID>
+    <ID>MaxLineLength:QrToolsScreens.kt:Text("SELECT PAGE TYPE", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:QrToolsScreens.kt:Text("TEXT TO SPEECH", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:QrToolsScreens.kt:Text(stringResource(R.string.sound_panel), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())</ID>
+    <ID>MaxLineLength:RouterManager.kt:RouterManager$"Model" to listOf("(?i)(?:model|device|product|router)[^&lt;]*?[&gt;]?\\s*:\\s*([^&lt;\\n]+)".toRegex(), "(?i)&lt;(?:td|div|span)[^&gt;]*&gt;(?:model|device)[^&lt;]*&lt;/(?:td|div|span)&gt;\\s*&lt;(?:td|div|span)[^&gt;]*&gt;([^&lt;]+)".toRegex())</ID>
+    <ID>MaxLineLength:RouterManager.kt:RouterManager$val responseText = try { conn.inputStream.bufferedReader().readText() } catch (e: Exception) { conn.errorStream?.bufferedReader()?.readText() ?: "" }</ID>
+    <ID>MaxLineLength:ScooterProtocol.kt:ScooterProtocol$val PAYLOAD_GEN_1 = byteArrayOf(0x5A, 0xA5.toByte(), 0x00, 0x4B, 0x48, 0x94.toByte(), 0xE3.toByte(), 0x3A, 0x91.toByte(), 0xE0.toByte(), 0x32, 0x7E, 0xC2.toByte())</ID>
+    <ID>MaxLineLength:ScooterProtocol.kt:ScooterProtocol$val PAYLOAD_GEN_2 = byteArrayOf(0x5A, 0xA5.toByte(), 0x00, 0x4B, 0x48, 0x94.toByte(), 0xE3.toByte(), 0x3A, 0x91.toByte(), 0xE0.toByte(), 0x43, 0x3E, 0xC2.toByte())</ID>
+    <ID>MaxLineLength:ScooterProtocol.kt:ScooterProtocol$val PAYLOAD_GEN_3 = byteArrayOf(0x5A, 0xA5.toByte(), 0x00, 0x4B, 0x48, 0x94.toByte(), 0xE3.toByte(), 0x3A, 0x91.toByte(), 0xE0.toByte(), 0x42, 0x7E, 0xC4.toByte())</ID>
+    <ID>MaxLineLength:SmartTvCastScreen.kt:val videoUri = remember(selectedVideo) { selectedVideo?.let { androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".provider", it) } }</ID>
+    <ID>MaxLineLength:TwsHijackEngine.kt:TwsHijackEngine$context.getString(R.string.tws_status, stateName(a2dpState), if (audioManager.isHfpConnected(address)) "OK" else context.getString(R.string.tws_hfp_none))</ID>
+    <ID>MaxLineLength:Type.kt:displayLarge = base.displayLarge.copy(fontFamily = family, fontWeight = weight, fontSize = base.displayLarge.fontSize * safeScale, letterSpacing = 0.3.sp)</ID>
+    <ID>MaxLineLength:Type.kt:displayMedium = base.displayMedium.copy(fontFamily = family, fontWeight = weight, fontSize = base.displayMedium.fontSize * safeScale, letterSpacing = 0.3.sp)</ID>
+    <ID>MaxLineLength:Type.kt:displaySmall = base.displaySmall.copy(fontFamily = family, fontWeight = weight, fontSize = base.displaySmall.fontSize * safeScale, letterSpacing = 0.3.sp)</ID>
+    <ID>MaxLineLength:Type.kt:headlineLarge = base.headlineLarge.copy(fontFamily = family, fontWeight = weight, fontSize = base.headlineLarge.fontSize * safeScale, letterSpacing = 0.25.sp)</ID>
+    <ID>MaxLineLength:Type.kt:headlineMedium = base.headlineMedium.copy(fontFamily = family, fontWeight = weight, fontSize = base.headlineMedium.fontSize * safeScale, letterSpacing = 0.25.sp)</ID>
+    <ID>MaxLineLength:Type.kt:headlineSmall = base.headlineSmall.copy(fontFamily = family, fontWeight = weight, fontSize = base.headlineSmall.fontSize * safeScale, letterSpacing = 0.25.sp)</ID>
+    <ID>MaxLineLength:WhisperPairBluetoothScreen.kt:Text(device.displayName.ifBlank { stringResource(R.string.device_unknown) }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)</ID>
+    <ID>MaxLineLength:WhisperPairBluetoothScreen.kt:Text(stringResource(R.string.whisperpair_connecting_ru) + ": ${device.status}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)</ID>
+    <ID>MaxLineLength:WhisperPairBluetoothScreen.kt:Text(stringResource(R.string.whisperpair_paired), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 22.sp)</ID>
+    <ID>NestedBlockDepth:BluetoothAudioManager.kt:BluetoothAudioManager$private fun convertPcmToM4a</ID>
+    <ID>NestedBlockDepth:BluetoothAudioManager.kt:BluetoothAudioManager$private fun registerScoReceiver</ID>
+    <ID>NestedBlockDepth:CameraNetworkScanner.kt:CameraNetworkScanner$fun getMacFromArp: String?</ID>
+    <ID>NestedBlockDepth:DolphyPairExploit.kt:DolphyPairExploit$@SuppressLint("MissingPermission") private fun runAirohaGatt</ID>
+    <ID>NestedBlockDepth:FastPairExploit.kt:FastPairExploit$@SuppressLint("MissingPermission") private fun registerBondReceiver</ID>
+    <ID>NestedBlockDepth:LanScannerScreen.kt:@Composable fun LanScannerScreen</ID>
+    <ID>NestedBlockDepth:LanScannerScreen.kt:private fun getLocalIpAddress: InetAddress?</ID>
+    <ID>NestedBlockDepth:NetworkDiagnosticHubScreen.kt:private fun readArpTable: List&lt;Pair&lt;String, String&gt;&gt;</ID>
+    <ID>NestedBlockDepth:OtherScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun OtherScreen</ID>
+    <ID>NestedBlockDepth:PluginCatalog.kt:PluginCatalog$private fun download</ID>
+    <ID>NestedBlockDepth:PluginManager.kt:PluginManager$fun importFromUrl: Result&lt;Uri&gt;</ID>
+    <ID>NestedBlockDepth:PluginManager.kt:PluginManager$fun installFromUri: Result&lt;PluginManifest&gt;</ID>
+    <ID>PrintStackTrace:DolphyChatScreens.kt:DolphyChatManager$e</ID>
+    <ID>PrintStackTrace:DolphyChatScreens.kt:DolphyChatManager.&lt;no name provided&gt;$e</ID>
+    <ID>PrintStackTrace:NrfScannerViewModel.kt:NrfScannerViewModel$e</ID>
+    <ID>PrintStackTrace:NrfScannerViewModel.kt:NrfScannerViewModel.&lt;no name provided&gt;$e</ID>
+    <ID>PrintStackTrace:QrAudioSpooferViewModel.kt:QrAudioSpooferViewModel$e</ID>
+    <ID>PrintStackTrace:RouterManager.kt:RouterManager$e</ID>
+    <ID>ReturnCount:DolphyPairExploit.kt:fun ScanResult.hasGoogleFastPair: Boolean</ID>
+    <ID>ReturnCount:HidKeyboardActivity.kt:HidKeyboardActivity$private fun detectDeviceKind: BtDeviceKind</ID>
+    <ID>ReturnCount:IrBackend.kt:IrBackend$fun transmit: Boolean</ID>
+    <ID>ReturnCount:KeyboardService.kt:KeyboardService$@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT) private fun initiateConnect</ID>
+    <ID>ReturnCount:KeyboardService.kt:KeyboardService.&lt;no name provided&gt;$override fun onReceive</ID>
+    <ID>ReturnCount:LanScannerScreen.kt:private fun guessDeviceType: LanDeviceType</ID>
+    <ID>ReturnCount:MainActivity.kt:SpamViewModel$fun startAdvertisePreset: AdvertiseStartResult</ID>
+    <ID>ReturnCount:MyCamEngine.kt:MyCamEngine$private suspend fun probeCamera: CameraTarget?</ID>
+    <ID>ReturnCount:NfcTagAnalyzer.kt:NfcTagAnalyzer$private fun detectPaymentSystem: String?</ID>
+    <ID>ReturnCount:NfcWriteScreens.kt:private fun readContactNameAndPhone: Pair&lt;String, String&gt;?</ID>
+    <ID>ReturnCount:PluginManager.kt:PluginManager$fun importFromUrl: Result&lt;Uri&gt;</ID>
+    <ID>ReturnCount:PluginSignature.kt:PluginSignature$fun verify: PluginSignatureStatus</ID>
+    <ID>ReturnCount:UsbIrManager.kt:UsbIrManager$@Synchronized fun transmit: Boolean</ID>
+    <ID>SafeCast:JsPluginSession.kt:JsPluginSession$if (first is org.mozilla.javascript.Function) first else null</ID>
+    <ID>SwallowedException:AudioScannerScreen.kt:e: Exception</ID>
+    <ID>SwallowedException:BluetoothAudioManager.kt:BluetoothAudioManager$e: Exception</ID>
+    <ID>SwallowedException:BluetoothAudioManager.kt:BluetoothAudioManager$e: NoSuchMethodException</ID>
+    <ID>SwallowedException:BluetoothJammerEngine.kt:BluetoothJammerEngine$e: Exception</ID>
+    <ID>SwallowedException:DolphyChatScreens.kt:DolphyChatManager.&lt;no name provided&gt;$e: Exception</ID>
+    <ID>SwallowedException:DuckyUtils.kt:DuckyUtils$e: SecurityException</ID>
+    <ID>SwallowedException:FastPairExploit.kt:FastPairExploit$e: Exception</ID>
+    <ID>SwallowedException:HidPcWorkspace.kt:e: Exception</ID>
+    <ID>SwallowedException:HidPcWorkspace.kt:e: SecurityException</ID>
+    <ID>SwallowedException:HidUi.kt:e: Exception</ID>
+    <ID>SwallowedException:HidUi.kt:e: SecurityException</ID>
+    <ID>SwallowedException:JsPluginSession.kt:JsPluginSession$e: Exception</ID>
+    <ID>SwallowedException:KeyboardService.kt:KeyboardService$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:LanScannerScreen.kt:e: Exception</ID>
+    <ID>SwallowedException:LanScannerScreen.kt:ex: Exception</ID>
+    <ID>SwallowedException:MainActivity.kt:MainActivity$e: Exception</ID>
+    <ID>SwallowedException:MainActivity.kt:SpamViewModel$e: Exception</ID>
+    <ID>SwallowedException:MainActivity.kt:e: Exception</ID>
+    <ID>SwallowedException:MainActivity.kt:e: Throwable</ID>
+    <ID>SwallowedException:MyCamEngine.kt:MyCamEngine$e: Exception</ID>
+    <ID>SwallowedException:NetworkDiagnosticHubScreen.kt:e: Exception</ID>
+    <ID>SwallowedException:PluginDeviceApis.kt:PluginDeviceApis$e: Exception</ID>
+    <ID>SwallowedException:QrGenerator.kt:QrGenerator$e: Exception</ID>
+    <ID>SwallowedException:QrToolsScreens.kt:QrToolsViewModel$e: Exception</ID>
+    <ID>SwallowedException:RootHidController.kt:RootHidController$e: Exception</ID>
+    <ID>SwallowedException:RouterManager.kt:RouterManager$e: Exception</ID>
+    <ID>SwallowedException:SmartTvCastScreen.kt:e: Exception</ID>
+    <ID>SwallowedException:TwsHijackEngine.kt:TwsHijackEngine.&lt;no name provided&gt;$t: Throwable</ID>
+    <ID>ThrowsCount:PluginCatalog.kt:PluginCatalog$private fun download</ID>
+    <ID>ThrowsCount:PluginDeviceApis.kt:PluginDeviceApis$fun nfcTransceive</ID>
+    <ID>ThrowsCount:PluginDeviceApis.kt:PluginDeviceApis$fun nfcWriteNdef</ID>
+    <ID>ThrowsCount:PluginDexRegistry.kt:PluginDexRegistry$fun loadBytes: ClassLoader</ID>
+    <ID>TooGenericExceptionCaught:AudioScannerScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BluetoothAdvertiser.kt:BluetoothAdvertiser$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BluetoothAudioManager.kt:BluetoothAudioManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BluetoothAudioManager.kt:BluetoothAudioManager.&lt;no name provided&gt;$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BluetoothAudioStress.kt:BluetoothStressService$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:BluetoothJammerEngine.kt:BluetoothJammerEngine$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BluetoothPhantomSpammer.kt:BluetoothPhantomSpammer$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CameraNetworkScanner.kt:CameraNetworkScanner$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:Connection.kt:Connection$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ContinuitySpam.kt:ContinuitySpam$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DolphyApplication.kt:DolphyApplication$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:DolphyChatScreens.kt:DolphyChatManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DolphyChatScreens.kt:DolphyChatManager.&lt;no name provided&gt;$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DolphyChatScreens.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:DolphyPairExploit.kt:DolphyPairExploit$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:DolphyPairExploit.kt:DolphyPairExploit.&lt;no name provided&gt;$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:FastPairExploit.kt:FastPairExploit$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FastPairExploit.kt:FastPairExploit.&lt;no name provided&gt;$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HardwareRuntime.kt:HardwareRuntime$error: Throwable</ID>
+    <ID>TooGenericExceptionCaught:HidPcWorkspace.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HidUi.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:IRRemotesScreen.kt:IrRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:IRRemotesScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:IrWidgetRuntime.kt:IrWidgetRuntime$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:JsPluginSession.kt:JsPluginSession$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:JsPluginSession.kt:JsPluginSession$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:JsUiBuilder.kt:JsUiBuilder$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:KeyboardService.kt:KeyboardService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:KeyboardService.kt:KeyboardService$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:KeyboardService.kt:KeyboardService.&lt;no name provided&gt;$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:KtorServerManager.kt:KtorServerManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:KtorServerManager.kt:KtorServerManager$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:LanScannerScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LanScannerScreen.kt:ex: Exception</ID>
+    <ID>TooGenericExceptionCaught:MainActivity.kt:MainActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MainActivity.kt:SpamViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MainActivity.kt:SpamViewModel$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:MainActivity.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MainActivity.kt:e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:MyCamEngine.kt:MyCamEngine$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NdefParsing.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NetworkDiagnosticHubScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NfcViewModel.kt:NfcViewModel$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:NfcWriteScreens.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NrfScannerViewModel.kt:NrfScannerViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NrfScannerViewModel.kt:NrfScannerViewModel.&lt;no name provided&gt;$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PluginAndroidApis.kt:PluginAndroidApis$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PluginCatalog.kt:PluginCatalog$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PluginDeviceApis.kt:PluginDeviceApis$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PluginDeviceApis.kt:PluginDeviceApis$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PluginDeviceApis.kt:PluginDeviceApis.&lt;no name provided&gt;$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PluginHostScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PluginManager.kt:PluginManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PluginManager.kt:PluginManager$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PluginManager.kt:PluginManager$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PrintDocumentPreparer.kt:PrintDocumentPreparer$error: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PythonPluginBridge.kt:PythonPluginBridge$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PythonPluginSession.kt:PythonPluginSession$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:QrAudioSpooferViewModel.kt:QrAudioSpooferViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:QrGenerator.kt:QrGenerator$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:QrToolsScreens.kt:QrToolsViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RootHidController.kt:RootHidController$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RootNfcHelper.kt:RootNfcHelper$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RootUtils.kt:RootUtils$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RouterManager.kt:RouterManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:Scanner.kt:Scanner$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ScooterGattClient.kt:ScooterGattClient$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ShizukuHelper.kt:ShizukuHelper$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SmartTvCastScreen.kt:e: Exception</ID>
+    <ID>TooGenericExceptionCaught:TwsHijackEngine.kt:TwsHijackEngine.&lt;no name provided&gt;$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:UsbHostHidController.kt:UsbHostHidController$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:UsbIrManager.kt:UsbIrManager$e: Exception</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("auth_failed")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("no_isodep")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("no_nfca")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("not_mifare_classic")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("not_mifare_ultralight")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("not_ndef")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("not_writable")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("too_large")</ID>
+    <ID>TooGenericExceptionThrown:PluginDeviceApis.kt:PluginDeviceApis$throw Exception("unsupported_tech: $techType")</ID>
+    <ID>TooManyFunctions:BleSpamRuntime.kt:BleSpamRuntime</ID>
+    <ID>TooManyFunctions:CameraNetworkScanner.kt:CameraNetworkScanner</ID>
+    <ID>TooManyFunctions:DesignSystem.kt:com.droid.dolphy.DesignSystem.kt</ID>
+    <ID>TooManyFunctions:Dolphy.kt:DolphyRepository</ID>
+    <ID>TooManyFunctions:FastPairExploit.kt:FastPairExploit</ID>
+    <ID>TooManyFunctions:FlipperWidgetProvider.kt:FlipperWidgetProvider$Companion</ID>
+    <ID>TooManyFunctions:HidController.kt:HidController</ID>
+    <ID>TooManyFunctions:IRRemotesScreen.kt:IrRepository</ID>
+    <ID>TooManyFunctions:IRRemotesScreen.kt:com.droid.dolphy.IRRemotesScreen.kt</ID>
+    <ID>TooManyFunctions:JsPluginSession.kt:JsPluginSession : PluginSession</ID>
+    <ID>TooManyFunctions:MainActivity.kt:SpamViewModel : AndroidViewModel</ID>
+    <ID>TooManyFunctions:MainActivity.kt:com.droid.dolphy.MainActivity.kt</ID>
+    <ID>TooManyFunctions:MyCamEngine.kt:MyCamEngine</ID>
+    <ID>TooManyFunctions:PluginAndroidApis.kt:PluginAndroidApis</ID>
+    <ID>TooManyFunctions:PluginDeviceApis.kt:PluginDeviceApis</ID>
+    <ID>TooManyFunctions:PluginDexRegistry.kt:PluginDexRegistry</ID>
+    <ID>TooManyFunctions:PluginManager.kt:PluginManager</ID>
+    <ID>TooManyFunctions:PluginReflection.kt:PluginReflection</ID>
+    <ID>TooManyFunctions:PluginRegistry.kt:PluginRegistry</ID>
+    <ID>TooManyFunctions:PluginSession.kt:PluginSession</ID>
+    <ID>TooManyFunctions:PythonPluginBridge.kt:PythonPluginBridge</ID>
+    <ID>TooManyFunctions:PythonUiParser.kt:PythonUiParser</ID>
+    <ID>UnusedParameter:BackdropCompat.kt:backdrop: Backdrop</ID>
+    <ID>UnusedParameter:BluetoothJammerEngine.kt:BluetoothJammerEngine$workerId: Int</ID>
+    <ID>UnusedParameter:Connection.kt:Connection$device: BluetoothDevice?</ID>
+    <ID>UnusedParameter:DesignSystem.kt:accentColor: Color = Color.Unspecified</ID>
+    <ID>UnusedParameter:DesignSystem.kt:accentColor: Color = MaterialTheme.colorScheme.primary</ID>
+    <ID>UnusedParameter:DesignSystem.kt:colors: ButtonColors = ButtonDefaults.buttonColors()</ID>
+    <ID>UnusedParameter:DesignSystem.kt:cornerRadius: Dp = 16.dp</ID>
+    <ID>UnusedParameter:DesignSystem.kt:isActive: Boolean = false</ID>
+    <ID>UnusedParameter:DesignSystem.kt:leadingIconTint: Color = Color.Unspecified</ID>
+    <ID>UnusedParameter:DolphyChatScreens.kt:userId: String</ID>
+    <ID>UnusedParameter:FastPairExploit.kt:FastPairExploit$gatt: BluetoothGatt</ID>
+    <ID>UnusedParameter:FlipperWidgetProvider.kt:FlipperWidgetProvider.Companion$context: Context</ID>
+    <ID>UnusedParameter:FlipperWidgetProvider.kt:FlipperWidgetProvider.Companion$irMode: IrMode</ID>
+    <ID>UnusedParameter:HidUi.kt:capsLock: Boolean</ID>
+    <ID>UnusedParameter:HidUi.kt:scale: Float = 1f</ID>
+    <ID>UnusedParameter:HidUi.kt:settingsPlum: @Composable (Modifier) -&gt; Unit = {}</ID>
+    <ID>UnusedParameter:HidUi.kt:togglePlum: @Composable (Modifier) -&gt; Unit = {}</ID>
+    <ID>UnusedParameter:KeyboardService.kt:KeyboardService$proxy: BluetoothHidDevice</ID>
+    <ID>UnusedParameter:LiquidComponents.kt:accentColor: Color = MaterialTheme.colorScheme.primary</ID>
+    <ID>UnusedParameter:LiquidComponents.kt:backdrop: Backdrop</ID>
+    <ID>UnusedParameter:LiquidComponents.kt:onTabSelected: (Int) -&gt; Unit</ID>
+    <ID>UnusedParameter:LiquidComponents.kt:selectedTabIndex: () -&gt; Int</ID>
+    <ID>UnusedParameter:LiquidComponents.kt:tabsCount: Int</ID>
+    <ID>UnusedParameter:LiquidComponents.kt:visibilityThreshold: Float</ID>
+    <ID>UnusedParameter:MainActivity.kt:SpamViewModel$enabled: Boolean</ID>
+    <ID>UnusedParameter:MainActivity.kt:accentColor: Color</ID>
+    <ID>UnusedParameter:MainActivity.kt:mainNavController: NavController</ID>
+    <ID>UnusedParameter:NfcScreens.kt:viewModel: NfcViewModel</ID>
+    <ID>UnusedParameter:NrfDeviceCard.kt:onConnect: (NrfDevice) -&gt; Unit</ID>
+    <ID>UnusedParameter:NrfDeviceModel.kt:name: String?</ID>
+    <ID>UnusedParameter:RouterManager.kt:RouterManager$ip: String</ID>
+    <ID>UnusedParameter:ScooterGattClient.kt:ScooterGattClient$chunk: ByteArray</ID>
+    <ID>UnusedParameter:ScooterHackScreen.kt:accent: Color</ID>
+    <ID>UnusedParameter:SectionTopBar.kt:accentColor: Color = MaterialTheme.colorScheme.primary</ID>
+    <ID>UnusedParameter:SectionTopBar.kt:alwaysCollapsed: Boolean = false</ID>
+    <ID>UnusedParameter:SectionTopBar.kt:showRootBadge: Boolean = false</ID>
+    <ID>UnusedParameter:SectionTopBar.kt:transparent: Boolean = false</ID>
+    <ID>UnusedParameter:UsbIrManager.kt:UsbIrManager.LegacyBulkStEncoder$freqHz: Int</ID>
+    <ID>UnusedParameter:WhisperPairBluetoothScreen.kt:onTestDevice: (FastPairDevice) -&gt; Unit</ID>
+    <ID>VariableNaming:RootHidController.kt:RootHidController$private val KEYBOARD_DEV = "/dev/hidg0"</ID>
+    <ID>VariableNaming:RootHidController.kt:RootHidController$private val MEDIA_DEV = "/dev/hidg2"</ID>
+    <ID>VariableNaming:RootHidController.kt:RootHidController$private val MOUSE_DEV = "/dev/hidg1"</ID>
+    <ID>VariableNaming:UsbHostHidController.kt:UsbHostHidController$private val TAG = "UsbHostHidController"</ID>
+    <ID>WildcardImport:AudioScannerScreen.kt:import androidx.compose.animation.*</ID>
+    <ID>WildcardImport:AudioScannerScreen.kt:import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:AudioScannerScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:AudioScannerScreen.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:AudioScannerScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:AudioScannerScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:BluetoothAudioManager.kt:import android.bluetooth.*</ID>
+    <ID>WildcardImport:BluetoothAudioManager.kt:import android.media.*</ID>
+    <ID>WildcardImport:BluetoothJammerEngine.kt:import kotlinx.coroutines.*</ID>
+    <ID>WildcardImport:BluetoothJammerScreen.kt:import androidx.compose.foundation.*</ID>
+    <ID>WildcardImport:BluetoothJammerScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:BluetoothJammerScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:BluetoothJammerScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:BluetoothJammerScreen.kt:import kotlinx.coroutines.*</ID>
+    <ID>WildcardImport:BluetoothPhantomSpammer.kt:import kotlinx.coroutines.*</ID>
+    <ID>WildcardImport:BluetoothSpamScreens.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:BluetoothSpamScreens.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:BluetoothSpamScreens.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:CustomizeAnimationsScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:CustomizeAnimationsScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:CustomizeAnimationsScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DesignSystem.kt:import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:DesignSystem.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DesignSystem.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DesignSystem.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DesignSystem.kt:import androidx.compose.ui.graphics.*</ID>
+    <ID>WildcardImport:DolphyChatScreens.kt:import android.bluetooth.*</ID>
+    <ID>WildcardImport:DolphyChatScreens.kt:import android.bluetooth.le.*</ID>
+    <ID>WildcardImport:DolphyChatScreens.kt:import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:DolphyChatScreens.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DolphyChatScreens.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:DolphyChatScreens.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DolphyChatScreens.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:FastPairExploit.kt:import android.bluetooth.*</ID>
+    <ID>WildcardImport:FunctionCatalog.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:GlobalChatScreen.kt:import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:GlobalChatScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:GlobalChatScreen.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:GlobalChatScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:GlobalChatScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:HidConsumerControls.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:IRRemotesScreen.kt:import androidx.compose.material.icons.automirrored.filled.*</ID>
+    <ID>WildcardImport:IRRemotesScreen.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.http.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.serialization.kotlinx.json.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.application.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.engine.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.netty.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.plugins.contentnegotiation.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.request.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.response.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.routing.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.server.websocket.*</ID>
+    <ID>WildcardImport:KtorServerManager.kt:import io.ktor.websocket.*</ID>
+    <ID>WildcardImport:LanScannerScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:LanScannerScreen.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:LanScannerScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:LanScannerScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:LanScannerScreen.kt:import kotlinx.coroutines.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import android.bluetooth.le.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import android.content.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import android.os.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.animation.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.foundation.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.compose.ui.graphics.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import androidx.navigation.compose.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import com.droid.dolphy.nfc.ui.*</ID>
+    <ID>WildcardImport:MainActivity.kt:import com.droid.dolphy.qr.*</ID>
+    <ID>WildcardImport:NavigationCustomization.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:NavigationCustomization.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:NavigationCustomization.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:NavigationCustomization.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:NfcAudioSpooferScreen.kt:import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:NfcAudioSpooferScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:NfcAudioSpooferScreen.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:NfcAudioSpooferScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:NfcAudioSpooferScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:NfcScreens.kt:import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:NfcScreens.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:NfcScreens.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:NfcScreens.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:NrfDeviceCard.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:NrfDeviceCard.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:NrfDeviceCard.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:NrfDeviceCard.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:NrfScannerScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:NrfScannerScreen.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:NrfScannerScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:NrfScannerScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:OtherScreen.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:OtherScreen.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:OtherScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PluginHostScreen.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PluginIcons.kt:import androidx.compose.material.icons.automirrored.filled.*</ID>
+    <ID>WildcardImport:PluginIcons.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:PluginUiRenderer.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PluginUiRenderer.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PluginUiRenderer.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:QrAudioSpooferViewModel.kt:import android.content.*</ID>
+    <ID>WildcardImport:QrAudioSpooferViewModel.kt:import kotlinx.coroutines.flow.*</ID>
+    <ID>WildcardImport:QrSpooferService.kt:import android.app.*</ID>
+    <ID>WildcardImport:QrToolsScreens.kt:import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:QrToolsScreens.kt:import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:QrToolsScreens.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:QrToolsScreens.kt:import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SectionTopBar.kt:import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:TwsHijackEngine.kt:import kotlinx.coroutines.*</ID>
+    <ID>WildcardImport:UsbHostHidController.kt:import android.hardware.usb.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

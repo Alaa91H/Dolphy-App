@@ -1,0 +1,30 @@
+complexity:
+  active: true
+  LongMethod:
+    # Compose screens and the plugin bridges are intentionally long-form.
+    allowedLines: 120
+  LongParameterList:
+    allowedFunctionParameters: 10
+    allowedConstructorParameters: 10
+  TooManyFunctions:
+    allowedFunctionsPerFile: 40
+    allowedFunctionsPerClass: 40
+
+style:
+  MaxLineLength:
+    active: true
+    maxLineLength: 160
+  MagicNumber:
+    active: false
+  ReturnCount:
+    max: 6
+
+naming:
+  FunctionNaming:
+    # @Composable functions are PascalCase by convention.
+    ignoreAnnotated:
+      - "Composable"
+  TopLevelPropertyNaming:
+    constantPattern: "[A-Z][_A-Z0-9]*"
+    propertyPattern: "[A-Za-z][_A-Za-z0-9]*"
+    privatePropertyPattern: "_?[A-Za-z][_A-Za-z0-9]*"

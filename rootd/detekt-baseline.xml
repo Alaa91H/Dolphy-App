@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>LoopWithTooManyJumpStatements:PrivilegedBroker.kt:PrivilegedBroker$while</ID>
+    <ID>TooGenericExceptionCaught:PrivilegedBroker.kt:PrivilegedBroker$error: Throwable</ID>
+  </CurrentIssues>
+</SmellBaseline>
