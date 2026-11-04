@@ -1,5 +1,7 @@
 package com.droid.dolphy.hid
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -203,5 +205,42 @@ class DuckyScriptTest {
     fun `unknown keys are reported as warnings`() {
         val program = DuckyScript.parse("NOTAKEY")
         assertFalse(program.warnings.isEmpty())
+    }
+
+    @Test
+    fun `windows notepad demo sends the expected hid sequence`() {
+        val (recorder, result) = run(
+            """
+            DELAY 600
+            GUI r
+            DELAY 500
+            STRING notepad
+            ENTER
+            DELAY 900
+            STRING Hello
+            ENTER
+            """.trimIndent(),
+        )
+        assertEquals(
+            listOf("R", "N", "O", "T", "E", "P", "A", "D", "ENTER", "H", "E", "L", "L", "O", "ENTER"),
+            recorder.keys,
+        )
+        assertTrue(recorder.events.contains("modDown:MOD_LMETA"))
+        assertTrue(recorder.events.contains("modUp:MOD_LMETA"))
+        assertTrue(recorder.events.last() == "releaseAll")
+        assertFalse(result.stopped)
+    }
+
+    @Test
+    fun `cancelling a run releases held modifiers`() = runBlocking {
+        val recorder = Recorder()
+        val program = DuckyScript.parse("HOLD SHIFT\nDELAY 5000")
+        val job = launch { DuckyRunner(recorder).run(program) }
+        delay(80)
+        job.cancel()
+        job.join()
+        assertTrue(recorder.events.contains("modDown:MOD_LSHIFT"))
+        assertTrue(recorder.events.contains("modUp:MOD_LSHIFT"))
+        assertEquals("releaseAll", recorder.events.last())
     }
 }

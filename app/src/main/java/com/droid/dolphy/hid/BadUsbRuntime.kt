@@ -100,7 +100,6 @@ object BadUsbRuntime {
         val mode = when {
             bluetooth -> Mode.BLUETOOTH_HID
             gadgetReady -> Mode.USB_GADGET
-            rooted -> Mode.USB_GADGET
             else -> Mode.NONE
         }
         val reason = when {

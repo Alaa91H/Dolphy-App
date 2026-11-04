@@ -131,7 +131,7 @@ class BadUsbStudio(BasePlugin):
             "DuckyScript 3.0 payload library, editor and runner",
             "usb",
             "main",
-            "USB",
+            "OTHER",
             150,
         )
         self.reload()

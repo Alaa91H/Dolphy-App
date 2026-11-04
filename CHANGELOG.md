@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **BadUSB transport reporting:** the runtime reported `USB gadget` whenever root
+  was available, even when no HID gadget node existed, so the plugin showed a
+  usable transport and let a run start against nothing. The mode is now `none`
+  until a gadget node is actually present, and the plugin blocks the run with the
+  reported reason.
+- **BadUSB Studio visibility:** the plugin registered its module in a `USB`
+  section that Dolphy does not render, so the card never appeared. It now
+  registers under the `Other` section like every other catalog plugin.
+
 ## [1.5.0] - 2026-11-04
 
 Dolphy 1.5.0 introduces **BadUSB Studio**, a catalog plugin that compiles and
