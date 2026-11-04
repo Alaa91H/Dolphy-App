@@ -130,34 +130,11 @@ object BadUsbRuntime {
         log: (String) -> Unit = {},
         onFinished: (DuckyRunResult?, String?) -> Unit = { _, _ -> },
     ): Boolean {
-        if (isRunning()) return false
-        val program = DuckyScript.parse(source)
-        if (!program.isValid) {
-            val first = program.errors.firstOrNull()
-            onFinished(null, first?.let { "Line ${it.line}: ${it.message}" } ?: "Invalid payload")
-            return false
-        }
-        val controller = resolveController()
-        if (controller == null) {
-            onFinished(null, statusReason())
-            return false
-        }
+        val request = prepare(source, onFinished) ?: return false
         onLog = log
         val job = scope.launch(start = CoroutineStart.LAZY) {
             try {
-                log("Running ${program.stepCount} steps on ${describe(controller)}")
-                val result = DuckyRunner(controller).run(program) { message -> log(message) }
-                log(
-                    "Finished ${result.executed} steps in ${result.elapsedMs} ms" +
-                        if (result.stopped) " (stopped)" else "",
-                )
-                onFinished(result, null)
-            } catch (t: kotlinx.coroutines.CancellationException) {
-                log("Payload cancelled")
-                onFinished(null, "cancelled")
-            } catch (t: Throwable) {
-                log("Payload failed: ${t.message ?: t.javaClass.simpleName}")
-                onFinished(null, t.message ?: t.javaClass.simpleName)
+                request.execute(log, onFinished) { describe(request.controller) }
             } finally {
                 onLog = null
                 activeJob.compareAndSet(coroutineContext[Job], null)
@@ -167,6 +144,50 @@ object BadUsbRuntime {
         job.start()
         return true
     }
+
+    private class Request(val program: DuckyProgram, val controller: HidController) {
+        suspend fun execute(
+            log: (String) -> Unit,
+            onFinished: (DuckyRunResult?, String?) -> Unit,
+            describeTransport: () -> String,
+        ) {
+            try {
+                log("Running ${program.stepCount} steps on ${describeTransport()}")
+                val result = DuckyRunner(controller).run(program) { message -> log(message) }
+                log(
+                    "Finished ${result.executed} steps in ${result.elapsedMs} ms" +
+                        if (result.stopped) " (stopped)" else "",
+                )
+                onFinished(result, null)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                log("Payload cancelled: ${cancelled.message ?: "cancelled"}")
+                onFinished(null, "cancelled")
+            } catch (rejected: SecurityException) {
+                log("HID access rejected: ${rejected.message ?: rejected.javaClass.simpleName}")
+                onFinished(null, rejected.message ?: rejected.javaClass.simpleName)
+            } catch (invalid: IllegalStateException) {
+                log("Payload failed: ${invalid.message ?: invalid.javaClass.simpleName}")
+                onFinished(null, invalid.message ?: invalid.javaClass.simpleName)
+            }
+        }
+    }
+
+    private fun prepare(source: String, onFinished: (DuckyRunResult?, String?) -> Unit): Request? {
+        if (isRunning()) return null
+        val program = DuckyScript.parse(source)
+        if (!program.isValid) {
+            val first = program.errors.firstOrNull()
+            onFinished(null, first?.let { "Line ${it.line}: ${it.message}" } ?: "Invalid payload")
+            return null
+        }
+        val controller = resolveController()
+        if (controller == null) {
+            onFinished(null, NO_TRANSPORT_MESSAGE)
+            return null
+        }
+        return Request(program, controller)
+    }
+
 
     fun stop() {
         activeJob.getAndSet(null)?.cancel()
@@ -182,11 +203,10 @@ object BadUsbRuntime {
         return if (ready) controller else null
     }
 
-    private fun statusReason(): String =
-        "No HID transport available: connect a Bluetooth HID host or grant root for /dev/hidg0"
-
     private fun describe(controller: HidController): String =
         if (controller is RootHidController) "the USB gadget" else "the Bluetooth HID session"
 
     private const val ROOT_PROBE_TTL_MS = 60_000L
+    private const val NO_TRANSPORT_MESSAGE =
+        "No HID transport available: connect a Bluetooth HID host or grant root for /dev/hidg0"
 }

@@ -80,29 +80,41 @@ sealed interface DuckyExpr {
             val l = left.eval(env)
             if (op == "&&") return bool(l != 0 && right.eval(env) != 0)
             if (op == "||") return bool(l != 0 || right.eval(env) != 0)
-            val r = right.eval(env)
-            return when (op) {
-                "+" -> l + r
-                "-" -> l - r
-                "*" -> l * r
-                "/" -> if (r == 0) 0 else l / r
-                "%" -> if (r == 0) 0 else l % r
-                "^" -> l.toDouble().pow(r.toDouble()).toInt()
-                "&" -> l and r
-                "|" -> l or r
-                "<<" -> l shl r
-                ">>" -> l shr r
-                "==" -> bool(l == r)
-                "!=" -> bool(l != r)
-                "<" -> bool(l < r)
-                "<=" -> bool(l <= r)
-                ">" -> bool(l > r)
-                ">=" -> bool(l >= r)
-                else -> 0
-            }
+            return combine(l, right.eval(env))
+        }
+
+        private fun combine(l: Int, r: Int): Int =
+            if (op in COMPARISONS) compare(l, r) else arithmetic(l, r)
+
+        private fun compare(l: Int, r: Int): Int = when (op) {
+            "==" -> bool(l == r)
+            "!=" -> bool(l != r)
+            "<" -> bool(l < r)
+            "<=" -> bool(l <= r)
+            ">" -> bool(l > r)
+            ">=" -> bool(l >= r)
+            else -> 0
+        }
+
+        private fun arithmetic(l: Int, r: Int): Int = when (op) {
+            "+" -> l + r
+            "-" -> l - r
+            "*" -> l * r
+            "/" -> if (r == 0) 0 else l / r
+            "%" -> if (r == 0) 0 else l % r
+            "^" -> l.toDouble().pow(r.toDouble()).toInt()
+            "&" -> l and r
+            "|" -> l or r
+            "<<" -> l shl r
+            ">>" -> l shr r
+            else -> 0
         }
 
         private fun bool(value: Boolean): Int = if (value) 1 else 0
+
+        private companion object {
+            val COMPARISONS = setOf("==", "!=", "<", "<=", ">", ">=")
+        }
     }
 }
 
@@ -166,7 +178,93 @@ object DuckyScript {
         "MATCH", "SAVEKEYS", "JITTER",
     )
 
+    private val MEDIA_ALIASES = mapOf(
+        "VOLUMEUP" to "VOLUMEUP",
+        "VOLUMEDOWN" to "VOLUMEDOWN",
+        "MUTE" to "VOLUMEMUTE",
+        "PLAYPAUSE" to "PLAYPAUSE",
+        "MEDIA_PLAY_PAUSE" to "PLAYPAUSE",
+    )
+
+    private val RANDOM_SETS = mapOf(
+        "RANDOM_LOWERCASE_LETTER" to "abcdefghijklmnopqrstuvwxyz",
+        "RANDOM_UPPERCASE_LETTER" to "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "RANDOM_LETTER" to "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "RANDOM_NUMBER" to "0123456789",
+        "RANDOM_SPECIAL" to "!@#$%^&*()",
+        "RANDOM_CHAR" to "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()",
+    )
+
+    /** Modifier names, cursor keys and AOSP key names accepted by payloads. */
+    internal val TOKEN_ALIASES: Map<String, String> = mapOf(
+        "CTRL" to "MOD_LCTRL",
+        "CONTROL" to "MOD_LCTRL",
+        "SHIFT" to "MOD_LSHIFT",
+        "ALT" to "MOD_LALT",
+        "ALTGR" to "MOD_RALT",
+        "GUI" to "MOD_LMETA",
+        "WINDOWS" to "MOD_LMETA",
+        "WIN" to "MOD_LMETA",
+        "COMMAND" to "MOD_LMETA",
+        "MENU" to "APPLICATION",
+        "APP" to "APPLICATION",
+        "APPLICATION" to "APPLICATION",
+        "ENTER" to "ENTER",
+        "RETURN" to "ENTER",
+        "ESC" to "ESC",
+        "ESCAPE" to "ESC",
+        "UPARROW" to "UP",
+        "UP" to "UP",
+        "DOWNARROW" to "DOWN",
+        "DOWN" to "DOWN",
+        "LEFTARROW" to "LEFT",
+        "LEFT" to "LEFT",
+        "RIGHTARROW" to "RIGHT",
+        "RIGHT" to "RIGHT",
+        "DEL" to "DELETE",
+        "DELETE" to "DELETE",
+        "PAGEUP" to "PAGEUP",
+        "PAGE_UP" to "PAGEUP",
+        "PAGEDOWN" to "PAGEDOWN",
+        "PAGE_DOWN" to "PAGEDOWN",
+        "CAPS_LOCK" to "CAPSLOCK",
+        "CAPSLOCK" to "CAPSLOCK",
+        "NUM_LOCK" to "NUMLOCK",
+        "NUMLOCK" to "NUMLOCK",
+        "SCROLL_LOCK" to "SCROLLLOCK",
+        "SCROLLLOCK" to "SCROLLLOCK",
+        "PRINTSCREEN" to "SYSRQ",
+        "PRINT_SCREEN" to "SYSRQ",
+        "BREAK" to "PAUSE",
+        "PAUSE" to "PAUSE",
+        "SPACE" to "SPACE",
+    )
+
+    private val CALL_PATTERN = Regex("^[A-Za-z_][A-Za-z0-9_]*\\s*\\(\\s*\\)$")
+
+    private val STRAY_KEYWORDS = setOf("ELSE", "END_IF", "END_WHILE", "END_FUNCTION", "END_REM")
+
     fun parse(source: String): DuckyProgram = Parser(source).parse()
+
+    /** Resolves a single payload token (modifier, key name or letter) to a HID key. */
+    internal fun mapToken(token: String): String {
+        TOKEN_ALIASES[token]?.let { return it }
+        return when {
+            token.length == 1 && token[0].isLetterOrDigit() -> token
+            token in keyCodes -> token
+            else -> ""
+        }
+    }
+
+    private fun commandOf(text: String): String =
+        text.trim().substringBefore(' ').substringBefore('\t').uppercase()
+
+    private fun argumentOf(text: String): String {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return ""
+        val separator = trimmed.indexOfFirst { it == ' ' || it == '\t' }
+        return if (separator < 0) "" else trimmed.substring(separator + 1)
+    }
 
     private class Line(val number: Int, val text: String)
 
@@ -198,89 +296,74 @@ object DuckyScript {
                     index++
                     return Block(nodes, command)
                 }
+                index++
                 when (command) {
-                    "" -> index++
-                    "REM_BLOCK" -> {
-                        index++
-                        skipUntil("END_REM", line.number)
-                    }
-                    "IF" -> {
-                        index++
-                        nodes += parseIf(line)
-                    }
-                    "WHILE" -> {
-                        index++
-                        val condition = expression(argumentOf(line.text), line.number)
-                        val body = parseBlock(setOf("END_WHILE"))
-                        if (body.terminator == null) {
-                            warning(line.number, "WHILE without END_WHILE")
-                        }
-                        nodes += DuckyNode.While(condition, body.nodes)
-                    }
-                    "FUNCTION" -> {
-                        index++
-                        val name = functionName(argumentOf(line.text)).ifBlank {
-                            warning(line.number, "FUNCTION without a name")
-                            ""
-                        }
-                        val body = parseBlock(setOf("END_FUNCTION"))
-                        if (body.terminator == null) {
-                            warning(line.number, "FUNCTION without END_FUNCTION")
-                        }
-                        if (name.isNotBlank()) {
-                            functions[name] = body.nodes
-                        }
-                    }
-                    "ELSE", "END_IF", "END_WHILE", "END_FUNCTION", "END_REM" -> {
-                        index++
-                        warning(line.number, "Unexpected $command")
-                    }
-                    "REPEAT" -> {
-                        index++
-                        val times = expression(argumentOf(line.text).ifBlank { "1" }, line.number)
-                        val target = nodes.removeLastOrNull()
-                        if (target == null) {
-                            warning(line.number, "REPEAT without a previous command")
-                        } else {
-                            nodes += DuckyNode.Repeat(times, listOf(target))
-                        }
-                    }
+                    "", "REM" -> Unit
+                    "REM_BLOCK" -> skipUntil("END_REM", line.number)
+                    "IF" -> nodes += parseIf(line)
+                    "WHILE" -> nodes += parseWhile(line)
+                    "FUNCTION" -> parseFunction(line)
+                    "REPEAT" -> repeatPrevious(nodes, line)
                     else -> {
-                        index++
-                        parseSimple(line)?.let { nodes += it }
+                        if (command in STRAY_KEYWORDS) {
+                            warning(line.number, "Unexpected $command")
+                        } else {
+                            parseSimple(line)?.let { nodes += it }
+                        }
                     }
                 }
             }
             return Block(nodes, null)
         }
 
+        private fun parseWhile(line: Line): DuckyNode {
+            val condition = expression(argumentOf(line.text), line.number)
+            val body = parseBlock(setOf("END_WHILE"))
+            if (body.terminator == null) warning(line.number, "WHILE without END_WHILE")
+            return DuckyNode.While(condition, body.nodes)
+        }
+
+        private fun parseFunction(line: Line) {
+            val name = functionName(argumentOf(line.text))
+            if (name.isBlank()) warning(line.number, "FUNCTION without a name")
+            val body = parseBlock(setOf("END_FUNCTION"))
+            if (body.terminator == null) warning(line.number, "FUNCTION without END_FUNCTION")
+            if (name.isNotBlank()) functions[name] = body.nodes
+        }
+
+        private fun repeatPrevious(nodes: MutableList<DuckyNode>, line: Line) {
+            val times = expression(argumentOf(line.text).ifBlank { "1" }, line.number)
+            val target = nodes.removeLastOrNull()
+            if (target == null) {
+                warning(line.number, "REPEAT without a previous command")
+            } else {
+                nodes += DuckyNode.Repeat(times, listOf(target))
+            }
+        }
+
         private fun parseIf(header: Line): DuckyNode {
             val conditionText = argumentOf(header.text).removeSuffix("THEN").removeSuffix("then").trim()
             val condition = expression(conditionText, header.number)
             val thenBlock = parseBlock(setOf("ELSE", "END_IF"))
-            var otherwise: List<DuckyNode> = emptyList()
-            if (thenBlock.terminator == "ELSE") {
-                val next = lines.getOrNull(index)
-                val nextCommand = next?.let { commandOf(it.text) }.orEmpty()
-                if (nextCommand == "IF" && next != null) {
-                    index++
-                    otherwise = listOf(parseIf(next))
-                } else {
-                    otherwise = parseBlock(setOf("END_IF")).nodes
-                }
-            } else if (thenBlock.terminator == null) {
-                warning(header.number, "IF without END_IF")
-            }
+            if (thenBlock.terminator == null) warning(header.number, "IF without END_IF")
+            val otherwise = if (thenBlock.terminator == "ELSE") parseElse() else emptyList()
             return DuckyNode.If(condition, thenBlock.nodes, otherwise)
+        }
+
+        private fun parseElse(): List<DuckyNode> {
+            val next = lines.getOrNull(index) ?: return emptyList()
+            if (commandOf(next.text) == "IF") {
+                index++
+                return listOf(parseIf(next))
+            }
+            return parseBlock(setOf("END_IF")).nodes
         }
 
         private fun skipUntil(keyword: String, startLine: Int) {
             while (index < lines.size) {
-                if (commandOf(lines[index].text) == keyword) {
-                    index++
-                    return
-                }
+                val current = commandOf(lines[index].text)
                 index++
+                if (current == keyword) return
             }
             warning(startLine, "REM_BLOCK without END_REM")
         }
@@ -290,98 +373,92 @@ object DuckyScript {
             if (text.isEmpty() || text.startsWith("//") || text.startsWith("#")) return null
             val command = commandOf(text)
             val argument = argumentOf(text).trim()
-
             return when (command) {
                 "REM" -> null
-
-                "DEFAULT_DELAY", "DEFAULTDELAY" -> DuckyNode.SetDefaultDelay(
-                    expression(argument, line.number),
-                )
-
-                "DELAY" -> DuckyNode.Delay(expression(argument.ifBlank { "0" }, line.number))
-
-                "STRING", "STRINGLN" -> parseStringBlock(command, argument, line)
-
-                "HOLD" -> DuckyNode.Hold(keysOf(argument, line.number))
-                "RELEASE" -> DuckyNode.Release(keysOf(argument, line.number))
-
                 "STOP_PAYLOAD" -> DuckyNode.Stop
                 "RESTART_PAYLOAD" -> DuckyNode.Restart
                 "RESET" -> DuckyNode.Reset
-
-                "DEFINE" -> {
-                    val name = argument.substringBefore(' ').trim()
-                    val value = argument.substringAfter(' ', "").trim()
-                    val resolved = resolveConstant(value)
-                    if (name.isBlank()) {
-                        warning(line.number, "DEFINE without a name")
-                    } else if (resolved == null) {
-                        warning(line.number, "DEFINE $name has an unsupported value")
-                    } else {
-                        constants[name] = resolved
-                    }
-                    null
-                }
-
-                "VAR" -> {
-                    val name = argument.substringBefore(' ').trim().removePrefix("$")
-                    val assignment = argument.substringAfter(' ', "").trim()
-                    val value = assignment.substringAfter('=', "").trim()
-                    if (name.isBlank() || !argument.contains('=')) {
-                        warning(line.number, "VAR needs a name and an assignment")
-                        null
-                    } else {
-                        DuckyNode.Assign(name, expression(value, line.number))
-                    }
-                }
-
-                "INJECT_MOD" -> {
-                    val key = mapToken(argument.uppercase())
-                    if (key.isBlank()) {
-                        warning(line.number, "INJECT_MOD ${argument.uppercase()} is not a key")
-                        null
-                    } else {
-                        DuckyNode.Keys(emptyList(), key)
-                    }
-                }
-
-                else -> when {
-                    command.startsWith("MEDIA_") -> {
-                        val key = command.removePrefix("MEDIA_")
-                        if (key in consumerControlCodes) DuckyNode.Media(key) else {
-                            warning(line.number, "$command is not a media key")
-                            null
-                        }
-                    }
-
-                    command in MEDIA_ALIASES -> DuckyNode.Media(MEDIA_ALIASES.getValue(command))
-
-                    command == "MOUSE_MOVE" -> {
-                        val parts = argument.split(Regex("\\s+")).filter { it.isNotBlank() }
-                        if (parts.size != 2) {
-                            warning(line.number, "MOUSE_MOVE needs X and Y")
-                            null
-                        } else {
-                            DuckyNode.MouseMove(expression(parts[0], line.number), expression(parts[1], line.number))
-                        }
-                    }
-
-                    command == "MOUSE_CLICK" -> DuckyNode.MouseClick(buttonOf(argument))
-                    command == "MOUSE_SCROLL" || command == "MOUSE_WHEEL" ->
-                        DuckyNode.MouseScroll(expression(argument.ifBlank { "0" }, line.number))
-
-                    command in RANDOM_SETS -> DuckyNode.RandomKeystrokes(RANDOM_SETS.getValue(command))
-
-                    CALL_PATTERN.matches(text) -> DuckyNode.Call(functionName(text))
-
-                    command in DEVICE_ONLY -> {
-                        warning(line.number, "$command is device specific and is ignored")
-                        DuckyNode.Noop(command)
-                    }
-
-                    else -> keyNodeOf(text, null, line.number)
-                }
+                "DEFINE" -> defineConstant(argument, line)
+                "VAR" -> assignVariable(argument, line)
+                "INJECT_MOD" -> injectMod(argument, line)
+                else -> typedCommand(command, argument, text, line)
             }
+        }
+
+        private fun typedCommand(command: String, argument: String, text: String, line: Line): DuckyNode? = when {
+            command == "DEFAULT_DELAY" || command == "DEFAULTDELAY" ->
+                DuckyNode.SetDefaultDelay(expression(argument, line.number))
+            command == "DELAY" -> DuckyNode.Delay(expression(argument.ifBlank { "0" }, line.number))
+            command == "STRING" || command == "STRINGLN" -> parseStringBlock(command, argument, line)
+            command == "HOLD" -> DuckyNode.Hold(keysOf(argument, line.number))
+            command == "RELEASE" -> DuckyNode.Release(keysOf(argument, line.number))
+            else -> extendedCommand(command, argument, text, line)
+        }
+
+        private fun extendedCommand(command: String, argument: String, text: String, line: Line): DuckyNode? = when {
+            command.startsWith("MEDIA_") -> mediaCommand(command, line)
+            command in MEDIA_ALIASES -> DuckyNode.Media(MEDIA_ALIASES.getValue(command))
+            command == "MOUSE_MOVE" -> mouseMove(argument, line)
+            command == "MOUSE_CLICK" -> DuckyNode.MouseClick(buttonOf(argument))
+            command == "MOUSE_SCROLL" || command == "MOUSE_WHEEL" ->
+                DuckyNode.MouseScroll(expression(argument.ifBlank { "0" }, line.number))
+            command in RANDOM_SETS -> DuckyNode.RandomKeystrokes(RANDOM_SETS.getValue(command))
+            CALL_PATTERN.matches(text) -> DuckyNode.Call(functionName(text))
+            command in DEVICE_ONLY -> deviceOnly(command, line)
+            else -> keyNodeOf(text, line.number)
+        }
+
+        private fun mediaCommand(command: String, line: Line): DuckyNode? {
+            val key = command.removePrefix("MEDIA_")
+            if (key in consumerControlCodes) return DuckyNode.Media(key)
+            warning(line.number, "$command is not a media key")
+            return null
+        }
+
+        private fun mouseMove(argument: String, line: Line): DuckyNode? {
+            val parts = argument.split(Regex("\\s+")).filter { it.isNotBlank() }
+            if (parts.size != 2) {
+                warning(line.number, "MOUSE_MOVE needs X and Y")
+                return null
+            }
+            return DuckyNode.MouseMove(expression(parts[0], line.number), expression(parts[1], line.number))
+        }
+
+        private fun deviceOnly(command: String, line: Line): DuckyNode {
+            warning(line.number, "$command is device specific and is ignored")
+            return DuckyNode.Noop(command)
+        }
+
+        private fun defineConstant(argument: String, line: Line): DuckyNode? {
+            val name = argument.substringBefore(' ').trim()
+            val value = argument.substringAfter(' ', "").trim()
+            val resolved = resolveConstant(value)
+            when {
+                name.isBlank() -> warning(line.number, "DEFINE without a name")
+                resolved == null -> warning(line.number, "DEFINE $name has an unsupported value")
+                else -> constants[name] = resolved
+            }
+            return null
+        }
+
+        private fun assignVariable(argument: String, line: Line): DuckyNode? {
+            val name = argument.substringBefore(' ').trim().removePrefix("$")
+            val assignment = argument.substringAfter(' ', "").trim()
+            val value = assignment.substringAfter('=', "").trim()
+            if (name.isBlank() || !argument.contains('=')) {
+                warning(line.number, "VAR needs a name and an assignment")
+                return null
+            }
+            return DuckyNode.Assign(name, expression(value, line.number))
+        }
+
+        private fun injectMod(argument: String, line: Line): DuckyNode? {
+            val key = mapToken(argument.uppercase())
+            if (key.isBlank()) {
+                warning(line.number, "INJECT_MOD ${argument.uppercase()} is not a key")
+                return null
+            }
+            return DuckyNode.Keys(emptyList(), key)
         }
 
         private fun parseStringBlock(command: String, argument: String, line: Line): DuckyNode? {
@@ -390,32 +467,28 @@ object DuckyScript {
             }
             val endKeyword = if (command == "STRINGLN") "END_STRINGLN" else "END_STRING"
             val collected = StringBuilder()
-            var opened = false
+            var closed = false
             while (index < lines.size) {
                 val current = lines[index]
+                index++
                 if (commandOf(current.text) == endKeyword) {
-                    index++
-                    opened = true
+                    closed = true
                     break
                 }
-                if (collected.isNotEmpty()) {
-                    if (command == "STRINGLN") collected.append('\n')
-                }
+                if (collected.isNotEmpty() && command == "STRINGLN") collected.append('\n')
                 collected.append(current.text.trimStart('\t').removePrefix("\t"))
-                index++
             }
-            if (!opened) {
-                warning(line.number, "$command block without $endKeyword")
-            }
-            return if (collected.isEmpty()) null else DuckyNode.Text(collected.toString(), submit = command == "STRINGLN")
+            if (!closed) warning(line.number, "$command block without $endKeyword")
+            if (collected.isEmpty()) return null
+            return DuckyNode.Text(collected.toString(), submit = command == "STRINGLN")
         }
 
-        private fun keyNodeOf(text: String, forced: String?, lineNumber: Int): DuckyNode? {
+        private fun keyNodeOf(text: String, lineNumber: Int): DuckyNode? {
             val tokens = text.split(Regex("\\s+"))
                 .flatMap { it.split('+', '-') }
                 .filter { it.isNotBlank() }
             val modifiers = mutableListOf<String>()
-            var key: String? = forced
+            var key: String? = null
             tokens.forEach { token ->
                 val mapped = mapToken(token.uppercase())
                 when {
@@ -446,16 +519,11 @@ object DuckyScript {
             else -> 0
         }
 
-        private fun expression(raw: String, lineNumber: Int): DuckyExpr {
-            val tokens = ExpressionTokenizer(raw, lineNumber)
-            val parsed = try {
-                ExpressionParser(tokens).parseAll()
-            } catch (t: Throwable) {
-                warning(lineNumber, "Cannot evaluate '${raw.trim()}': ${t.message}")
+        private fun expression(raw: String, lineNumber: Int): DuckyExpr =
+            runCatching { ExpressionParser(ExpressionTokenizer(raw)).parse() }.getOrElse { error ->
+                warning(lineNumber, "Cannot evaluate '${raw.trim()}': ${error.message}")
                 DuckyExpr.Const(0)
             }
-            return parsed
-        }
 
         private fun resolveConstant(raw: String): Int? {
             val trimmed = raw.trim()
@@ -470,223 +538,166 @@ object DuckyScript {
             diagnostics += DuckyDiagnostic(line, message, fatal = false)
         }
     }
-
-    private fun commandOf(text: String): String =
-        text.trim().substringBefore(' ').substringBefore('\t').uppercase()
-
-    private fun argumentOf(text: String): String {
-        val trimmed = text.trim()
-        if (trimmed.isEmpty()) return ""
-        val space = trimmed.indexOfFirst { it == ' ' || it == '\t' }
-        return if (space < 0) "" else trimmed.substring(space + 1)
-    }
-
-    private val MEDIA_ALIASES: Map<String, String> = mapOf(
-        "VOLUMEUP" to "VOLUMEUP",
-        "VOLUMEDOWN" to "VOLUMEDOWN",
-        "MUTE" to "VOLUMEMUTE",
-        "PLAYPAUSE" to "PLAYPAUSE",
-        "MEDIA_PLAY_PAUSE" to "PLAYPAUSE",
-    )
-
-    private val CALL_PATTERN = Regex("^[A-Za-z_][A-Za-z0-9_]*\\s*\\(\\s*\\)$")
-
-    private val RANDOM_SETS: Map<String, String> = mapOf(
-        "RANDOM_LOWERCASE_LETTER" to "abcdefghijklmnopqrstuvwxyz",
-        "RANDOM_UPPERCASE_LETTER" to "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        "RANDOM_LETTER" to "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        "RANDOM_NUMBER" to "0123456789",
-        "RANDOM_SPECIAL" to "!@#$%^&*()",
-        "RANDOM_CHAR" to "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()",
-    )
-
-    internal fun mapToken(token: String): String = when (token) {
-        "CTRL", "CONTROL" -> "MOD_LCTRL"
-        "SHIFT" -> "MOD_LSHIFT"
-        "ALT" -> "MOD_LALT"
-        "ALTGR" -> "MOD_RALT"
-        "GUI", "WINDOWS", "WIN", "COMMAND" -> "MOD_LMETA"
-        "MENU", "APP", "APPLICATION" -> "APPLICATION"
-        "ENTER", "RETURN" -> "ENTER"
-        "ESC", "ESCAPE" -> "ESC"
-        "UPARROW", "UP" -> "UP"
-        "DOWNARROW", "DOWN" -> "DOWN"
-        "LEFTARROW", "LEFT" -> "LEFT"
-        "RIGHTARROW", "RIGHT" -> "RIGHT"
-        "DEL", "DELETE" -> "DELETE"
-        "PAGEUP", "PAGE_UP" -> "PAGEUP"
-        "PAGEDOWN", "PAGE_DOWN" -> "PAGEDOWN"
-        "CAPS_LOCK", "CAPSLOCK" -> "CAPSLOCK"
-        "NUM_LOCK", "NUMLOCK" -> "NUMLOCK"
-        "SCROLL_LOCK", "SCROLLLOCK" -> "SCROLLLOCK"
-        "PRINTSCREEN", "PRINT_SCREEN" -> "SYSRQ"
-        "BREAK", "PAUSE" -> "PAUSE"
-        "SPACE" -> "SPACE"
-        else -> when {
-            token.length == 1 && (token[0].isLetterOrDigit()) -> token
-            token in keyCodes -> token
-            else -> ""
-        }
-    }
-
-    internal fun modifierNames(): Set<String> = keyCodes.keys.filter { it.startsWith("MOD_") }.toSet()
 }
 
 /** Builds an expression tree from DuckyScript operator syntax. */
-private class ExpressionTokenizer(private val raw: String, private val line: Int) {
+private class ExpressionTokenizer(raw: String) {
     private val tokens = mutableListOf<String>()
-
     private var position = 0
 
     init {
-        tokenize(raw)
+        var cursor = 0
+        while (cursor < raw.length) {
+            cursor = when {
+                raw[cursor].isWhitespace() -> cursor + 1
+                raw[cursor].isDigit() -> readNumber(raw, cursor)
+                raw[cursor] == '$' -> readVariable(raw, cursor)
+                raw[cursor].isLetter() || raw[cursor] == '_' -> readIdentifier(raw, cursor)
+                else -> readOperator(raw, cursor)
+            }
+        }
     }
 
     fun next(): String? = if (position < tokens.size) tokens[position++] else null
 
     fun peek(): String? = tokens.getOrNull(position)
 
-    private fun tokenize(source: String) {
-        var i = 0
-        while (i < source.length) {
-            val ch = source[i]
-            when {
-                ch.isWhitespace() -> i++
-                ch.isDigit() -> {
-                    val start = i
-                    while (i < source.length && source[i].isDigit()) i++
-                    tokens += source.substring(start, i)
-                }
-                ch == '$' -> {
-                    val start = i
-                    i++
-                    while (i < source.length && (source[i].isLetterOrDigit() || source[i] == '_')) i++
-                    tokens += source.substring(start, i)
-                }
-                ch == '(' || ch == ')' || ch == '!' || ch == '-' || ch == '~' -> {
-                    tokens += ch.toString()
-                    i++
-                }
-                ch == '+' || ch == '*' || ch == '/' || ch == '%' || ch == '^' -> {
-                    tokens += ch.toString()
-                    i++
-                }
-                ch == '<' || ch == '>' || ch == '=' || ch == '&' || ch == '|' -> {
-                    val two = source.substring(i, minOf(i + 2, source.length))
-                    when (two) {
-                        "==", "!=", "<=", ">=", "<<", ">>", "&&", "||" -> {
-                            tokens += two
-                            i += 2
-                        }
-                        else -> {
-                            tokens += ch.toString()
-                            i++
-                        }
-                    }
-                }
-                else -> {
-                    // Bare identifiers are treated as constants with a value of zero.
-                    val start = i
-                    while (i < source.length && (source[i].isLetterOrDigit() || source[i] == '_')) i++
-                    if (i == start) i++ else tokens += "0"
-                }
-            }
+    private fun readNumber(source: String, start: Int): Int {
+        var cursor = start
+        while (cursor < source.length && source[cursor].isDigit()) cursor++
+        tokens += source.substring(start, cursor)
+        return cursor
+    }
+
+    private fun readVariable(source: String, start: Int): Int {
+        var cursor = start + 1
+        while (cursor < source.length && (source[cursor].isLetterOrDigit() || source[cursor] == '_')) cursor++
+        tokens += source.substring(start, cursor)
+        return cursor
+    }
+
+    private fun readIdentifier(source: String, start: Int): Int {
+        var cursor = start
+        while (cursor < source.length && (source[cursor].isLetterOrDigit() || source[cursor] == '_')) cursor++
+        // Bare identifiers are treated as constants with a value of zero.
+        tokens += "0"
+        return cursor
+    }
+
+    private fun readOperator(source: String, start: Int): Int {
+        val pair = source.substring(start, minOf(start + 2, source.length))
+        if (pair in TWO_CHAR_OPERATORS) {
+            tokens += pair
+            return start + 2
         }
+        tokens += source[start].toString()
+        return start + 1
+    }
+
+    private companion object {
+        val TWO_CHAR_OPERATORS = setOf("==", "!=", "<=", ">=", "<<", ">>", "&&", "||")
     }
 }
 
 private class ExpressionParser(private val tokenizer: ExpressionTokenizer) {
+    private val comparisons = setOf("==", "!=", "<", "<=", ">", ">=")
+    private val multiplicative = setOf("*", "/", "%", "^")
 
-    fun parseAll(): DuckyExpr {
-        val expr = parseOr()
-        return expr
-    }
+    fun parse(): DuckyExpr = parseOr()
 
     private fun parseOr(): DuckyExpr {
         var left = parseAnd()
-        while (tokenizer.peek() == "||") {
+        var token = tokenizer.peek()
+        while (token == "||") {
             tokenizer.next()
             left = DuckyExpr.Binary("||", left, parseAnd())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseAnd(): DuckyExpr {
         var left = parseBitOr()
-        while (tokenizer.peek() == "&&") {
+        var token = tokenizer.peek()
+        while (token == "&&") {
             tokenizer.next()
             left = DuckyExpr.Binary("&&", left, parseBitOr())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseBitOr(): DuckyExpr {
         var left = parseBitAnd()
-        while (tokenizer.peek() == "|") {
+        var token = tokenizer.peek()
+        while (token == "|") {
             tokenizer.next()
             left = DuckyExpr.Binary("|", left, parseBitAnd())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseBitAnd(): DuckyExpr {
         var left = parseComparison()
-        while (tokenizer.peek() == "&") {
+        var token = tokenizer.peek()
+        while (token == "&") {
             tokenizer.next()
             left = DuckyExpr.Binary("&", left, parseComparison())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseComparison(): DuckyExpr {
         var left = parseShift()
-        while (true) {
-            val op = tokenizer.peek() ?: break
-            if (op !in COMPARISONS) break
+        var token = tokenizer.peek()
+        while (token != null && token in comparisons) {
             tokenizer.next()
-            left = DuckyExpr.Binary(op, left, parseShift())
+            left = DuckyExpr.Binary(token, left, parseShift())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseShift(): DuckyExpr {
         var left = parseAdditive()
-        while (true) {
-            val op = tokenizer.peek() ?: break
-            if (op != "<<" && op != ">>") break
+        var token = tokenizer.peek()
+        while (token == "<<" || token == ">>") {
             tokenizer.next()
-            left = DuckyExpr.Binary(op, left, parseAdditive())
+            left = DuckyExpr.Binary(token, left, parseAdditive())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseAdditive(): DuckyExpr {
         var left = parseMultiplicative()
-        while (true) {
-            val op = tokenizer.peek() ?: break
-            if (op != "+" && op != "-") break
+        var token = tokenizer.peek()
+        while (token == "+" || token == "-") {
             tokenizer.next()
-            left = DuckyExpr.Binary(op, left, parseMultiplicative())
+            left = DuckyExpr.Binary(token, left, parseMultiplicative())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseMultiplicative(): DuckyExpr {
         var left = parseUnary()
-        while (true) {
-            val op = tokenizer.peek() ?: break
-            if (op !in setOf("*", "/", "%", "^")) break
+        var token = tokenizer.peek()
+        while (token != null && token in multiplicative) {
             tokenizer.next()
-            left = DuckyExpr.Binary(op, left, parseUnary())
+            left = DuckyExpr.Binary(token, left, parseUnary())
+            token = tokenizer.peek()
         }
         return left
     }
 
     private fun parseUnary(): DuckyExpr {
-        val op = tokenizer.peek() ?: return DuckyExpr.Const(0)
-        if (op == "!" || op == "-" || op == "~") {
+        val token = tokenizer.peek()
+        if (token == "!" || token == "-" || token == "~") {
             tokenizer.next()
-            return DuckyExpr.Unary(op, parseUnary())
+            return DuckyExpr.Unary(token, parseUnary())
         }
         return parsePrimary()
     }
@@ -704,10 +715,47 @@ private class ExpressionParser(private val tokenizer: ExpressionTokenizer) {
             else -> DuckyExpr.Const(0)
         }
     }
+}
 
-    companion object {
-        private val COMPARISONS = setOf("==", "!=", "<", "<=", ">", ">=")
-    }
+/** A key press expressed as an optional shift modifier plus a HID key name. */
+private data class KeyStroke(val shift: Boolean, val key: String)
+
+private val CHAR_STROKES: Map<Char, KeyStroke> = buildMap {
+    put(' ', KeyStroke(false, "SPACE"))
+    put('\t', KeyStroke(false, "TAB"))
+    put('\n', KeyStroke(false, "ENTER"))
+    put('-', KeyStroke(false, "MINUS"))
+    put('_', KeyStroke(true, "MINUS"))
+    put('=', KeyStroke(false, "EQUAL"))
+    put('+', KeyStroke(true, "EQUAL"))
+    put('[', KeyStroke(false, "LEFTBRACE"))
+    put('{', KeyStroke(true, "LEFTBRACE"))
+    put(']', KeyStroke(false, "RIGHTBRACE"))
+    put('}', KeyStroke(true, "RIGHTBRACE"))
+    put('\\', KeyStroke(false, "BACKSLASH"))
+    put('|', KeyStroke(true, "BACKSLASH"))
+    put(';', KeyStroke(false, "SEMICOLON"))
+    put(':', KeyStroke(true, "SEMICOLON"))
+    put('\'', KeyStroke(false, "APOSTROPHE"))
+    put('"', KeyStroke(true, "APOSTROPHE"))
+    put('`', KeyStroke(false, "GRAVE"))
+    put('~', KeyStroke(true, "GRAVE"))
+    put(',', KeyStroke(false, "COMMA"))
+    put('<', KeyStroke(true, "COMMA"))
+    put('.', KeyStroke(false, "DOT"))
+    put('>', KeyStroke(true, "DOT"))
+    put('/', KeyStroke(false, "SLASH"))
+    put('?', KeyStroke(true, "SLASH"))
+    put('!', KeyStroke(true, "1"))
+    put('@', KeyStroke(true, "2"))
+    put('#', KeyStroke(true, "3"))
+    put('$', KeyStroke(true, "4"))
+    put('%', KeyStroke(true, "5"))
+    put('^', KeyStroke(true, "6"))
+    put('&', KeyStroke(true, "7"))
+    put('*', KeyStroke(true, "8"))
+    put('(', KeyStroke(true, "9"))
+    put(')', KeyStroke(true, "0"))
 }
 
 /**
@@ -730,12 +778,13 @@ class DuckyRunner(
     }
 
     private val environment = DuckyEnvironment()
+    private val heldKeys = LinkedHashSet<String>()
     private var functions: Map<String, List<DuckyNode>> = emptyMap()
     private var defaultDelayMs: Long = 0
     private var executed = 0
     private var budget = 0
     private var stopped = false
-    private val heldKeys = LinkedHashSet<String>()
+    private var logSink: (String) -> Unit = {}
 
     suspend fun run(program: DuckyProgram, onLog: (String) -> Unit = {}): DuckyRunResult {
         val started = System.currentTimeMillis()
@@ -746,26 +795,7 @@ class DuckyRunner(
         stopped = false
         var restarts = 0
         try {
-            while (true) {
-                val flow = try {
-                    executeBlock(program.nodes)
-                } catch (t: SecurityException) {
-                    onLog("HID write rejected: ${t.message}")
-                    Flow.Stop
-                }
-                when (flow) {
-                    is Flow.Restart -> {
-                        restarts++
-                        if (restarts > MAX_RESTARTS) {
-                            onLog("RESTART_PAYLOAD limit reached")
-                            break
-                        }
-                        releaseEverything()
-                        onLog("Restarting payload ($restarts)")
-                    }
-                    else -> break
-                }
-            }
+            restarts = runUntilFinished(program.nodes)
         } finally {
             releaseEverything()
         }
@@ -778,8 +808,32 @@ class DuckyRunner(
         )
     }
 
+    private suspend fun runUntilFinished(nodes: List<DuckyNode>): Int {
+        var restarts = 0
+        var done = false
+        while (!done) {
+            when (val flow = executeBlock(nodes)) {
+                is Flow.Restart -> {
+                    restarts++
+                    if (restarts > MAX_RESTARTS) {
+                        onLogSink("RESTART_PAYLOAD limit reached")
+                        done = true
+                    } else {
+                        releaseEverything()
+                        onLogSink("Restarting payload ($restarts)")
+                    }
+                }
+                Flow.Stop -> {
+                    stopped = true
+                    done = true
+                }
+                else -> done = true
+            }
+        }
+        return restarts
+    }
+
     private suspend fun executeBlock(nodes: List<DuckyNode>): Flow {
-        val env = environment
         for (node in nodes) {
             currentCoroutineContext().ensureActive()
             if (budget-- <= 0) {
@@ -788,109 +842,156 @@ class DuckyRunner(
                 return Flow.Stop
             }
             executed++
-            when (node) {
-                is DuckyNode.Delay -> delay(node.millis.eval(env).coerceIn(1, 3_600_000).toLong())
-                is DuckyNode.SetDefaultDelay -> defaultDelayMs = node.millis.eval(env).coerceIn(0, 60_000).toLong()
-                is DuckyNode.Text -> {
-                    type(node.text)
-                    if (node.submit) {
-                        tap("ENTER", emptyList())
-                        applyDefaultDelay()
-                    }
-                }
-                is DuckyNode.Keys -> pressKeys(node)
-                is DuckyNode.Hold -> node.keys.forEach { key ->
-                    if (key.startsWith("MOD_")) controller.modifierDown(key) else controller.keyDown(key)
-                    heldKeys += key
-                }
-                is DuckyNode.Release -> node.keys.forEach { key ->
-                    if (key.startsWith("MOD_")) controller.modifierUp(key) else controller.keyUp(key)
-                    heldKeys -= key
-                }
-                is DuckyNode.Repeat -> {
-                    val times = node.times.eval(env).coerceIn(0, 10_000)
-                    repeat(times) {
-                        val flow = executeBlock(node.body)
-                        if (flow !is Flow.Normal) return flow
-                    }
-                }
-                is DuckyNode.If -> {
-                    val branch = if (node.condition.eval(env) != 0) node.then else node.otherwise
-                    val flow = executeBlock(branch)
-                    if (flow !is Flow.Normal) return flow
-                }
-                is DuckyNode.While -> {
-                    var iterations = 0
-                    while (node.condition.eval(env) != 0) {
-                        if (iterations++ > MAX_LOOP_ITERATIONS) {
-                            onLogSink("WHILE loop limit reached")
-                            break
-                        }
-                        val flow = executeBlock(node.body)
-                        if (flow !is Flow.Normal) return flow
-                    }
-                }
-                is DuckyNode.Call -> {
-                    val body = functions[node.name]
-                    if (body == null) {
-                        onLogSink("Unknown function ${node.name}()")
-                    } else {
-                        val flow = executeBlock(body)
-                        if (flow is Flow.Returned) continue
-                        if (flow !is Flow.Normal) return flow
-                    }
-                }
-                is DuckyNode.Return -> return Flow.Returned(node.value?.eval(env) ?: 0)
-                is DuckyNode.Assign -> environment[node.name] = node.value.eval(env)
-                is DuckyNode.Media -> {
-                    controller.mediaDown(node.key)
-                    delay(keyHoldMs)
-                    controller.mediaUp(node.key)
-                    applyDefaultDelay()
-                }
-                is DuckyNode.MouseMove -> controller.mouseMove(node.deltaX.eval(env), node.deltaY.eval(env))
-                is DuckyNode.MouseClick -> controller.mouseClick(node.button)
-                is DuckyNode.MouseScroll -> controller.mouseWheel(node.delta.eval(env))
-                is DuckyNode.RandomKeystrokes -> {
-                    val charset = node.charset
-                    if (charset.isNotEmpty()) {
-                        typeChar(charset[Random.nextInt(charset.length)].toString())
-                        applyDefaultDelay()
-                    }
-                }
-                DuckyNode.Reset -> releaseEverything()
-                DuckyNode.Stop -> {
-                    stopped = true
-                    return Flow.Stop
-                }
-                DuckyNode.Restart -> return Flow.Restart
-                is DuckyNode.Noop -> Unit
-            }
+            val flow = executeNode(node)
+            if (flow != null) return flow
         }
         return Flow.Normal
     }
 
-    private var logSink: (String) -> Unit = {}
+    private suspend fun executeNode(node: DuckyNode): Flow? = when (node) {
+        is DuckyNode.Repeat, is DuckyNode.If, is DuckyNode.While, is DuckyNode.Call,
+        is DuckyNode.Return, DuckyNode.Stop, DuckyNode.Restart -> executeControl(node)
+        is DuckyNode.MouseMove, is DuckyNode.MouseClick, is DuckyNode.MouseScroll -> {
+            executePointer(node)
+            null
+        }
+        else -> {
+            executeInput(node)
+            null
+        }
+    }
 
-    private fun onLogSink(message: String) {
-        runCatching { logSink(message) }
+    private suspend fun executeControl(node: DuckyNode): Flow = when (node) {
+        is DuckyNode.Repeat -> repeatFlow(node)
+        is DuckyNode.If -> ifFlow(node)
+        is DuckyNode.While -> whileFlow(node)
+        is DuckyNode.Call -> callFlow(node)
+        is DuckyNode.Return -> Flow.Returned(node.value?.eval(environment) ?: 0)
+        DuckyNode.Stop -> Flow.Stop
+        else -> Flow.Restart
+    }
+
+    private fun executePointer(node: DuckyNode) {
+        when (node) {
+            is DuckyNode.MouseMove -> controller.mouseMove(
+                node.deltaX.eval(environment),
+                node.deltaY.eval(environment),
+            )
+            is DuckyNode.MouseClick -> controller.mouseClick(node.button)
+            is DuckyNode.MouseScroll -> controller.mouseWheel(node.delta.eval(environment))
+            else -> Unit
+        }
+    }
+
+    private suspend fun executeInput(node: DuckyNode) {
+        when (node) {
+            is DuckyNode.Delay -> pause(node.millis.eval(environment))
+            is DuckyNode.SetDefaultDelay ->
+                defaultDelayMs = node.millis.eval(environment).coerceIn(0, 60_000).toLong()
+            is DuckyNode.Text -> typeTextNode(node)
+            is DuckyNode.Keys -> pressKeys(node)
+            is DuckyNode.Hold -> holdKeys(node.keys)
+            is DuckyNode.Release -> releaseKeys(node.keys)
+            is DuckyNode.Media -> tapMedia(node.key)
+            is DuckyNode.RandomKeystrokes -> randomKeystroke(node.charset)
+            is DuckyNode.Assign -> environment[node.name] = node.value.eval(environment)
+            DuckyNode.Reset -> releaseEverything()
+            else -> Unit
+        }
+    }
+
+    private suspend fun repeatFlow(node: DuckyNode.Repeat): Flow {
+        val times = node.times.eval(environment).coerceIn(0, 10_000)
+        for (iteration in 0 until times) {
+            val flow = executeBlock(node.body)
+            if (flow !is Flow.Normal) return flow
+        }
+        return Flow.Normal
+    }
+
+    private suspend fun ifFlow(node: DuckyNode.If): Flow {
+        val branch = if (node.condition.eval(environment) != 0) node.then else node.otherwise
+        return executeBlock(branch)
+    }
+
+    private suspend fun whileFlow(node: DuckyNode.While): Flow {
+        var iterations = 0
+        while (node.condition.eval(environment) != 0) {
+            if (iterations++ > MAX_LOOP_ITERATIONS) {
+                onLogSink("WHILE loop limit reached")
+                break
+            }
+            val flow = executeBlock(node.body)
+            if (flow !is Flow.Normal) return flow
+        }
+        return Flow.Normal
+    }
+
+    private suspend fun callFlow(node: DuckyNode.Call): Flow {
+        val body = functions[node.name]
+        if (body == null) {
+            onLogSink("Unknown function ${node.name}()")
+            return Flow.Normal
+        }
+        val flow = executeBlock(body)
+        return if (flow is Flow.Returned) Flow.Normal else flow
+    }
+
+    private suspend fun typeTextNode(node: DuckyNode.Text) {
+        type(node.text)
+        if (node.submit) {
+            tap("ENTER", emptyList())
+            applyDefaultDelay()
+        }
+    }
+
+    private suspend fun holdKeys(keys: List<String>) {
+        keys.forEach { key ->
+            if (key.startsWith("MOD_")) controller.modifierDown(key) else controller.keyDown(key)
+            heldKeys += key
+        }
+    }
+
+    private fun releaseKeys(keys: List<String>) {
+        keys.forEach { key ->
+            runCatching {
+                if (key.startsWith("MOD_")) controller.modifierUp(key) else controller.keyUp(key)
+            }
+            heldKeys -= key
+        }
+    }
+
+    private suspend fun tapMedia(key: String) {
+        controller.mediaDown(key)
+        delay(keyHoldMs)
+        controller.mediaUp(key)
+        applyDefaultDelay()
+    }
+
+    private suspend fun randomKeystroke(charset: String) {
+        if (charset.isEmpty()) return
+        typeChar(charset[Random.nextInt(charset.length)].toString())
+        applyDefaultDelay()
+    }
+
+    private suspend fun pause(millis: Int) {
+        delay(millis.coerceIn(1, 3_600_000).toLong())
     }
 
     private suspend fun type(raw: String) {
-        val text = interpolate(raw)
-        for (ch in text) {
-            if (ch == '\n') {
+        for (char in interpolate(raw)) {
+            if (char == '\n') {
                 tap("ENTER", emptyList())
             } else {
-                typeChar(ch.toString())
+                typeChar(char.toString())
             }
             applyDefaultDelay()
         }
     }
 
     private suspend fun typeChar(char: String) {
-        val mapping = charMapping(char) ?: return
-        tap(mapping.second, mapping.first)
+        val stroke = strokeFor(char) ?: return
+        tap(stroke.key, if (stroke.shift) SHIFT_MODIFIERS else emptyList())
     }
 
     private suspend fun pressKeys(node: DuckyNode.Keys) {
@@ -933,75 +1034,48 @@ class DuckyRunner(
     private fun interpolate(raw: String): String {
         if (!raw.contains('$')) return raw
         val out = StringBuilder()
-        var i = 0
-        while (i < raw.length) {
-            val ch = raw[i]
-            if (ch == '$') {
-                var end = i + 1
-                while (end < raw.length && (raw[end].isLetterOrDigit() || raw[end] == '_')) end++
-                val name = raw.substring(i + 1, end)
-                val value = environment[name]
-                if (value != null && name.isNotEmpty()) {
-                    out.append(value)
-                    i = end
-                    continue
-                }
+        var cursor = 0
+        while (cursor < raw.length) {
+            val char = raw[cursor]
+            val end = if (char == '$') variableEnd(raw, cursor) else cursor
+            val name = if (char == '$') raw.substring(cursor + 1, end) else ""
+            val value = if (name.isEmpty()) null else environment[name]
+            if (value == null) {
+                out.append(char)
+                cursor++
+            } else {
+                out.append(value)
+                cursor = end
             }
-            out.append(ch)
-            i++
         }
         return out.toString()
     }
 
-    private fun charMapping(char: String): Pair<List<String>, String>? {
-        val shift = listOf("MOD_LSHIFT")
-        return when (char) {
-            " " -> emptyList<String>() to "SPACE"
-            "\t" -> emptyList<String>() to "TAB"
-            "\n" -> emptyList<String>() to "ENTER"
-            "-" -> emptyList<String>() to "MINUS"
-            "_" -> shift to "MINUS"
-            "=" -> emptyList<String>() to "EQUAL"
-            "+" -> shift to "EQUAL"
-            "[" -> emptyList<String>() to "LEFTBRACE"
-            "{" -> shift to "LEFTBRACE"
-            "]" -> emptyList<String>() to "RIGHTBRACE"
-            "}" -> shift to "RIGHTBRACE"
-            "\\" -> emptyList<String>() to "BACKSLASH"
-            "|" -> shift to "BACKSLASH"
-            ";" -> emptyList<String>() to "SEMICOLON"
-            ":" -> shift to "SEMICOLON"
-            "'" -> emptyList<String>() to "APOSTROPHE"
-            "\"" -> shift to "APOSTROPHE"
-            "`" -> emptyList<String>() to "GRAVE"
-            "~" -> shift to "GRAVE"
-            "," -> emptyList<String>() to "COMMA"
-            "<" -> shift to "COMMA"
-            "." -> emptyList<String>() to "DOT"
-            ">" -> shift to "DOT"
-            "/" -> emptyList<String>() to "SLASH"
-            "?" -> shift to "SLASH"
-            "!" -> shift to "1"
-            "@" -> shift to "2"
-            "#" -> shift to "3"
-            "$" -> shift to "4"
-            "%" -> shift to "5"
-            "^" -> shift to "6"
-            "&" -> shift to "7"
-            "*" -> shift to "8"
-            "(" -> shift to "9"
-            ")" -> shift to "0"
-            else -> when {
-                char.length == 1 && char[0] in 'a'..'z' -> emptyList<String>() to char.uppercase()
-                char.length == 1 && char[0] in 'A'..'Z' -> shift to char.uppercase()
-                char.length == 1 && char[0] in '0'..'9' -> emptyList<String>() to char
-                else -> null
-            }
+    private fun variableEnd(raw: String, dollar: Int): Int {
+        var end = dollar + 1
+        while (end < raw.length && (raw[end].isLetterOrDigit() || raw[end] == '_')) end++
+        return end
+    }
+
+    private fun strokeFor(char: String): KeyStroke? {
+        if (char.length != 1) return null
+        val symbol = char[0]
+        CHAR_STROKES[symbol]?.let { return it }
+        return when {
+            symbol in 'a'..'z' -> KeyStroke(false, symbol.uppercaseChar().toString())
+            symbol in 'A'..'Z' -> KeyStroke(true, symbol.toString())
+            symbol in '0'..'9' -> KeyStroke(false, symbol.toString())
+            else -> null
         }
     }
 
-    companion object {
-        private const val MAX_RESTARTS = 3
-        private const val MAX_LOOP_ITERATIONS = 10_000
+    private fun onLogSink(message: String) {
+        runCatching { logSink(message) }
+    }
+
+    private companion object {
+        const val MAX_RESTARTS = 3
+        const val MAX_LOOP_ITERATIONS = 10_000
+        val SHIFT_MODIFIERS = listOf("MOD_LSHIFT")
     }
 }
