@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-04
+
+Dolphy 1.3.0 makes navigation and interface changes instantaneous across the
+app. It removes the remaining motion from screen transitions, lists, expandable
+panels, toasts, and plugin surfaces, and aligns every repository link with the
+canonical project home.
+
+### Changed
+
+- **Zero-motion interface:** screen navigation, category paging, bottom-bar
+  scrolling, list insertions, expandable settings, toast presentation, and NFC
+  success states now render immediately instead of animating.
+- **System transition suppression:** Dolphy disables Compose motion at the
+  window recomposer, process animator scale, activity and window transitions,
+  and Android predictive back, so the platform cannot reintroduce a transition.
+- **Plugin surfaces:** plugin preview, plugin host, and safe-mode notices now
+  use fixed, immediately visible panels with explicit back and dismiss handling.
+- **Picker presentation:** picker surfaces use consistent border widths and
+  clipping, and the collapsed expandable picker no longer draws a ripple,
+  keeping selection changes consistent with the reduced-motion interface.
+- **Repository links:** the in-app GitHub link, plugin catalog download URLs,
+  plugin examples link, and documentation site now point to
+  `Alaa91H/Dolphy-App`.
+
+### Fixed
+
+- Back navigation from the plugin preview and plugin host screens no longer
+  plays a sheet-dismissal animation or leaves an intermediate frame visible.
+- Back and outside-tap handling now dismiss the fixed plugin preview panel
+  consistently.
+- The safe-mode notice and plugin host sheet keep their content scrollable on
+  small screens while preserving navigation-bar insets.
+
+### Upgrade notes
+
+- **Version:** `versionName` 1.3.0, `versionCode` 30300.
+- No data migration is required. Settings, installed plugins, backups, and
+  plugin data remain compatible with 1.2.0.
+- Motion is disabled inside Dolphy only; system-wide animation settings are not
+  changed.
+
 ## [1.2.0] - 2026-11-04
 
 Dolphy 1.2.0 adds a complete, portable backup and restore workflow for all
@@ -301,6 +342,7 @@ private release signing, and a modern Android toolchain.
 - [`plugin-examples/README.md`](plugin-examples/README.md) — plugin catalog and
   example descriptions.
 
+[1.3.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.3.0
 [1.2.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.0.0
