@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-04
+
+Dolphy 1.4.1 is a focused maintenance release that restores reliable IR
+catalog refreshes from the **Flipper IRDB Sync** plugin. It preserves the
+existing catalog, plugin, and user-data format from 1.4.0.
+
+### Fixed
+
+- **Flipper IRDB Sync startup:** the plugin bridge now accepts Python bound
+  methods directly as `PyObject` callbacks for `irdbSync`. Starting a sync no
+  longer fails with `Cannot convert method object to
+  kotlin.jvm.functions.Function1`.
+- **Sync callback delivery:** progress events, completion notices, and errors
+  are delivered back to the installed plugin correctly, including the
+  already-up-to-date path.
+
+### Compatibility
+
+- Kotlin and JavaScript callers keep the existing `(String) -> Unit` callback
+  entry point; the new `PyObject` path is additive.
+- No plugin reinstall or data migration is required. Installed plugins,
+  settings, favorites, custom remotes, and backups remain compatible with
+  1.4.0.
+
+### Upgrade notes
+
+- **Version:** `versionName` 1.4.1, `versionCode` 30401.
+- Devices running 1.4.0 can update in place with the release-signed APK.
+
 ## [1.4.0] - 2026-11-04
 
 Dolphy 1.4.0 adds native SmartTV casting and makes the optional Flipper-IRDB
@@ -444,6 +473,7 @@ private release signing, and a modern Android toolchain.
 - [`plugin-examples/README.md`](plugin-examples/README.md) — plugin catalog and
   example descriptions.
 
+[1.4.1]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.4.1
 [1.4.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.4.0
 [1.3.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.3.0
 [1.2.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.2.0
