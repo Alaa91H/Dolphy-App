@@ -21,6 +21,8 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import com.droid.dolphy.IrCatalogSync
+import com.droid.dolphy.IrSyncOutcome
 import com.droid.dolphy.RootUtils
 import com.droid.dolphy.ShizukuHelper
 import com.droid.dolphy.plugin.PluginManager
@@ -37,6 +39,7 @@ import java.net.Socket
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import kotlinx.coroutines.runBlocking
 import android.bluetooth.le.ScanFilter
 import android.net.wifi.p2p.WifiP2pConfig
 import android.net.wifi.p2p.WifiP2pManager
@@ -518,6 +521,76 @@ class PluginDeviceApis(
         } catch (_: Exception) {
             "{}"
         }
+    }
+
+    fun irdbStatusJson(): String {
+        return try {
+            val metadata = IrCatalogSync.readMetadata(context)
+            JSONObject()
+                .put("ok", true)
+                .put("installed", IrCatalogSync.installedRoot(context) != null)
+                .put("fileCount", metadata?.fileCount ?: 0)
+                .put("bytes", metadata?.bytes ?: 0L)
+                .put("syncedAt", metadata?.syncedAt ?: 0L)
+                .toString()
+        } catch (e: Exception) {
+            JSONObject()
+                .put("ok", false)
+                .put("error", e.message ?: "status_failed")
+                .toString()
+        }
+    }
+
+    fun irdbSync(callback: (String) -> Unit): Boolean {
+        if (denied(PluginPermission.IRDB, callback)) return false
+        io.execute {
+            fun emit(payload: JSONObject) {
+                mainHandler.post { runCatching { callback(payload.toString()) } }
+            }
+            try {
+                val outcome = runBlocking {
+                    IrCatalogSync.sync(context) { progress ->
+                        val total = progress.totalBytes
+                        val fraction = if (total > 0L) {
+                            (progress.downloadedBytes.toDouble() / total.toDouble()).coerceIn(0.0, 1.0)
+                        } else {
+                            null
+                        }
+                        emit(
+                            JSONObject()
+                                .put("ok", true)
+                                .put("final", false)
+                                .put("phase", progress.phase.name.lowercase())
+                                .put("downloadedBytes", progress.downloadedBytes)
+                                .put("totalBytes", total)
+                                .put("extractedFiles", progress.extractedFiles)
+                                .put("progress", fraction ?: JSONObject.NULL)
+                        )
+                    }
+                }
+                val metadata = when (outcome) {
+                    is IrSyncOutcome.Updated -> outcome.metadata
+                    is IrSyncOutcome.UpToDate -> outcome.metadata
+                }
+                emit(
+                    JSONObject()
+                        .put("ok", true)
+                        .put("final", true)
+                        .put("upToDate", outcome is IrSyncOutcome.UpToDate)
+                        .put("fileCount", metadata.fileCount)
+                        .put("bytes", metadata.bytes)
+                        .put("syncedAt", metadata.syncedAt)
+                )
+            } catch (t: Throwable) {
+                emit(
+                    JSONObject()
+                        .put("ok", false)
+                        .put("final", true)
+                        .put("error", t.message ?: "sync_failed")
+                )
+            }
+        }
+        return true
     }
 
     fun irToggleStorm(): Boolean = try {

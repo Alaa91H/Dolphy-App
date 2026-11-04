@@ -118,6 +118,7 @@ class PluginFileBrowser(BasePlugin):
         self.selected = None
         self.preview = ""
         self.reload()
+        self.navigate("main")
 
     def share(self):
         target = str((self.selected or {}).get("path", ""))
@@ -212,6 +213,7 @@ class PluginFileBrowser(BasePlugin):
 
     def screen_file(self, ui, api, state):
         entry = self.selected or {}
+        confirm = self.pending_delete
         return ui.scaffold(
             title=str(entry.get("name", "File")),
             content=ui.lazy_column(
@@ -241,6 +243,15 @@ class PluginFileBrowser(BasePlugin):
                         ],
                         spacing=8,
                     ),
+                    ui.alert_dialog(
+                        bool(confirm),
+                        "Delete entry?",
+                        "Permanently delete " + str((confirm or {}).get("name", "")) + " from the plugin sandbox?",
+                        "Delete",
+                        "Cancel",
+                        self.delete_pending,
+                        self.cancel_delete,
+                    ),
                 ],
                 padding=16,
                 spacing=12,
@@ -248,8 +259,5 @@ class PluginFileBrowser(BasePlugin):
             ),
         )
 
-    def delete_callback(self):
-        def callback(value=None):
-            self.ask_delete(self.selected)
-
-        return callback
+    def delete_callback(self, value=None):
+        self.ask_delete(self.selected)

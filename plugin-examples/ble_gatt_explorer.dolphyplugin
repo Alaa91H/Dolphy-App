@@ -114,12 +114,13 @@ class BleGattExplorer(BasePlugin):
             return
         name = str(event.get("event", ""))
         if name == "connection":
-            state = int(event.get("state", 0))
-            if state == 2:
+            raw_state = event.get("state", 0)
+            state = str(raw_state).lower()
+            if raw_state == 2 or state == "connected":
                 self.connected = str(event.get("address", self.connected or ""))
                 self.status = "Connected"
                 self.discover()
-            elif state == 0:
+            elif raw_state == 0 or state == "disconnected":
                 self.connected = None
                 self.services = []
                 self.status = "Disconnected"
@@ -175,7 +176,7 @@ class BleGattExplorer(BasePlugin):
 
     def char_callback(self, service_uuid, characteristic_uuid):
         def callback(value=None):
-            self.enable_notifications(service_uuid, characteristic_uuid)
+            self.read_characteristic(service_uuid, characteristic_uuid)
 
         return callback
 
@@ -339,7 +340,7 @@ class BleGattExplorer(BasePlugin):
                             ui.row(
                                 [
                                     ui.button("Discover services", self.discover, enabled=connected, fill_max_width=False),
-                                    ui.button("Disconnect", self.disconnect, style="tonal", enabled=connected, fill_max_width=False),
+                                    ui.button("Disconnect", lambda: self.disconnect(), style="tonal", enabled=connected, fill_max_width=False),
                                 ],
                                 spacing=8,
                             ),

@@ -421,6 +421,25 @@
     <string name="ir_tv_remotes">أجهزة تحكم IR (تلفزيون)</string>
     <string name="ir_tv_short">تلفزيون</string>
     <string name="ir_universal_remotes">أجهزة التحكم العالمية</string>
+    <string name="ir_sync_title">قاعدة IR من GitHub</string>
+    <string name="ir_sync_description">نزّل أحدث نسخة من Flipper-IRDB مباشرةً. يُفضّل Wi-Fi.</string>
+    <string name="ir_sync_never">لم تُنزَّل نسخة محدثة بعد؛ تُستخدم القاعدة المدمجة.</string>
+    <string name="ir_sync_last">آخر مزامنة: %1$s • %2$d ملفاً</string>
+    <string name="ir_sync_action">مزامنة الآن</string>
+    <string name="ir_sync_updating">جارٍ المزامنة…</string>
+    <string name="ir_sync_checking">جارٍ التحقق من التحديث…</string>
+    <string name="ir_sync_downloading">جارٍ التنزيل: %1$s / %2$s</string>
+    <string name="ir_sync_downloading_unknown">جارٍ التنزيل: %1$s</string>
+    <string name="ir_sync_extracting">جارٍ فك الأرشيف: %1$d ملفاً</string>
+    <string name="ir_sync_installing">جارٍ تثبيت القاعدة…</string>
+    <string name="ir_sync_success">اكتملت المزامنة: %1$d جهاز تحكم</string>
+    <string name="ir_sync_up_to_date">القاعدة محدثة بالفعل</string>
+    <string name="ir_sync_failed">تعذّرت المزامنة: %1$s</string>
+    <string name="ir_sync_confirm_title">مزامنة قاعدة IR؟</string>
+    <string name="ir_sync_confirm_body">سيتم تنزيل أرشيف Flipper-IRDB من GitHub (عشرات الميغابايت) واستبدال النسخة المحلية. يُفضّل Wi-Fi، وأبقِ التطبيق مفتوحاً حتى تنتهي العملية.</string>
+    <string name="ir_sync_space_error">لا توجد مساحة كافية. يلزم نحو 300 ميغابايت فارغة.</string>
+    <string name="ir_sync_archive_error">أرشيف GitHub غير صالح أو فارغ.</string>
+    <string name="ir_sync_http_error">أعاد GitHub رمز الخطأ %1$d.</string>
     <string name="ir_user_remotes">أجهزة التحكم الخاصة بك</string>
     <string name="ir_user_remotes_title">أجهزة التحكم الخاصة بك</string>
 
@@ -643,6 +662,17 @@
     <string name="smarttv_cast_open_local_site">فتح الموقع المحلي</string>
     <string name="smarttv_cast_pick_video">اختر فيديو لإرساله إلى التلفزيون</string>
     <string name="smarttv_cast_title">بث SmartTV</string>
+    <string name="smarttv_cast_preparing">جارٍ تجهيز الفيديو…</string>
+    <string name="smarttv_cast_ready">جاهز للبث</string>
+    <string name="smarttv_cast_connecting">جارٍ الاتصال بـ%1$s…</string>
+    <string name="smarttv_cast_playing">يتم البث على %1$s</string>
+    <string name="smarttv_cast_failed">فشل البث: %1$s</string>
+    <string name="smarttv_cast_stopped">تم إيقاف البث</string>
+    <string name="smarttv_cast_stop">إيقاف</string>
+    <string name="smarttv_cast_refresh">تحديث البحث</string>
+    <string name="smarttv_cast_network_hint">وصّل الهاتف بنفس شبكة Wi-Fi التي يستخدمها التلفاز.</string>
+    <string name="smarttv_cast_no_network">لا يوجد اتصال Wi-Fi أو Ethernet.</string>
+    <string name="smarttv_cast_pick_failed">تعذّر فتح الملف المحدد.</string>
     <!-- Universal remotes -->
     <string name="universal_db_empty">القاعدة فارغة</string>
     <string name="universal_db_failed">لم تُحمّل القاعدة (راجع logcat UniversalRemotes)</string>
@@ -1169,6 +1199,7 @@
     <string name="plugin_capability_bluetooth">Bluetooth وBLE</string>
     <string name="plugin_capability_wifi">Wi‑Fi</string>
     <string name="plugin_capability_infrared">مرسل الأشعة تحت الحمراء</string>
+    <string name="plugin_capability_irdb">مزامنة قاعدة IR</string>
     <string name="plugin_capability_usb">USB وBAD HID</string>
     <string name="plugin_capability_root">Root</string>
     <string name="plugin_capability_shizuku">Shizuku</string>
@@ -1514,6 +1545,7 @@
     <string name="plugin_catalog_desc_integration_hooks">مثال تكامل يضيف زرًا عائمًا وخطّافًا لإرسال الأشعة تحت الحمراء داخل شاشات Dolphy.</string>
     <string name="plugin_catalog_desc_ble_asset_pack">وضع إعلان BLE مخصص وتنزيل ملفات الإضافة مع مراعاة الأذونات قبل التنزيل.</string>
     <string name="plugin_catalog_desc_ir_signal_lab">مختبر الأشعة تحت الحمراء: حالة الباعث والترددات الحاملة وإرسال أنماط نبضية خام.</string>
+    <string name="plugin_catalog_desc_irdb_sync">تنزيل قاعدة Flipper-IRDB من GitHub ومزامنتها مع أجهزة التحكم IR المدمجة.</string>
     <string name="plugin_catalog_desc_ble_gatt_explorer">الاتصال بأجهزة BLE الطرفية واستعراض الخدمات وقراءة خصائص GATT.</string>
     <string name="plugin_catalog_desc_ble_advert_lab">تركيب حزمة BLE مخصصة مع بيانات المُصنّع وبثّها.</string>
     <string name="plugin_catalog_desc_bt_classic_lab">الأجهزة المقترنة والاكتشاف الكلاسيكي وبطاقة تفاصيل كاملة للجهاز.</string>

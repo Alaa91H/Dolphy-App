@@ -1086,6 +1086,7 @@ class PluginAndroidApis(
                             JSONObject()
                                 .put("uuid", c.uuid.toString())
                                 .put("props", c.properties)
+                                .put("propsStr", charPropsStr(c.properties))
                         )
                     }
                     arr.put(JSONObject().put("uuid", s.uuid.toString()).put("characteristics", chars))

@@ -356,21 +356,23 @@ private fun PluginCapabilitySummary(capabilities: List<String>) {
 
 @Composable
 private fun capabilityLabel(id: String): String = stringResource(
-    when (id) {
-        "dex" -> R.string.plugin_capability_dex
-        "download" -> R.string.plugin_capability_download
-        "network" -> R.string.plugin_capability_network
-        "files" -> R.string.plugin_capability_files
-        "ble_spam" -> R.string.plugin_capability_ble_spam
-        "bluetooth" -> R.string.plugin_capability_bluetooth
-        "wifi" -> R.string.plugin_capability_wifi
-        "infrared" -> R.string.plugin_capability_infrared
-        "usb" -> R.string.plugin_capability_usb
-        "root" -> R.string.plugin_capability_root
-        "shizuku" -> R.string.plugin_capability_shizuku
-        "shell" -> R.string.plugin_capability_shell
-        else -> R.string.plugin_capability_hooks
-    },
+    capabilityLabelResources[id] ?: R.string.plugin_capability_hooks,
+)
+
+private val capabilityLabelResources: Map<String, Int> = mapOf(
+    "dex" to R.string.plugin_capability_dex,
+    "download" to R.string.plugin_capability_download,
+    "network" to R.string.plugin_capability_network,
+    "files" to R.string.plugin_capability_files,
+    "ble_spam" to R.string.plugin_capability_ble_spam,
+    "bluetooth" to R.string.plugin_capability_bluetooth,
+    "wifi" to R.string.plugin_capability_wifi,
+    "infrared" to R.string.plugin_capability_infrared,
+    "irdb" to R.string.plugin_capability_irdb,
+    "usb" to R.string.plugin_capability_usb,
+    "root" to R.string.plugin_capability_root,
+    "shizuku" to R.string.plugin_capability_shizuku,
+    "shell" to R.string.plugin_capability_shell,
 )
 
 @Composable

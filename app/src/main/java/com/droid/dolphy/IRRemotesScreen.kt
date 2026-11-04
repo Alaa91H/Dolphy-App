@@ -13,6 +13,8 @@ import android.os.Vibrator
 import android.provider.OpenableColumns
 import android.util.Log
 import java.io.File
+import java.io.IOException
+import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -73,6 +75,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -777,6 +780,10 @@ object IrRepository {
         }
 
         for (candidate in candidates) {
+            if (IrCatalogSync.localFile(context, candidate) != null) {
+                resolvedAssetCache[requestedPath] = candidate
+                return candidate
+            }
             try {
                 context.assets.open(candidate).close()
                 resolvedAssetCache[requestedPath] = candidate
@@ -829,7 +836,12 @@ object IrRepository {
             return emptyList()
         }
         val text = try {
-            context.assets.open(resolvedPath).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val syncedFile = IrCatalogSync.localFile(context, resolvedPath)
+            if (syncedFile != null) {
+                syncedFile.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            } else {
+                context.assets.open(resolvedPath).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            }
         } catch (e: Exception) {
             Log.e("IrRepository", "Failed to read asset $resolvedPath (requested $assetPath): ${e.message}")
             return emptyList()
@@ -881,33 +893,61 @@ object IrRepository {
     fun getFlipperIndex(context: Context): Map<String, Map<String, String>> {
         flIndexCache?.let { return it }
 
-        val cacheFile = java.io.File(context.filesDir, "ir_flipper_index_v1.txt")
-        if (cacheFile.isFile && cacheFile.length() > 64) {
-            try {
-                val result = mutableMapOf<String, MutableMap<String, String>>()
-                cacheFile.bufferedReader().useLines { lines ->
-                    lines.forEach { line ->
-                        val parts = line.split('\t')
-                        if (parts.size >= 3) {
-                            val catBrand = parts[0]
-                            val model = parts[1]
-                            val path = parts[2]
-                            result.getOrPut(catBrand) { mutableMapOf() }[model] = path
-                        }
-                    }
-                }
-                if (result.isNotEmpty()) {
-                    flIndexCache = result
-                    return result
-                }
-            } catch (e: Exception) {
-                Log.w("IrRepository", "IR index cache read failed: ${e.message}")
-            }
+        val token = IrCatalogSync.indexToken(context)
+        val cacheFile = java.io.File(context.filesDir, "ir_flipper_index_v2.txt")
+        readFlipperIndexCache(cacheFile, token)?.let {
+            flIndexCache = it
+            return it
         }
-        val base = "Flipper-IRDB-main"
-        val cats = listAssets(context, base)
+
+        val result = IrCatalogSync.installedRoot(context)?.let(::buildInstalledIndex)
+            ?: buildAssetIndex(context)
+        flIndexCache = result
+        writeFlipperIndexCache(cacheFile, token, result)
+        return result
+    }
+
+    private fun readFlipperIndexCache(
+        cacheFile: File,
+        token: String
+    ): Map<String, Map<String, String>>? {
+        if (!cacheFile.isFile || cacheFile.length() <= 64L) return null
+        return try {
+            val lines = cacheFile.readLines()
+            if (lines.firstOrNull() != "#$token") return null
+            val result = mutableMapOf<String, MutableMap<String, String>>()
+            for (line in lines.drop(1)) {
+                val parts = line.split('\t')
+                if (parts.size < 3) continue
+                result.getOrPut(parts[0]) { mutableMapOf() }[parts[1]] = parts[2]
+            }
+            result.takeIf { it.isNotEmpty() }
+        } catch (e: IOException) {
+            Log.w("IrRepository", "IR index cache read failed: ${e.message}")
+            null
+        }
+    }
+
+    private fun buildInstalledIndex(root: File): Map<String, Map<String, String>> {
+        val base = IrCatalogSync.CATALOG_DIR
         val result = mutableMapOf<String, MutableMap<String, String>>()
-        for (cat in cats) {
+        root.walkTopDown()
+            .filter { it.isFile && it.extension.equals("ir", ignoreCase = true) }
+            .forEach { file ->
+                val relative = file.relativeTo(root).invariantSeparatorsPath
+                val parts = relative.split('/')
+                if (parts.size < 3) return@forEach
+                val model = file.name.removeSuffix(".ir")
+                result.getOrPut("${parts[0]}/${parts[1]}") { mutableMapOf() }[model] =
+                    "$base/$relative"
+            }
+        return result
+    }
+
+    private fun buildAssetIndex(context: Context): Map<String, Map<String, String>> {
+        val base = IrCatalogSync.CATALOG_DIR
+        val result = mutableMapOf<String, MutableMap<String, String>>()
+        for (cat in listAssets(context, base)) {
             val brands = listAssets(context, "$base/$cat")
             for (brand in brands) {
                 val models = listAssets(context, "$base/$cat/$brand")
@@ -918,19 +958,39 @@ object IrRepository {
                 if (modelMap.isNotEmpty()) result["$cat/$brand"] = modelMap
             }
         }
-        flIndexCache = result
+        return result
+    }
+
+    private fun writeFlipperIndexCache(
+        cacheFile: File,
+        token: String,
+        result: Map<String, Map<String, String>>
+    ) {
         try {
-            cacheFile.bufferedWriter().use { w ->
+            cacheFile.bufferedWriter().use { writer ->
+                writer.append('#').append(token).append('\n')
                 for ((catBrand, models) in result) {
                     for ((model, path) in models) {
-                        w.append(catBrand).append('\t').append(model).append('\t').append(path).append('\n')
+                        writer.append(catBrand).append('\t')
+                            .append(model).append('\t')
+                            .append(path).append('\n')
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             Log.w("IrRepository", "IR index cache write failed: ${e.message}")
         }
-        return result
+    }
+
+    @Synchronized
+    fun invalidateFlipperCache(context: Context) {
+        flIndexCache = null
+        buttonsCache.clear()
+        resolvedAssetCache.clear()
+        runCatching {
+            java.io.File(context.filesDir, "ir_flipper_index_v1.txt").delete()
+            java.io.File(context.filesDir, "ir_flipper_index_v2.txt").delete()
+        }
     }
 
 
@@ -1184,8 +1244,9 @@ fun IRFlipperHome(navController: NavController) {
     var categories by remember { mutableStateOf<List<String>?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<FlipperSearchResult>>(emptyList()) }
+    var reloadToken by remember { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(reloadToken) {
         withContext(Dispatchers.IO) {
             categories = IrRepository.getFlipperIndex(context).keys
                 .map { it.substringBefore('/') }
@@ -1337,6 +1398,7 @@ fun IRFlipperHome(navController: NavController) {
             }
         }
     }
+
 }
 
 private data class FlipperSearchResult(

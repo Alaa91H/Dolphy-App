@@ -6,6 +6,7 @@ __version__ = "1.0.0"
 __author__ = "Dolphy"
 __description__ = "Bluetooth and Wi-Fi diagnostics"
 __icon__ = "filled:bluetooth_searching"
+__permissions__ = ["bluetooth", "wifi"]
 
 
 class RadioLab(BasePlugin):

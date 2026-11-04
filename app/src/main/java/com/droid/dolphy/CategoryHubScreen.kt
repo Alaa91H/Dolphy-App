@@ -899,7 +899,7 @@ private fun ViewModeSwitch(
             )
             IconToggleButton(
                 checked = viewMode == 0,
-                onCheckedChange = { if (!it) onViewModeChange() },
+                onCheckedChange = { if (it) onViewModeChange() },
                 modifier = Modifier.size(38.dp),
                 colors = colors,
                 shape = CircleShape,
@@ -912,7 +912,7 @@ private fun ViewModeSwitch(
             }
             IconToggleButton(
                 checked = viewMode == 1,
-                onCheckedChange = { if (!it) onViewModeChange() },
+                onCheckedChange = { if (it) onViewModeChange() },
                 modifier = Modifier.size(38.dp),
                 colors = colors,
                 shape = CircleShape,

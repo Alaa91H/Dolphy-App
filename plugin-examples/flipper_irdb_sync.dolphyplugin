@@ -1,0 +1,255 @@
+import datetime
+import json
+
+__id__ = "flipper_irdb_sync"
+__name__ = "Flipper IRDB Sync"
+__version__ = "1.0.0"
+__author__ = "Dolphy"
+__description__ = "Download and refresh the Flipper-IRDB catalog from GitHub"
+__icon__ = "rounded:settings_remote"
+__permissions__ = ["irdb"]
+
+
+class FlipperIrdbSync(BasePlugin):
+    def __init__(self):
+        super().__init__()
+        self.installed = False
+        self.file_count = 0
+        self.bytes = 0
+        self.synced_at = 0
+        self.syncing = False
+        self.progress = None
+        self.error = ""
+        self.notice = ""
+        self.show_confirm = False
+
+    def on_plugin_load(self):
+        self.add_module(
+            "Flipper IRDB Sync",
+            "Download and refresh the Flipper-IRDB catalog",
+            "ir",
+            "main",
+            "INFRARED",
+            5,
+        )
+        self.load_status()
+
+    def load_status(self):
+        try:
+            payload = json.loads(str(self.api.getDevice().irdbStatusJson()))
+        except Exception as error:
+            payload = {}
+            self.error = "Could not read the catalog status: " + str(error)
+        self.installed = bool(payload.get("installed"))
+        self.file_count = int(payload.get("fileCount", 0) or 0)
+        self.bytes = int(payload.get("bytes", 0) or 0)
+        self.synced_at = int(payload.get("syncedAt", 0) or 0)
+
+    def format_bytes(self, value):
+        try:
+            size = float(value)
+        except Exception:
+            return "0 B"
+        units = ["B", "KB", "MB", "GB"]
+        index = 0
+        while size >= 1024.0 and index < len(units) - 1:
+            size /= 1024.0
+            index += 1
+        if index == 0:
+            return str(int(size)) + " " + units[index]
+        return ("%.1f" % size) + " " + units[index]
+
+    def format_time(self, value):
+        try:
+            stamp = int(value)
+            if stamp <= 0:
+                return "Never"
+            return datetime.datetime.fromtimestamp(stamp / 1000.0).strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            return "Unknown"
+
+    def status_text(self):
+        if self.installed:
+            return "Online copy ready with " + str(self.file_count) + " IR files"
+        return "Using the built-in catalog; sync to download the latest copy"
+
+    def phase_text(self):
+        if not self.progress:
+            return "Checking GitHub…"
+        phase = str(self.progress.get("phase", ""))
+        downloaded = self.format_bytes(self.progress.get("downloadedBytes", 0))
+        total = self.format_bytes(self.progress.get("totalBytes", 0))
+        if phase == "checking":
+            return "Checking GitHub for updates…"
+        if phase == "downloading":
+            if int(self.progress.get("totalBytes", 0) or 0) > 0:
+                return "Downloading " + downloaded + " / " + total
+            return "Downloading " + downloaded
+        if phase == "extracting":
+            return "Extracting " + str(int(self.progress.get("extractedFiles", 0) or 0)) + " files…"
+        if phase == "installing":
+            return "Installing the catalog…"
+        if phase == "done":
+            return "Finishing…"
+        return "Working…"
+
+    def progress_fraction(self):
+        if not self.progress:
+            return None
+        try:
+            total = float(self.progress.get("totalBytes", 0) or 0)
+            downloaded = float(self.progress.get("downloadedBytes", 0) or 0)
+        except Exception:
+            return None
+        if total <= 0:
+            return None
+        return max(0.0, min(1.0, downloaded / total))
+
+    def ask_sync(self):
+        if self.syncing:
+            return
+        self.error = ""
+        self.notice = ""
+        self.show_confirm = True
+        self.refresh()
+
+    def dismiss_confirm(self):
+        self.show_confirm = False
+        self.refresh()
+
+    def start_sync(self):
+        if self.syncing:
+            return
+        self.show_confirm = False
+        self.error = ""
+        self.notice = ""
+        self.syncing = True
+        self.progress = {"phase": "checking"}
+        self.refresh()
+        try:
+            started = bool(self.api.getDevice().irdbSync(self.on_sync_event))
+        except Exception as error:
+            started = False
+            self.error = "Could not start the sync: " + str(error)
+        if not started:
+            self.syncing = False
+            self.progress = None
+            if not self.error:
+                self.error = "The IR database bridge is unavailable"
+            self.refresh()
+
+    def on_sync_event(self, raw):
+        try:
+            event = json.loads(str(raw))
+        except Exception:
+            event = {"ok": False, "error": "invalid_sync_response"}
+
+        if not event.get("ok"):
+            self.syncing = False
+            self.progress = None
+            error = str(event.get("error", "sync_failed"))
+            if error == "permission_denied":
+                error = "The IR database permission was not granted"
+            self.error = "Sync failed: " + error
+            self.refresh()
+            return
+
+        if event.get("final"):
+            self.syncing = False
+            self.progress = None
+            if event.get("upToDate"):
+                self.notice = "The catalog is already up to date"
+            else:
+                self.notice = "Synced " + str(int(event.get("fileCount", 0) or 0)) + " IR files"
+            self.load_status()
+            self.refresh()
+            return
+
+        self.progress = event
+        self.refresh()
+
+    def screen_main(self, ui, api, state):
+        nodes = [
+            ui.card(
+                [
+                    ui.row(
+                        [
+                            ui.icon("ir", 36),
+                            ui.column(
+                                [
+                                    ui.text("Flipper IRDB Sync", "titleLarge"),
+                                    ui.text("Lucaslhm/Flipper-IRDB · GitHub archive", "bodySmall"),
+                                ],
+                                spacing=2,
+                            ),
+                        ],
+                        spacing=12,
+                    ),
+                    ui.row(
+                        [
+                            ui.chip("Online copy" if self.installed else "Built-in catalog", self.installed),
+                            ui.chip("Wi-Fi recommended", False),
+                        ],
+                        spacing=6,
+                    ),
+                    ui.text(self.status_text(), "bodySmall"),
+                ]
+            )
+        ]
+
+        if self.syncing:
+            nodes.append(ui.linear_progress(self.progress_fraction()))
+            nodes.append(ui.text(self.phase_text(), "bodySmall"))
+        if self.error:
+            nodes.append(ui.text(self.error, "bodySmall", color="error"))
+        if self.notice:
+            nodes.append(ui.text(self.notice, "bodySmall", color="primary"))
+
+        nodes.extend(
+            [
+                ui.card(
+                    [
+                        ui.text("Catalog details", "titleMedium"),
+                        ui.settings_row("Source", "Lucaslhm/Flipper-IRDB", "link"),
+                        ui.settings_row("Last sync", self.format_time(self.synced_at), "schedule"),
+                        ui.settings_row("Files", str(self.file_count), "description"),
+                        ui.settings_row("Downloaded size", self.format_bytes(self.bytes), "storage"),
+                    ]
+                ),
+                ui.button(
+                    "Syncing…" if self.syncing else "Sync from GitHub",
+                    self.ask_sync,
+                    enabled=not self.syncing,
+                    fill_max_width=True,
+                ),
+                ui.button(
+                    "Open IR remotes",
+                    lambda: self.navigate_app("other/ir_flipper_home"),
+                    style="tonal",
+                    fill_max_width=True,
+                ),
+                ui.text(
+                    "The first sync downloads about 21 MB and replaces only the online copy. "
+                    "Your favorites and custom remotes are not changed.",
+                    "bodySmall",
+                ),
+            ]
+        )
+
+        nodes.append(
+            ui.alert_dialog(
+                self.show_confirm,
+                "Download the IR database?",
+                "Dolphy will download the Flipper-IRDB archive from GitHub and update the local catalog. "
+                "About 300 MB of free space is recommended. Keep the app open until it finishes.",
+                "Sync now",
+                "Cancel",
+                self.start_sync,
+                self.dismiss_confirm,
+            )
+        )
+
+        return ui.scaffold(
+            title="Flipper IRDB Sync",
+            content=ui.lazy_column(nodes, padding=16, spacing=12, fill_max_size=True),
+        )

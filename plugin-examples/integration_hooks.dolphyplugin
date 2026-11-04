@@ -4,6 +4,7 @@ __version__ = "1.0.0"
 __author__ = "Dolphy"
 __description__ = "Screen and action hook example"
 __icon__ = "rounded:extension"
+__permissions__ = ["hooks"]
 
 
 class IntegrationHooks(BasePlugin):

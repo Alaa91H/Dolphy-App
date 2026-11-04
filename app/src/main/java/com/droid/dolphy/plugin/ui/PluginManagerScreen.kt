@@ -602,21 +602,23 @@ private fun permissionSummary(ids: List<String>): String {
 }
 
 @StringRes
-private fun permissionLabelRes(id: String): Int? = when (id.lowercase()) {
-    "wifi" -> R.string.plugin_capability_wifi
-    "bluetooth" -> R.string.plugin_capability_bluetooth
-    "ble_spam" -> R.string.plugin_capability_ble_spam
-    "dex" -> R.string.plugin_capability_dex
-    "download" -> R.string.plugin_capability_download
-    "files" -> R.string.plugin_capability_files
-    "infrared" -> R.string.plugin_capability_infrared
-    "network" -> R.string.plugin_capability_network
-    "usb" -> R.string.plugin_capability_usb
-    "root" -> R.string.plugin_capability_root
-    "shizuku" -> R.string.plugin_capability_shizuku
-    "shell" -> R.string.plugin_capability_shell
-    else -> null
-}
+private fun permissionLabelRes(id: String): Int? = permissionLabelResources[id.lowercase()]
+
+private val permissionLabelResources: Map<String, Int> = mapOf(
+    "wifi" to R.string.plugin_capability_wifi,
+    "bluetooth" to R.string.plugin_capability_bluetooth,
+    "ble_spam" to R.string.plugin_capability_ble_spam,
+    "dex" to R.string.plugin_capability_dex,
+    "download" to R.string.plugin_capability_download,
+    "files" to R.string.plugin_capability_files,
+    "infrared" to R.string.plugin_capability_infrared,
+    "irdb" to R.string.plugin_capability_irdb,
+    "network" to R.string.plugin_capability_network,
+    "usb" to R.string.plugin_capability_usb,
+    "root" to R.string.plugin_capability_root,
+    "shizuku" to R.string.plugin_capability_shizuku,
+    "shell" to R.string.plugin_capability_shell,
+)
 
 private fun formatSize(bytes: Long): String = when {
     bytes >= 1024 * 1024 -> String.format(java.util.Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))

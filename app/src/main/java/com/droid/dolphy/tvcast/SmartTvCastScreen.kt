@@ -1,17 +1,14 @@
-// NsdManager.resolveService/host are deprecated on API 34+, but their replacements
-// require API 34 while this app targets minSdk 26.
-@file:Suppress("DEPRECATION")
-
 package com.droid.dolphy.tvcast
 
-import com.droid.dolphy.DolphyIconButton
-
 import android.content.Context
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,26 +20,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cast
-import androidx.compose.material.icons.filled.VideoFile
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -57,120 +51,41 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.net.toUri
+import androidx.core.content.FileProvider
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavController
+import com.droid.dolphy.AccentButton
+import com.droid.dolphy.DolphyIconButton
 import com.droid.dolphy.MaterialBackground
 import com.droid.dolphy.R
 import com.droid.dolphy.SectionTopBar
-import fi.iki.elonen.NanoHTTPD
 import java.io.File
-import java.io.FileInputStream
-import com.droid.dolphy.core.security.LocalHttpPolicy
-import java.net.InetAddress
-import java.net.NetworkInterface
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-data class CastDevice(
-    val name: String,
-    val host: String,
-    val port: Int,
-    val type: CastType,
-    val serviceInfo: NsdServiceInfo? = null
-)
-
-enum class CastType {
-    CHROMECAST,
-    GOOGLE_CAST,
-    DIAL,
-    DLNA,
-    UPNP,
-    UNKNOWN
-}
-
-class VideoHttpServer(
-    private val videoFile: File,
-    port: Int = 8080,
-) : NanoHTTPD(port) {
-
-    private val mime: String = when (videoFile.extension.lowercase()) {
-        "mp4", "m4v" -> "video/mp4"
-        "webm" -> "video/webm"
-        "mkv" -> "video/x-matroska"
-        "avi" -> "video/x-msvideo"
-        "mov" -> "video/quicktime"
-        "jpg", "jpeg" -> "image/jpeg"
-        "png" -> "image/png"
-        "gif" -> "image/gif"
-        "webp" -> "image/webp"
-        else -> "video/mp4"
-    }
-
-    override fun serve(session: IHTTPSession): Response {
-        val uri = session.uri ?: "/"
-        if (uri == "/" || uri == "/index.html" || uri == "/play") {
-            val html = """
-                <!DOCTYPE html><html><head><meta charset="utf-8"/>
-                <meta name="viewport" content="width=device-width,initial-scale=1"/>
-                <title>Dolphy Cast</title>
-                <style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh}
-                video,img{max-width:100%;max-height:100vh}</style></head><body>
-                ${if (mime.startsWith("image/")) "<img src='/video' autoplay/>"
-                else "<video src='/video' controls autoplay playsinline></video>"}
-                </body></html>
-            """.trimIndent()
-            return newFixedLengthResponse(Response.Status.OK, "text/html", html).apply {
-                addHeader("Access-Control-Allow-Origin", "*")
-            }
-        }
-
-        val videoLength = videoFile.length()
-        val rangeHeader = session.headers["range"] ?: session.headers["Range"]
-        if (rangeHeader != null) {
-            val rangeValues = rangeHeader.replace("bytes=", "", ignoreCase = true).split("-")
-            val rangeStart = rangeValues[0].toLongOrNull() ?: 0L
-            val rangeEnd = rangeValues.getOrNull(1)?.toLongOrNull() ?: (videoLength - 1)
-            val contentLength = (rangeEnd - rangeStart + 1).coerceAtLeast(0)
-
-            val stream = FileInputStream(videoFile).apply { skip(rangeStart) }
-            return newFixedLengthResponse(
-                Response.Status.PARTIAL_CONTENT,
-                mime,
-                stream,
-                contentLength,
-            ).apply {
-                addHeader("Content-Range", "bytes $rangeStart-$rangeEnd/$videoLength")
-                addHeader("Accept-Ranges", "bytes")
-                addHeader("Access-Control-Allow-Origin", "*")
-                addHeader("Content-Type", mime)
-            }
-        }
-
-        return newFixedLengthResponse(
-            Response.Status.OK,
-            mime,
-            FileInputStream(videoFile),
-            videoLength,
-        ).apply {
-            addHeader("Accept-Ranges", "bytes")
-            addHeader("Access-Control-Allow-Origin", "*")
-            addHeader("Content-Type", mime)
-            addHeader("Content-Length", videoLength.toString())
-        }
-    }
+private sealed interface CastUiStatus {
+    data object Idle : CastUiStatus
+    data object Preparing : CastUiStatus
+    data object Ready : CastUiStatus
+    data object Stopped : CastUiStatus
+    data class Connecting(val name: String) : CastUiStatus
+    data class Playing(val name: String) : CastUiStatus
+    data class Error(val message: String) : CastUiStatus
 }
 
 @Composable
@@ -178,203 +93,187 @@ fun SmartTvCastScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var selectedVideo by remember { mutableStateOf<File?>(null) }
-    var server by remember { mutableStateOf<VideoHttpServer?>(null) }
-    var serverUrl by remember { mutableStateOf<String?>(null) }
-    var isPlaying by remember { mutableStateOf(false) }
+    var prepared by remember { mutableStateOf<PreparedVideo?>(null) }
+    var server by remember { mutableStateOf<CastVideoServer?>(null) }
+    var videoUrl by remember { mutableStateOf<String?>(null) }
+    var pageUrl by remember { mutableStateOf<String?>(null) }
+    var isPreparing by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<CastUiStatus>(CastUiStatus.Idle) }
+    var activeSession by remember { mutableStateOf<CastSession?>(null) }
+    var activeDeviceId by remember { mutableStateOf<String?>(null) }
+    var castJob by remember { mutableStateOf<Job?>(null) }
 
     val devices = remember { mutableStateListOf<CastDevice>() }
     var isScanning by remember { mutableStateOf(false) }
+    var discoveryError by remember { mutableStateOf<String?>(null) }
 
-    val nsdManager = remember { context.getSystemService(Context.NSD_SERVICE) as? NsdManager }
-    var discoveryListener by remember { mutableStateOf<NsdManager.DiscoveryListener?>(null) }
+    val discovery = remember(context) {
+        CastDiscovery(
+            context = context,
+            onDevice = { device ->
+                val index = devices.indexOfFirst { it.id == device.id }
+                if (index >= 0) devices[index] = device else devices.add(device)
+            },
+            onDeviceLost = { id -> devices.removeAll { it.id == id } },
+            onScanning = { isScanning = it },
+            onError = { discoveryError = it },
+        )
+    }
 
-    fun getLocalIpAddress(): String {
-        return try {
-            val interfaces = NetworkInterface.getNetworkInterfaces()
-            while (interfaces.hasMoreElements()) {
-                val networkInterface = interfaces.nextElement()
-                val addresses = networkInterface.inetAddresses
-                while (addresses.hasMoreElements()) {
-                    val address = addresses.nextElement()
-                    if (!address.isLoopbackAddress && address.hostAddress?.contains(":") != true) {
-                        return address.hostAddress ?: "0.0.0.0"
-                    }
-                }
+    fun refreshDevices() {
+        devices.clear()
+        discoveryError = null
+        discovery.restart()
+    }
+
+    fun stopSession(stopServer: Boolean, markStopped: Boolean) {
+        castJob?.cancel()
+        castJob = null
+        val session = activeSession
+        activeSession = null
+        activeDeviceId = null
+        if (session != null) {
+            scope.launch(Dispatchers.IO) {
+                session.stop()
+                session.close()
             }
-            "0.0.0.0"
-        } catch (e: Exception) {
-            "0.0.0.0"
+        }
+        if (stopServer) {
+            server?.stop()
+            server = null
+            videoUrl = null
+            pageUrl = null
+        }
+        status = when {
+            markStopped -> CastUiStatus.Stopped
+            stopServer && prepared == null -> CastUiStatus.Idle
+            else -> CastUiStatus.Ready
         }
     }
 
-    fun stopServer() {
-        server?.stop()
-        server = null
-        serverUrl = null
-        isPlaying = false
+    fun clearVideo() {
+        stopSession(stopServer = true, markStopped = false)
+        prepared?.file?.delete()
+        prepared = null
+        status = CastUiStatus.Idle
     }
 
-    fun startServer(videoFile: File) {
-        try {
-            stopServer()
-            val newServer = VideoHttpServer(videoFile, 8080)
-            newServer.start()
-            server = newServer
-            val ip = getLocalIpAddress()
-            serverUrl = "http://$ip:8080/video"
-            isPlaying = true
-            Log.i("SmartTvCast", "Server up: $serverUrl  (html http://$ip:8080/play)")
-        } catch (e: Exception) {
-            Log.e("SmartTvCast", "Failed to start server", e)
-        }
-    }
-
-    fun startDiscovery() {
-        if (isScanning) return
-        isScanning = true
-
-        val listener = object : NsdManager.DiscoveryListener {
-            override fun onDiscoveryStarted(serviceType: String) {
-                Log.d("SmartTvCast", "Discovery started: $serviceType")
-            }
-
-            override fun onDiscoveryStopped(serviceType: String) {
-                Log.d("SmartTvCast", "Discovery stopped: $serviceType")
-            }
-
-            override fun onServiceFound(serviceInfo: NsdServiceInfo) {
-                Log.d("SmartTvCast", "Service found: ${serviceInfo.serviceName}")
-
-                val type = when {
-                    serviceInfo.serviceType.contains("_googlecast") -> CastType.CHROMECAST
-                    serviceInfo.serviceType.contains("_dial") -> CastType.DIAL
-                    serviceInfo.serviceType.contains("_dlna") -> CastType.DLNA
-                    serviceInfo.serviceType.contains("_upnp") -> CastType.UPNP
-                    else -> CastType.UNKNOWN
-                }
-
-
-                nsdManager?.resolveService(serviceInfo, object : NsdManager.ResolveListener {
-                    override fun onResolveFailed(si: NsdServiceInfo?, errorCode: Int) {
-                        Log.w("SmartTvCast", "Resolve failed: ${si?.serviceName} error=$errorCode")
-                    }
-                    override fun onServiceResolved(si: NsdServiceInfo) {
-                        val host = si.host?.hostAddress ?: return
-                        val device = CastDevice(
-                            name = si.serviceName,
-                            host = host,
-                            port = si.port,
-                            type = type,
-                            serviceInfo = si
-                        )
-                        if (devices.none { it.host == device.host && it.name == device.name }) {
-                            devices.add(device)
-                            Log.d("SmartTvCast", "Resolved device: ${device.name} @ ${device.host}:${device.port}")
-                        }
-                    }
-                })
-            }
-
-            override fun onServiceLost(serviceInfo: NsdServiceInfo) {
-                Log.d("SmartTvCast", "Service lost: ${serviceInfo.serviceName}")
-                devices.removeAll { it.serviceInfo == serviceInfo }
-            }
-
-            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e("SmartTvCast", "Discovery start failed: $errorCode")
-                isScanning = false
-            }
-
-            override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                Log.e("SmartTvCast", "Discovery stop failed: $errorCode")
-                isScanning = false
-            }
-        }
-
-        discoveryListener = listener
-
-        nsdManager?.let { ndm ->
-            try {
-                ndm.discoverServices("_googlecast._tcp", NsdManager.PROTOCOL_DNS_SD, listener)
-            } catch (e: Exception) {
-                Log.e("SmartTvCast", "Failed to discover _googlecast", e)
-            }
-
-            try {
-                ndm.discoverServices("_dial._tcp", NsdManager.PROTOCOL_DNS_SD, listener)
-            } catch (e: Exception) {
-                Log.e("SmartTvCast", "Failed to discover _dial", e)
-            }
-        }
-    }
-
-    fun stopDiscovery() {
-        nsdManager?.let { ndm ->
-            discoveryListener?.let {
+    suspend fun startServerFor(video: PreparedVideo) {
+        isPreparing = true
+        status = CastUiStatus.Preparing
+        val setup = withContext(Dispatchers.IO) {
+            runCatching {
+                val ip = CastNetwork.localIpv4(context)
+                    ?: throw IllegalStateException(context.getString(R.string.smarttv_cast_no_network))
+                val newServer = CastVideoServer(video.file, video.mimeType, video.displayName)
                 try {
-                    ndm.stopServiceDiscovery(it)
-                } catch (e: Exception) {
-                    Log.e("SmartTvCast", "Failed to stop discovery", e)
+                    newServer.start()
+                    ServerSetup(
+                        server = newServer,
+                        videoUrl = newServer.playbackUrl(ip),
+                        pageUrl = newServer.pageUrl(ip),
+                    )
+                } catch (error: IOException) {
+                    newServer.stop()
+                    throw error
                 }
             }
         }
-        isScanning = false
-    }
-
-    fun castToDevice(device: CastDevice) {
-        val url = serverUrl
-        if (url == null) {
-            Log.e("SmartTvCast", "castToDevice: no serverUrl — pick a file first")
-            return
-        }
-        scope.launch(Dispatchers.IO) {
-            Log.i("SmartTvCast", "Casting $url → ${device.name} (${device.type}) ${device.host}:${device.port}")
-            sendCastRequest(device, url)
+        setup.onSuccess { value ->
+            server = value.server
+            videoUrl = value.videoUrl
+            pageUrl = value.pageUrl
+            status = CastUiStatus.Ready
+            isPreparing = false
+        }.onFailure { error ->
+            Log.w(TAG, "Could not start cast server", error)
+            status = CastUiStatus.Error(error.message ?: "Could not serve the selected video")
+            isPreparing = false
         }
     }
 
-    fun copyUriToTempFile(context: Context, uri: android.net.Uri): File? {
-        return try {
-            val tempFile = File(context.cacheDir, "video_${System.currentTimeMillis()}.mp4")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                tempFile.outputStream().use { output ->
-                    input.copyTo(output)
+    fun selectVideo(uri: Uri) {
+        if (isPreparing) return
+        scope.launch {
+            isPreparing = true
+            status = CastUiStatus.Preparing
+            val result = withContext(Dispatchers.IO) {
+                runCatching { prepareVideo(context, uri) }
+            }
+            val video = result.getOrNull()
+            if (video == null) {
+                status = CastUiStatus.Error(context.getString(R.string.smarttv_cast_pick_failed))
+                isPreparing = false
+                return@launch
+            }
+            val previous = prepared
+            stopSession(stopServer = true, markStopped = false)
+            previous?.file?.delete()
+            prepared = video
+            startServerFor(video)
+        }
+    }
+
+    fun castTo(device: CastDevice) {
+        val url = videoUrl ?: return
+        val video = prepared ?: return
+        if (activeDeviceId != null) return
+        activeSession?.close()
+        activeSession = null
+        castJob = scope.launch {
+            status = CastUiStatus.Connecting(device.name)
+            activeDeviceId = device.id
+            val result = withContext(Dispatchers.IO) {
+                CastClients.play(device, url, video.mimeType, video.displayName)
+            }
+            when (result) {
+                is CastOutcome.Success -> {
+                    activeSession = result.session
+                    status = CastUiStatus.Playing(device.name)
+                }
+                is CastOutcome.Failure -> {
+                    activeDeviceId = null
+                    status = CastUiStatus.Error(result.detail)
                 }
             }
-            tempFile
-        } catch (e: Exception) {
-            Log.e("SmartTvCast", "Error copying file: ${e.message}")
-            null
+            castJob = null
         }
     }
-
 
     val videoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: android.net.Uri? ->
-        uri?.let {
-            scope.launch {
-                val file = copyUriToTempFile(context, it)
-                if (file != null) {
-                    selectedVideo = file
-                    startServer(file)
-                } else {
-                    Log.e("SmartTvCast", "Failed to copy video file")
-                }
-            }
-        }
-    }
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri -> uri?.let(::selectVideo) }
 
     LaunchedEffect(Unit) {
-        startDiscovery()
+        if (CastNetwork.localIpv4(context) == null) {
+            status = CastUiStatus.Error(context.getString(R.string.smarttv_cast_no_network))
+        }
+        discovery.start()
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            stopServer()
-            stopDiscovery()
+            discovery.stop()
+            castJob?.cancel()
+            activeSession?.let { session ->
+                Thread {
+                    runCatching { session.stop() }
+                    session.close()
+                }.start()
+            }
+            server?.stop()
+            prepared?.file?.delete()
         }
+    }
+
+    val statusText = when (val current = status) {
+        CastUiStatus.Idle -> null
+        CastUiStatus.Preparing -> stringResource(R.string.smarttv_cast_preparing)
+        CastUiStatus.Ready -> stringResource(R.string.smarttv_cast_ready)
+        CastUiStatus.Stopped -> stringResource(R.string.smarttv_cast_stopped)
+        is CastUiStatus.Connecting -> stringResource(R.string.smarttv_cast_connecting, current.name)
+        is CastUiStatus.Playing -> stringResource(R.string.smarttv_cast_playing, current.name)
+        is CastUiStatus.Error -> stringResource(R.string.smarttv_cast_failed, current.message)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -393,203 +292,272 @@ fun SmartTvCastScreen(navController: NavController) {
                         .navigationBarsPadding()
                         .padding(horizontal = 16.dp)
                         .padding(top = 8.dp, bottom = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                Text(
-                    text = stringResource(R.string.smarttv_cast_pick_video),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh
-                ) {
-                    if (selectedVideo == null) {
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable {
-                                    videoPickerLauncher.launch("*/*")
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    Icons.Filled.Add,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(48.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = stringResource(R.string.smarttv_cast_choose_video),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    } else {
-
-                        val videoUri = remember(selectedVideo) { selectedVideo?.let { androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".provider", it) } }
-                        val previewPlayer = remember(videoUri) {
-                            videoUri?.let { uri ->
-                                ExoPlayer.Builder(context).build().apply {
-                                    setMediaItem(MediaItem.fromUri(uri))
-                                    repeatMode = Player.REPEAT_MODE_ALL
-                                    volume = 0f
-                                    trackSelectionParameters = trackSelectionParameters
-                                        .buildUpon()
-                                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
-                                        .build()
-                                    playWhenReady = true
-                                    prepare()
-                                }
-                            }
-                        }
-
-                        DisposableEffect(previewPlayer) {
-                            onDispose {
-                                previewPlayer?.release()
-                            }
-                        }
-
-                        Box(modifier = Modifier.fillMaxSize()) {
-
-                            if (previewPlayer != null) {
-                                AndroidView(
-                                    factory = { ctx ->
-                                        androidx.media3.ui.PlayerView(ctx).apply {
-                                            useController = false
-                                            keepScreenOn = true
-                                            player = previewPlayer
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxSize(),
-                                    update = { playerView ->
-                                        playerView.player = previewPlayer
-                                        previewPlayer.let { player ->
-                                            if (!player.isPlaying) {
-                                                player.prepare()
-                                                player.play()
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-
-
-                            DolphyIconButton(
-                                onClick = {
-                                    stopServer()
-                                    selectedVideo?.delete()
-                                    selectedVideo = null
-                                },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(8.dp)
-                                    .background(
-                                        Color.Black.copy(alpha = 0.6f),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                            ) {
-                                Icon(
-                                    Icons.Filled.Close,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-
-                if (selectedVideo != null && serverUrl != null) {
-                    com.droid.dolphy.AccentButton(
-                        onClick = {
-
-                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(serverUrl))
-                            context.startActivity(intent)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Filled.Language, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.smarttv_cast_open_local_site))
-                    }
-                }
-
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.smarttv_cast_devices, devices.size),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = stringResource(R.string.smarttv_cast_pick_video),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
-                    if (isScanning) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(devices, key = { it.host + it.name }) { device ->
-                        CastDeviceRow(
-                            device = device,
-                            onCastClick = { castToDevice(device) },
-                            canCast = isPlaying && serverUrl != null
-                        )
-                    }
-
-                    if (devices.isEmpty()) {
-                        item {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ) {
+                        if (prepared == null) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 32.dp),
-                                contentAlignment = Alignment.Center
+                                    .fillMaxSize()
+                                    .clickable { videoPickerLauncher.launch("*/*") },
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
                                     Icon(
-                                        Icons.Filled.Cast,
+                                        Icons.Filled.Add,
                                         contentDescription = null,
                                         modifier = Modifier.size(48.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = MaterialTheme.colorScheme.primary,
                                     )
                                     Text(
-                                        text = stringResource(R.string.smarttv_cast_no_devices),
+                                        text = stringResource(R.string.smarttv_cast_choose_video),
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.primary,
                                     )
                                 }
+                            }
+                        } else {
+                            CastPreview(
+                                context = context,
+                                video = prepared!!,
+                                onClose = ::clearVideo,
+                            )
+                        }
+                    }
+
+                    if (pageUrl != null && prepared != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            AccentButton(
+                                onClick = {
+                                    pageUrl?.let { url ->
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_VIEW, Uri.parse(url)),
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Icon(Icons.Filled.Language, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.smarttv_cast_open_local_site))
+                            }
+                            FilledTonalButton(onClick = { stopSession(stopServer = false, markStopped = true) }) {
+                                Icon(Icons.Filled.Stop, contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(stringResource(R.string.smarttv_cast_stop))
+                            }
+                        }
+                    }
+
+                    statusText?.let { text ->
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        ) {
+                            Text(
+                                text = text,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.smarttv_cast_devices, devices.size),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (isScanning) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            }
+                            DolphyIconButton(onClick = ::refreshDevices) {
+                                Icon(
+                                    Icons.Filled.Refresh,
+                                    contentDescription = stringResource(R.string.smarttv_cast_refresh),
+                                )
+                            }
+                        }
+                    }
+
+                    discoveryError?.let { error ->
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentPadding = PaddingValues(bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        items(devices, key = { it.id }) { device ->
+                            CastDeviceRow(
+                                device = device,
+                                isBusy = activeDeviceId == device.id,
+                                canCast = videoUrl != null && !isPreparing && activeDeviceId == null,
+                                onCastClick = { castTo(device) },
+                            )
+                        }
+
+                        if (devices.isEmpty()) {
+                            item {
+                                EmptyDevices(isScanning = isScanning)
                             }
                         }
                     }
                 }
-                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CastPreview(
+    context: Context,
+    video: PreparedVideo,
+    onClose: () -> Unit,
+) {
+    val isImage = video.mimeType.startsWith("image/")
+    val bitmap = remember(video) {
+        if (isImage) runCatching { BitmapFactory.decodeFile(video.file.absolutePath) }.getOrNull()
+        else null
+    }
+    val player = remember(video) {
+        if (isImage) null else {
+            val uri = FileProvider.getUriForFile(
+                context,
+                context.packageName + ".provider",
+                video.file,
+            )
+            ExoPlayer.Builder(context).build().apply {
+                setMediaItem(MediaItem.fromUri(uri))
+                repeatMode = Player.REPEAT_MODE_ALL
+                volume = 0f
+                trackSelectionParameters = trackSelectionParameters
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
+                    .build()
+                playWhenReady = true
+                prepare()
+            }
+        }
+    }
+
+    DisposableEffect(player) {
+        onDispose { player?.release() }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = video.displayName,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+            )
+        } else if (player != null) {
+            AndroidView(
+                factory = { viewContext ->
+                    androidx.media3.ui.PlayerView(viewContext).apply {
+                        useController = false
+                        keepScreenOn = true
+                        this.player = player
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+                update = { playerView ->
+                    playerView.player = player
+                    if (!player.isPlaying) {
+                        player.prepare()
+                        player.play()
+                    }
+                },
+            )
+        }
+
+        DolphyIconButton(
+            onClick = onClose,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
+                .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp)),
+        ) {
+            Icon(
+                Icons.Filled.Close,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyDevices(isScanning: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                Icons.Filled.Cast,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.smarttv_cast_no_devices),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (!isScanning) {
+                Text(
+                    text = stringResource(R.string.smarttv_cast_network_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -598,19 +566,20 @@ fun SmartTvCastScreen(navController: NavController) {
 @Composable
 private fun CastDeviceRow(
     device: CastDevice,
+    isBusy: Boolean,
+    canCast: Boolean,
     onCastClick: () -> Unit,
-    canCast: Boolean
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -619,257 +588,128 @@ private fun CastDeviceRow(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "${device.type} • ${device.host}:${device.port}",
+                    text = "${device.protocol.label} • ${device.endpointLabel}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                device.model?.takeIf { it.isNotBlank() }?.let { model ->
+                    Text(
+                        text = model,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
 
-            DolphyIconButton(
-                onClick = onCastClick,
-                enabled = canCast
-            ) {
-                Icon(
-                    Icons.Filled.Cast,
-                    contentDescription = null,
-                    tint = if (canCast) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+            if (isBusy) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(24.dp),
+                    strokeWidth = 2.dp,
                 )
-            }
-        }
-    }
-}
-
-private fun sendCastRequest(device: CastDevice, videoUrl: String) {
-    kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
-        try {
-            when (device.type) {
-                CastType.DIAL -> sendDialRequest(device, videoUrl)
-                CastType.DLNA -> sendDlnaRequest(device, videoUrl)
-                CastType.CHROMECAST, CastType.GOOGLE_CAST -> sendGoogleCastRequest(device, videoUrl)
-                else -> sendGenericCastRequest(device, videoUrl)
-            }
-        } catch (e: Exception) {
-            Log.e("SmartTvCast", "Failed to send cast request: ${e.message}", e)
-        }
-    }
-}
-
-private fun sendDialRequest(device: CastDevice, videoUrl: String) {
-    try {
-
-        val launchUrl = "http://${device.host}:${device.port}/apps/YouTube"
-        val connection = LocalHttpPolicy.requireLocal(launchUrl).openConnection() as java.net.HttpURLConnection
-        connection.requestMethod = "POST"
-        connection.setRequestProperty("Content-Type", "text/plain")
-        connection.doOutput = true
-        connection.connectTimeout = 5000
-        connection.readTimeout = 5000
-
-
-        connection.outputStream.use { os ->
-            os.write(videoUrl.toByteArray())
-        }
-
-        val responseCode = connection.responseCode
-        Log.d("SmartTvCast", "DIAL response: $responseCode")
-
-        if (responseCode == 201 || responseCode == 200) {
-
-            val instanceUrl = connection.getHeaderField("Location")
-            if (instanceUrl != null) {
-
-                val playConnection = LocalHttpPolicy.requireLocal(instanceUrl).openConnection() as java.net.HttpURLConnection
-                playConnection.requestMethod = "POST"
-                playConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-                playConnection.doOutput = true
-                playConnection.connectTimeout = 5000
-                playConnection.readTimeout = 5000
-
-                val playData = "v=$videoUrl"
-                playConnection.outputStream.use { os ->
-                    os.write(playData.toByteArray())
+            } else {
+                DolphyIconButton(
+                    onClick = onCastClick,
+                    enabled = canCast,
+                ) {
+                    Icon(
+                        Icons.Filled.Cast,
+                        contentDescription = null,
+                        tint = if (canCast) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
                 }
-
-                val playResponse = playConnection.responseCode
-                Log.d("SmartTvCast", "DIAL play response: $playResponse")
-                playConnection.disconnect()
             }
         }
-        connection.disconnect()
-    } catch (e: Exception) {
-        Log.e("SmartTvCast", "DIAL request failed: ${e.message}", e)
     }
 }
 
-private fun sendDlnaRequest(device: CastDevice, videoUrl: String) {
-    val controlPaths = listOf(
-        "/upnp/control/AVTransport1",
-        "/AVTransport/control",
-        "/MediaRenderer/AVTransport/Control",
-        "/_urn:schemas-upnp-org:service:AVTransport_control",
-        "/dmr/AVTransport/control",
-        "/control/AVTransport1",
-        "/AVTransport1/ctrl",
-    )
-    val meta = buildDlnaMetaData(videoUrl)
-    val escapedUri = videoUrl
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
+private fun prepareVideo(context: Context, uri: Uri): PreparedVideo? {
+    val metadata = readVideoMetadata(context, uri) ?: return null
+    val file = copyVideoToCache(context, uri, metadata) ?: return null
+    return PreparedVideo(file, metadata.mimeType, metadata.displayName)
+}
 
-    for (path in controlPaths) {
-        try {
-            val soapUrl = "http://${device.host}:${device.port}$path"
-            val setOk = dlnaSoap(
-                soapUrl,
-                "urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI",
-                """
-                <u:SetAVTransportURI xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
-                  <InstanceID>0</InstanceID>
-                  <CurrentURI>$escapedUri</CurrentURI>
-                  <CurrentURIMetaData>$meta</CurrentURIMetaData>
-                </u:SetAVTransportURI>
-                """.trimIndent(),
-            )
-            Log.d("SmartTvCast", "DLNA SetURI $path → $setOk")
-            if (setOk !in 200..299 && setOk != 0) continue
-
-            val playOk = dlnaSoap(
-                soapUrl,
-                "urn:schemas-upnp-org:service:AVTransport:1#Play",
-                """
-                <u:Play xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
-                  <InstanceID>0</InstanceID>
-                  <Speed>1</Speed>
-                </u:Play>
-                """.trimIndent(),
-            )
-            Log.d("SmartTvCast", "DLNA Play $path → $playOk")
-            if (playOk in 200..299) return
-        } catch (e: Exception) {
-            Log.w("SmartTvCast", "DLNA path $path failed: ${e.message}")
+private fun readVideoMetadata(context: Context, uri: Uri): VideoMetadata? {
+    val resolver = context.contentResolver
+    val mimeType = try {
+        resolver.getType(uri) ?: "video/mp4"
+    } catch (error: SecurityException) {
+        Log.w(TAG, "Unable to inspect selected MIME type", error)
+        return null
+    }
+    var displayName = "video.mp4"
+    val cursor = try {
+        resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+    } catch (error: SecurityException) {
+        Log.w(TAG, "Unable to inspect selected file name", error)
+        return null
+    }
+    cursor?.use { value ->
+        if (value.moveToFirst()) {
+            val index = value.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (index >= 0) {
+                displayName = value.getString(index)?.takeIf { it.isNotBlank() } ?: displayName
+            }
         }
     }
-    sendGenericCastRequest(device, videoUrl.replace("/video", "/play"))
+    return VideoMetadata(displayName, mimeTypeForName(displayName, mimeType))
 }
 
-private fun buildDlnaMetaData(videoUrl: String): String {
-    val title = "Dolphy Cast"
-    val didl = """
-        <DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
-         xmlns:dc="http://purl.org/dc/elements/1.1/"
-         xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">
-          <item id="1" parentID="0" restricted="1">
-            <dc:title>$title</dc:title>
-            <upnp:class>object.item.videoItem</upnp:class>
-            <res protocolInfo="http-get:*:video/mp4:*">$videoUrl</res>
-          </item>
-        </DIDL-Lite>
-    """.trimIndent()
-    return didl
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-}
-
-private fun dlnaSoap(url: String, soapAction: String, bodyInner: String): Int {
-    return try {
-        val connection = LocalHttpPolicy.requireLocal(url).openConnection() as java.net.HttpURLConnection
-        connection.requestMethod = "POST"
-        connection.setRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"")
-        connection.setRequestProperty("SOAPACTION", "\"$soapAction\"")
-        connection.doOutput = true
-        connection.connectTimeout = 4000
-        connection.readTimeout = 6000
-        val soapBody = """<?xml version="1.0" encoding="utf-8"?>
-<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
- xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-  <s:Body>$bodyInner</s:Body>
-</s:Envelope>"""
-        connection.outputStream.use { it.write(soapBody.toByteArray(Charsets.UTF_8)) }
-        val code = connection.responseCode
-        connection.disconnect()
-        code
-    } catch (e: Exception) {
-        Log.w("SmartTvCast", "dlnaSoap $url: ${e.message}")
-        -1
+private fun copyVideoToCache(
+    context: Context,
+    uri: Uri,
+    metadata: VideoMetadata,
+): File? {
+    val extension = extensionForName(metadata.displayName, metadata.mimeType)
+    val file = File(context.cacheDir, "cast_${System.currentTimeMillis()}.$extension")
+    val input = try {
+        context.contentResolver.openInputStream(uri)
+    } catch (error: IOException) {
+        Log.w(TAG, "Unable to open selected file", error)
+        return null
+    } catch (error: SecurityException) {
+        Log.w(TAG, "No permission to read selected file", error)
+        return null
+    } ?: run {
+        Log.w(TAG, "The selected file has no readable stream")
+        return null
     }
-}
-
-private fun sendGoogleCastRequest(device: CastDevice, videoUrl: String) {
     try {
-        val playPage = videoUrl.replace("/video", "/play")
-        for (app in listOf("YouTube", "ChromeCast", "DefaultMediaReceiver")) {
-            try {
-                val castUrl = "http://${device.host}:8008/apps/$app"
-                val connection = LocalHttpPolicy.requireLocal(castUrl).openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "text/plain")
-                connection.doOutput = true
-                connection.connectTimeout = 3000
-                connection.readTimeout = 3000
-                connection.outputStream.use { it.write(playPage.toByteArray()) }
-                val code = connection.responseCode
-                Log.d("SmartTvCast", "Cast $app → $code")
-                connection.disconnect()
-                if (code in 200..299) return
-            } catch (e: Exception) {
-                Log.w("SmartTvCast", "Cast app $app: ${e.message}")
-            }
+        input.use { source ->
+            file.outputStream().use { target -> source.copyTo(target) }
         }
-        sendDialRequest(device, playPage)
-        sendGenericCastRequest(device, playPage)
-    } catch (e: Exception) {
-        Log.e("SmartTvCast", "Google Cast request failed: ${e.message}", e)
+    } catch (error: IOException) {
+        file.delete()
+        Log.w(TAG, "Unable to copy selected file", error)
+        return null
     }
+    if (file.length() <= 0L) {
+        file.delete()
+        Log.w(TAG, "The selected file is empty")
+        return null
+    }
+    return file
 }
 
-private fun sendGenericCastRequest(device: CastDevice, videoUrl: String) {
-    try {
+private data class VideoMetadata(
+    val displayName: String,
+    val mimeType: String,
+)
 
-        val endpoints = listOf(
-            "/apps/YouTube",
-            "/dial/apps/YouTube",
-            "/upnp/control/AVTransport1"
-        )
+private data class ServerSetup(
+    val server: CastVideoServer,
+    val videoUrl: String,
+    val pageUrl: String,
+)
 
-        for (endpoint in endpoints) {
-            try {
-                val url = "http://${device.host}:${device.port}$endpoint"
-                val connection = LocalHttpPolicy.requireLocal(url).openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json")
-                connection.doOutput = true
-                connection.connectTimeout = 3000
-                connection.readTimeout = 3000
-
-                val json = """{"url":"$videoUrl"}"""
-                connection.outputStream.use { os ->
-                    os.write(json.toByteArray())
-                }
-
-                val responseCode = connection.responseCode
-                Log.d("SmartTvCast", "Generic cast to $endpoint response: $responseCode")
-                connection.disconnect()
-
-                if (responseCode in 200..299) {
-                    break
-                }
-            } catch (e: Exception) {
-                Log.d("SmartTvCast", "Endpoint $endpoint failed: ${e.message}")
-            }
-        }
-    } catch (e: Exception) {
-        Log.e("SmartTvCast", "Generic cast request failed: ${e.message}", e)
-    }
-}
-
+private const val TAG = "SmartTvCast"

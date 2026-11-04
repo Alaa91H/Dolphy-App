@@ -141,6 +141,7 @@ class IrSignalLab(BasePlugin):
             if index < 2:
                 time.sleep(0.12)
         self.status = "Repeated the pattern three times"
+        self.refresh()
 
     def clear_log(self):
         self.log = ""

@@ -57,6 +57,10 @@ class BleAssetPack(BasePlugin):
     def stop_mode(self):
         self.stop_event.set()
         self.api.getAndroid().bleAdvertiseStop()
+        worker = self.worker
+        if worker is not None and worker is not threading.current_thread():
+            worker.join(timeout=1.0)
+        self.worker = None
 
     def download_ir_pack(self):
         self.download_assets([

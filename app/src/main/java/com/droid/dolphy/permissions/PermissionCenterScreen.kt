@@ -761,6 +761,7 @@ private val capabilityStringResources = mapOf(
     PluginPermission.BLUETOOTH to R.string.plugin_capability_bluetooth,
     PluginPermission.WIFI to R.string.plugin_capability_wifi,
     PluginPermission.INFRARED to R.string.plugin_capability_infrared,
+    PluginPermission.IRDB to R.string.plugin_capability_irdb,
     PluginPermission.USB to R.string.plugin_capability_usb,
     PluginPermission.BLE_SPAM to R.string.plugin_capability_ble_spam,
 )

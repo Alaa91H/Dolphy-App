@@ -12,10 +12,11 @@ Plugins are executable user-provided code with broad access to application and d
 |---|---|---|---|
 | [Wi-Fi Scanner MD3E](wifi_scanner_md3e.dolphyplugin) | Other | `wifi` | Connection, nearby networks, security, band, channel and signal details. |
 | [BLE Scanner DEX MD3E](ble_scanner_dex_md3e.dolphyplugin) | Other | `bluetooth`, `dex` | Batched BLE scanning enriched by an embedded DEX analyzer. |
-| [Radio Lab](radio_lab.dolphyplugin) | Bluetooth | — | Live BLE scan plus Wi-Fi interface diagnostics. |
-| [Integration Hooks](integration_hooks.dolphyplugin) | Plugins | — | Screen FAB, IR transmit hook and a service provider example. |
+| [Radio Lab](radio_lab.dolphyplugin) | Bluetooth | `bluetooth`, `wifi` | Live BLE scan plus Wi-Fi interface diagnostics. |
+| [Integration Hooks](integration_hooks.dolphyplugin) | Plugins | `hooks` | Screen FAB, IR transmit hook and a service provider example. |
 | [BLE Asset Pack](ble_asset_pack.dolphyplugin) | Plugins | `ble_spam`, `bluetooth`, `download`, `files`, `infrared` | Custom BLE advertising mode and permission-aware asset downloads. |
 | [IR Signal Lab](ir_signal_lab.dolphyplugin) | Infrared | `infrared` | Emitter and carrier diagnostics plus raw pulse-pattern transmission with presets. |
+| [Flipper IRDB Sync](flipper_irdb_sync.dolphyplugin) | Infrared | `irdb` | Download and refresh the Flipper-IRDB catalog used by the built-in IR remotes. |
 | [BLE GATT Explorer](ble_gatt_explorer.dolphyplugin) | Bluetooth | `bluetooth` | Connect to a peripheral, discover services and read characteristics. |
 | [BLE Advert Lab](ble_advert_lab.dolphyplugin) | Bluetooth | `ble_spam`, `bluetooth` | Compose manufacturer data and broadcast a custom advertisement. |
 | [Classic Bluetooth Lab](bt_classic_lab.dolphyplugin) | Bluetooth | `bluetooth` | Bonded devices, discovery, bonding actions and device details. |
@@ -60,6 +61,14 @@ The embedded class is `com.dolphy.examples.ble.BleAnalyzer`. Its readable Java s
 Reports the IR emitter state through the `ConsumerIrManager` bridge, lists the carrier frequencies the device accepts and transmits raw pulse patterns. Presets build NEC frames, and every duration can be edited before sending. Repeat sends the pattern three times.
 
 Required permission group: `infrared`.
+
+### Flipper IRDB Sync
+
+[Download the plugin](flipper_irdb_sync.dolphyplugin)
+
+Downloads the official `Lucaslhm/Flipper-IRDB` archive from GitHub and atomically refreshes the local IR catalog used by Dolphy's built-in remotes. The plugin shows the last sync time, file count and downloaded size, confirms the download before it starts, and reports progress. Favorites and custom remotes are not changed.
+
+Required permission group: `irdb`.
 
 ### BLE GATT Explorer
 

@@ -29,6 +29,7 @@ enum class PluginPermission(val token: String) {
     HOOKS("hooks"),
     BLE_SPAM("ble_spam"),
     NFC("nfc"),
+    IRDB("irdb"),
     ;
 
     companion object {
@@ -86,6 +87,7 @@ object PluginPermissions {
             PluginPermission.SHELL to listOf("shellExec", "shell_exec", "smartExec"),
             PluginPermission.HOOKS to listOf("hook_screen", "hook_action", "hook_surface", "registerScreenHook"),
             PluginPermission.NFC to listOf("nfcRead", "nfcWrite", "nfc_transceive"),
+            PluginPermission.IRDB to listOf("irdbSync", "irdbStatusJson", "irdb_sync"),
         )
         val inferred = checks.filterValues { tokens ->
             tokens.any { source.contains(it, ignoreCase = true) }
