@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-04
+
+Dolphy 1.5.0 introduces **BadUSB Studio**, a catalog plugin that compiles and
+runs DuckyScript 3.0 payloads over the HID session Dolphy already owns. The
+release adds the payload engine, a permission-gated bridge, and the plugin
+itself; catalog, plugin, and user-data formats are unchanged.
+
+### Added
+
+- **BadUSB Studio plugin:** the official catalog now lists a 22nd plugin with a
+  payload library, an editor, validation before every run, an explicit safety
+  gate, and a run log, all installed and updated through the plugin store.
+- **DuckyScript 3.0 engine:** a new compiler and interpreter cover comments
+  (`REM`, `REM_BLOCK`), `DEFAULT_DELAY`, `DELAY`, `STRING`/`STRINGLN` and string
+  blocks, key and modifier combos, `INJECT_MOD`, `HOLD`/`RELEASE`, `REPEAT`,
+  `DEFINE`, `VAR`, integer expressions, `IF`/`ELSE`, `WHILE`,
+  `FUNCTION`/`RETURN`, `RANDOM_*` keystrokes, `MEDIA_*` consumer keys,
+  `MOUSE_*` input, and payload control (`STOP_PAYLOAD`, `RESTART_PAYLOAD`,
+  `RESET`).
+- **Transport selection:** payloads run over the Bluetooth HID session when a
+  host is connected and fall back to the rooted USB gadget at `/dev/hidg0`,
+  reporting the active transport and the reason it is unavailable.
+- **`badUsb*` plugin bridge:** status, validation, run, and stop entry points
+  are gated by the existing `usb` permission, cap scripts at 64,000 characters,
+  and deliver events on the main thread.
+- **New key codes:** `PAUSE` and `INSERT` were added to the HID key table.
+
+### Changed
+
+- **Keyboard session ownership:** `KeyboardService` attaches the payload
+  runtime to the active HID session and detaches it on teardown, so a run
+  cannot outlive the transport it started on.
+- **Static analysis:** the engine was reorganised into smaller dispatch tables
+  and helpers so the Detekt gate passes without suppressions.
+
+### Fixed
+
+- **BadUSB Studio install:** the catalog entry referenced a plugin file that
+  was not published to `main`, so installing it returned HTTP 404. The plugin
+  is now published and the catalog entry resolves.
+
+### Compatibility
+
+- No plugin reinstall, settings migration, or backup change is needed;
+  installed plugins, favorites, custom remotes, and backups remain compatible
+  with 1.4.1.
+- Unsupported device-only commands (`ATTACKMODE`, `LED_*`, `BUTTON_*`,
+  `WAIT_FOR_*`, `MATCH`) compile as warnings instead of failing, so unmodified
+  Hak5 and Flipper payloads still load.
+
+### Upgrade notes
+
+- **Version:** `versionName` 1.5.0, `versionCode` 30500.
+- Bluetooth HID payloads need a paired host; USB gadget payloads need root
+  access to `/dev/hidg0`. Devices with neither can install and edit payloads
+  but cannot run them.
+- Devices running 1.4.1 can update in place with the release-signed APK.
+
 ## [1.4.1] - 2026-11-04
 
 Dolphy 1.4.1 is a focused maintenance release that restores reliable IR
