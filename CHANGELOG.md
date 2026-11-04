@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-11-04
+
+Dolphy 1.5.1 is a BadUSB Studio maintenance release. It adds one-tap HID setup
+actions to the plugin, so a host can be paired over Bluetooth or prepared over
+USB without leaving the payload screen, and it corrects the transport reporting
+and catalog section that made previous builds misleading. Catalog formats, the
+plugin API, and user data are unchanged.
+
+### Added
+
+- **One-tap HID setup in BadUSB Studio:** the transport card now offers
+  **Connect via Bluetooth**, which opens the HID Keyboard screen for pairing,
+  and **Set up USB HID**, which creates the rooted gadget and reports the
+  outcome inline.
+- **`hidKeyboardOpen` and `hidUsbSetupJson` bridge helpers:** `usb`-permission
+  gated device entry points for Python plugins. The USB helper checks root and
+  `configfs usb_gadget` support before touching the gadget and returns a
+  structured result with the reason a device cannot host a HID interface.
+
 ### Fixed
 
 - **BadUSB transport reporting:** the runtime reported `USB gadget` whenever root
@@ -17,6 +36,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BadUSB Studio visibility:** the plugin registered its module in a `USB`
   section that Dolphy does not render, so the card never appeared. It now
   registers under the `Other` section like every other catalog plugin.
+- **USB HID diagnostics:** asking for the gadget on a kernel without
+  `configfs usb_gadget` used to fail silently. The setup action now reports the
+  missing kernel support and points to Bluetooth HID instead.
+- **Plugin catalog listing:** the BadUSB Studio row now shows the `Other`
+  section that the plugin actually registers under.
+
+### Changed
+
+- **BadUSB Studio 1.1.0:** the shipped plugin bundle is now version 1.1.0 with
+  the two transport actions and their handler functions.
+- **Version:** `versionName` 1.5.1, `versionCode` 30501.
+
+### Upgrade notes
+
+- Devices running 1.5.0 can update in place with the release-signed APK. No
+  plugin reinstall, settings migration, or backup change is needed.
+- The USB action needs a rooted device whose kernel exposes
+  `configfs usb_gadget`; other devices get an explicit message and should use
+  Bluetooth HID.
 
 ## [1.5.0] - 2026-11-04
 
@@ -542,6 +580,7 @@ private release signing, and a modern Android toolchain.
 - [`plugin-examples/README.md`](plugin-examples/README.md) — plugin catalog and
   example descriptions.
 
+[1.5.1]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.5.1
 [1.4.1]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.4.1
 [1.4.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.4.0
 [1.3.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.3.0
