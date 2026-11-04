@@ -7,6 +7,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-04
+
+Dolphy 1.4.0 adds native SmartTV casting and makes the optional Flipper-IRDB
+update an installable plugin instead of a built-in card. The cast screen now
+speaks Chromecast, DIAL, and DLNA/UPnP directly, while IR catalog refreshes go
+through the same review, permission, and update flow as every other plugin.
+
+### Added
+
+- **Native SmartTV Cast:** a rebuilt cast screen discovers televisions and
+  streaming devices through mDNS and SSDP, shows their advertised protocol and
+  endpoint, and keeps the selected media ready for more than one receiver.
+- **Chromecast CASTV2:** Dolphy connects to the receiver over TLS, launches the
+  Default Media Receiver, loads the selected media through the media namespace,
+  and sends a proper stop command when the session ends.
+- **DIAL and DLNA/UPnP:** DIAL receivers are launched through their advertised
+  application list, while DLNA televisions receive `SetAVTransportURI` and
+  `Play` over the AVTransport control URL from their own device description.
+- **Local media server:** a per-session NanoHTTPD server serves one selected
+  video or image with byte-range support, a small browser fallback page, an
+  operating-system-assigned port, and an unguessable path token.
+- **Network-aware casting:** the server advertises a Wi-Fi or Ethernet LAN
+  address, preferring those transports over VPN, cellular, or virtual links.
+- **Flipper IRDB Sync plugin:** the official catalog now includes a 21st plugin
+  that downloads `Lucaslhm/Flipper-IRDB` from GitHub, reports its status and
+  progress, and refreshes the IR catalog used by the built-in remotes.
+- **`irdb` plugin permission:** catalog sync is a distinct capability with its
+  own label in plugin previews, the plugin manager, and the permission center.
+- **Version-aware IR index cache:** the Flipper index records which catalog it
+  was built from and is invalidated after a successful sync, so stale results
+  cannot survive an update.
+
+### Changed
+
+- **IR catalog delivery:** the built-in sync card was removed from the Flipper
+  IR home. Catalog refresh is now installed and managed through the plugin
+  store, while favorites and custom remotes remain untouched.
+- **SmartTV Cast receiver handling:** discovery no longer assumes one port or
+  one protocol for every television; ports, application URLs, and DLNA control
+  URLs come from each receiver's advertisements and device description.
+- **Cast status and controls:** the screen now presents preparing, ready,
+  connecting, playing, stopped, and failed states, with an explicit stop action
+  and a refresh button for discovery.
+- **Plugin catalog metadata:** plugin sizes and declared permissions now match
+  the shipped files, including the new IRDB plugin and the corrected Radio Lab
+  and Integration Hooks manifests.
+- **Category view switch:** selecting the mode that is already active no longer
+  toggles the list into the other mode.
+
+### Fixed
+
+- **Cast discovery:** Chromecast, DIAL, and DLNA receivers are resolved from
+  their advertised services instead of a shared hard-coded port.
+- **Cast playback:** media URLs are served from the phone with range requests,
+  which lets televisions seek and resume correctly.
+- **Cast lifecycle:** changing the selected video, leaving the screen, and
+  stopping playback now close the active session and the local server without
+  leaving a receiver playing in the background.
+- **BLE GATT Explorer:** connection events accept both numeric and named states,
+  notification callbacks read the selected characteristic, and the disconnect
+  action passes a proper callback.
+- **BLE Asset Pack:** stopping an advertisement now waits briefly for the worker
+  thread and clears its reference, preventing an orphaned advertiser.
+- **Plugin File Browser:** delete confirmation is rendered as an actual dialog,
+  and the browser returns to the file list after the operation.
+- **IR Signal Lab:** repeating a pattern now refreshes the result instead of
+  leaving the previous status on screen.
+- **Plugin bridge:** GATT characteristics expose a formatted `propsStr` value
+  alongside the raw property list for Python plugins.
+- **Plugin permission labels:** the new `irdb` capability is translated and
+  displayed consistently instead of falling back to the generic hooks label.
+
+### Security
+
+- **IR archive validation:** the sync engine accepts only HTTPS URLs on the
+  GitHub hosts it expects, validates redirects, rejects archive entries outside
+  `Flipper-IRDB-main`, and refuses blank, absolute, or traversal paths.
+- **Bounded downloads and extraction:** IRDB sync enforces 256 MB compressed,
+  512 MB extracted, and 50,000-file limits, checks for roughly 300 MB of free
+  space, and installs the new catalog atomically so a failed sync cannot leave a
+  partial database in use.
+- **Local cast traffic:** all cast control requests pass through
+  `LocalHttpPolicy`, keeping them on the local network, and the media server
+  exposes only the selected file through a random per-session token.
+- **Plugin consent:** IR catalog changes require the explicit `irdb` permission,
+  which is shown during installation and can be reviewed in the permission
+  center.
+
+### Upgrade notes
+
+- **Version:** `versionName` 1.4.0, `versionCode` 30400.
+- No data migration is required. Settings, favorites, custom remotes, installed
+  plugins, and existing backups remain compatible with 1.3.0.
+- The bundled IR catalog remains available immediately after upgrading. Install
+  **Flipper IRDB Sync** from the plugin store only when an online refresh is
+  wanted; the first sync downloads about 21 MB and replaces only the synced copy.
+- SmartTV Cast requires the phone and television to be on the same local
+  network. It does not request a storage permission; the selected file is copied
+  into app-private cache for the duration of the session.
+- The old built-in IR sync card is intentionally gone. Catalog status and sync
+  controls now live in the plugin's Infrared module.
+
 ## [1.3.0] - 2026-11-04
 
 Dolphy 1.3.0 makes navigation and interface changes instantaneous across the
@@ -342,6 +444,7 @@ private release signing, and a modern Android toolchain.
 - [`plugin-examples/README.md`](plugin-examples/README.md) — plugin catalog and
   example descriptions.
 
+[1.4.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.4.0
 [1.3.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.3.0
 [1.2.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.1.0
