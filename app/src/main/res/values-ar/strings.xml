@@ -1560,6 +1560,7 @@
     <string name="plugin_catalog_desc_shizuku_console">أوامر صدفة مميزة عبر Shizuku دون root.</string>
     <string name="plugin_catalog_desc_shell_console">أوامر صدفة عادية باسم تطبيق Dolphy.</string>
     <string name="plugin_catalog_desc_usb_inspector">أجهزة USB المتصلة مع المعرّفات وأصناف الواجهات.</string>
+    <string name="plugin_catalog_desc_badusb">استوديو DuckyScript 3.0: مكتبة حمولات ومحرّر بفحص سطور وتنفيذ عبر Bluetooth HID أو USB gadget بصلاحية root.</string>
     <string name="plugin_catalog_update_title">تحديث %1$s؟</string>
     <string name="plugin_signature_invalid">توقيع الإضافة غير صالح — تم إيقاف التثبيت.</string>
     <string name="plugin_signature_untrusted">هذه الإضافة غير موقّعة أو موقّعة بمفتاح غير موثوق.</string>

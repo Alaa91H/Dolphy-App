@@ -264,6 +264,17 @@ val PLUGIN_CATALOG: List<CatalogPlugin> = listOf(
         permissions = listOf("usb"),
         descriptionRes = R.string.plugin_catalog_desc_usb_inspector,
     ),
+    CatalogPlugin(
+        id = "badusb",
+        name = "BadUSB Studio",
+        author = "Dolphy",
+        version = "1.0.0",
+        fileName = "badusb.dolphyplugin",
+        sizeBytes = 13_981,
+        icon = "rounded:keyboard",
+        permissions = listOf("usb"),
+        descriptionRes = R.string.plugin_catalog_desc_badusb,
+    ),
 )
 
 /** Compares dot separated versions; returns true when [remote] is newer than [installed]. */

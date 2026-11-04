@@ -1509,6 +1509,7 @@
     <string name="plugin_catalog_desc_shizuku_console">Привилегированные команды через Shizuku без root.</string>
     <string name="plugin_catalog_desc_shell_console">Обычные shell-команды от имени приложения Dolphy.</string>
     <string name="plugin_catalog_desc_usb_inspector">Подключённые USB-устройства с идентификаторами и классами интерфейсов.</string>
+    <string name="plugin_catalog_desc_badusb">DuckyScript 3.0: библиотека полезных нагрузок, редактор с проверкой и запуск через Bluetooth HID или root-USB-гаджет.</string>
     <string name="plugin_catalog_update_title">Обновить %1$s?</string>
     <string name="plugin_signature_invalid">Подпись плагина недействительна — установка остановлена.</string>
     <string name="plugin_signature_untrusted">Плагин не подписан или подписан недоверенным ключом.</string>

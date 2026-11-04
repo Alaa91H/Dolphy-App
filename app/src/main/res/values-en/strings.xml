@@ -1570,6 +1570,7 @@ The file is downloaded from the official Dolphy GitHub repository. Plugins run w
     <string name="plugin_catalog_desc_shizuku_console">Privileged shell commands through Shizuku without root.</string>
     <string name="plugin_catalog_desc_shell_console">Unprivileged shell commands running as the Dolphy app.</string>
     <string name="plugin_catalog_desc_usb_inspector">Attached USB devices with descriptors and interface classes.</string>
+    <string name="plugin_catalog_desc_badusb">DuckyScript 3.0 studio: payload library, validated editor and execution over Bluetooth HID or a rooted USB gadget.</string>
     <string name="plugin_catalog_update_title">Update %1$s?</string>
     <string name="plugin_signature_invalid">Plugin signature is invalid — installation stopped.</string>
     <string name="plugin_signature_untrusted">This plugin is unsigned or signed by an untrusted key.</string>

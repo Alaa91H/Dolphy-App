@@ -71,6 +71,8 @@ val keyCodes = mapOf<String, Byte>(
     "NUMLOCK" to 0x53,
 
     "SYSRQ" to 0x46,
+    "PAUSE" to 0x48,
+    "INSERT" to 0x49,
     "HOME" to 0x4a,
     "PAGEUP" to 0x4b,
     "DELETE" to 0x4c,

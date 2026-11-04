@@ -1,0 +1,411 @@
+import json
+
+__id__ = "badusb"
+__name__ = "BadUSB Studio"
+__version__ = "1.0.0"
+__author__ = "Dolphy"
+__description__ = "Compile, validate and run DuckyScript 3.0 payloads over Bluetooth HID or a rooted USB gadget"
+__icon__ = "rounded:keyboard"
+__permissions__ = ["usb"]
+
+PAYLOADS = [
+    {
+        "id": "windows_notepad",
+        "title": "Windows · Notepad demo",
+        "subtitle": "Opens Notepad and types a line",
+        "script": "\n".join(
+            [
+                "REM Harmless demo: open Notepad and type",
+                "DELAY 600",
+                "GUI r",
+                "DELAY 500",
+                "STRING notepad",
+                "ENTER",
+                "DELAY 900",
+                "STRING Hello from Dolphy BadUSB Studio",
+                "ENTER",
+            ]
+        ),
+    },
+    {
+        "id": "macos_textedit",
+        "title": "macOS · TextEdit demo",
+        "subtitle": "Spotlight search, then types a line",
+        "script": "\n".join(
+            [
+                "DELAY 600",
+                "GUI SPACE",
+                "DELAY 600",
+                "STRING TextEdit",
+                "ENTER",
+                "DELAY 1200",
+                "STRING Hello from Dolphy BadUSB Studio",
+            ]
+        ),
+    },
+    {
+        "id": "open_url",
+        "title": "Open a URL",
+        "subtitle": "Windows Run dialog with the project page",
+        "script": "\n".join(
+            [
+                "DELAY 600",
+                "GUI r",
+                "DELAY 500",
+                "STRING https://github.com/Alaa91H/Dolphy-App",
+                "ENTER",
+            ]
+        ),
+    },
+    {
+        "id": "typing_loop",
+        "title": "Variables and WHILE loop",
+        "subtitle": "Types the pangram three times",
+        "script": "\n".join(
+            [
+                "VAR $n = 0",
+                "WHILE $n < 3",
+                "STRING The quick brown fox jumps over the lazy dog.",
+                "ENTER",
+                "VAR $n = $n + 1",
+                "END_WHILE",
+            ]
+        ),
+    },
+    {
+        "id": "media_keys",
+        "title": "Consumer control demo",
+        "subtitle": "Volume up, pause, volume down",
+        "script": "\n".join(
+            [
+                "MEDIA_VOLUMEUP",
+                "DELAY 400",
+                "MEDIA_PLAYPAUSE",
+                "DELAY 400",
+                "MEDIA_VOLUMEDOWN",
+            ]
+        ),
+    },
+    {
+        "id": "diagnostics",
+        "title": "Diagnostics payload",
+        "subtitle": "Shows device-only commands reported as warnings",
+        "script": "\n".join(
+            [
+                "REM Device specific commands are accepted but ignored",
+                "ATTACKMODE HID",
+                "LED_R",
+                "STRING diagnostics: ok",
+                "ENTER",
+            ]
+        ),
+    },
+]
+
+MODES = {
+    "bluetooth_hid": "Bluetooth HID",
+    "usb_gadget": "USB gadget",
+    "none": "No transport",
+}
+
+
+class BadUsbStudio(BasePlugin):
+    def __init__(self):
+        super().__init__()
+        self.state = {}
+        self.status = "Reading HID transport"
+        self.selected = 0
+        self.script = PAYLOADS[0]["script"]
+        self.editor_open = False
+        self.log_lines = []
+        self.running = False
+        self.armed = False
+        self.steps = 0
+        self.warning_count = 0
+        self.error_count = 0
+        self.last_run = ""
+
+    def on_plugin_load(self):
+        self.add_module(
+            "BadUSB Studio",
+            "DuckyScript 3.0 payload library, editor and runner",
+            "usb",
+            "main",
+            "USB",
+            150,
+        )
+        self.reload()
+
+    def on_plugin_unload(self):
+        if self.running:
+            self.api.getDevice().badUsbStop()
+            self.running = False
+
+    def reload(self):
+        try:
+            self.state = json.loads(str(self.api.getDevice().badUsbStatusJson()))
+        except Exception as error:
+            self.state = {}
+            self.status = "Bridge error: " + str(error)
+        self.running = bool(self.state.get("running"))
+        self.validate()
+        self.refresh()
+
+    def validate(self):
+        try:
+            report = json.loads(str(self.api.getDevice().badUsbValidateJson(self.script)))
+        except Exception as error:
+            self.steps = 0
+            self.error_count = 1
+            self.warning_count = 0
+            self.status = "Cannot validate: " + str(error)
+            return
+        self.steps = int(report.get("steps", 0))
+        self.error_count = len(report.get("errors", []))
+        self.warning_count = len(report.get("warnings", []))
+        if self.error_count:
+            first = report.get("errors", [{}])[0]
+            self.status = "Line " + str(first.get("line", 0)) + ": " + str(first.get("message", "invalid payload"))
+        elif not self.running:
+            self.status = (
+                str(self.steps)
+                + " steps ready · "
+                + str(self.warning_count)
+                + " warnings"
+            )
+
+    def transport_ready(self):
+        return str(self.state.get("mode", "none")) != "none"
+
+    def update_script(self, value):
+        self.script = str(value)
+        self.validate()
+        self.refresh()
+
+    def select_payload(self, payload_id):
+        for index, item in enumerate(PAYLOADS):
+            if item["id"] == str(payload_id):
+                self.selected = index
+                self.script = item["script"]
+                self.editor_open = False
+                self.validate()
+                self.status = "Loaded “" + item["title"] + "”"
+                self.navigate("main")
+                self.refresh()
+                return
+
+    def toggle_armed(self):
+        self.armed = not self.armed
+        self.status = "Payload execution armed" if self.armed else "Payload execution disarmed"
+        self.refresh()
+
+    def append_log(self, line):
+        self.log_lines.append(line)
+        if len(self.log_lines) > 60:
+            self.log_lines = self.log_lines[-60:]
+
+    def run_payload(self):
+        if self.running:
+            return
+        if not self.armed:
+            self.status = "Enable the safety switch before running a payload"
+            self.refresh()
+            return
+        if not self.transport_ready():
+            self.status = str(self.state.get("reason", "No HID transport available"))
+            self.refresh()
+            return
+        self.validate()
+        if self.error_count:
+            self.refresh()
+            return
+        self.log_lines = []
+        self.last_run = ""
+        self.running = True
+        self.status = "Sending payload"
+        self.refresh()
+        try:
+            started = bool(self.api.getDevice().badUsbRun(self.script, self.on_event))
+        except Exception as error:
+            started = False
+            self.append_log("Bridge error: " + str(error))
+        if not started and not self.running:
+            self.status = "Could not start the payload"
+        self.refresh()
+
+    def stop_payload(self):
+        try:
+            self.api.getDevice().badUsbStop()
+        except Exception as error:
+            self.append_log("Stop failed: " + str(error))
+        self.running = False
+        self.status = "Payload stopped"
+        self.refresh()
+
+    def on_event(self, raw):
+        try:
+            event = json.loads(str(raw))
+        except Exception:
+            return
+        kind = str(event.get("type", ""))
+        if kind == "log":
+            self.append_log(str(event.get("message", "")))
+        elif kind == "done":
+            self.running = False
+            self.last_run = (
+                str(event.get("executed", 0))
+                + " steps in "
+                + str(event.get("elapsedMs", 0))
+                + " ms"
+                + (" · stopped early" if bool(event.get("stopped")) else "")
+            )
+            self.status = "Payload finished"
+        elif kind == "error":
+            self.running = False
+            self.status = str(event.get("message", "Payload failed"))
+            self.append_log(self.status)
+        self.refresh()
+
+    def open_editor(self):
+        self.editor_open = True
+        self.navigate("editor")
+        self.refresh()
+
+    def open_library(self):
+        self.navigate("library")
+        self.refresh()
+
+    def screen_main(self, ui, api, state):
+        mode = str(self.state.get("mode", "none"))
+        rows = [
+            ui.chip(MODES.get(mode, mode), mode != "none"),
+            ui.chip("Root", bool(self.state.get("rooted"))),
+            ui.chip("BT HID", bool(self.state.get("bluetoothConnected"))),
+            ui.chip("Running" if self.running else "Idle", self.running),
+        ]
+        actions = [
+            ui.button("Run payload", self.run_payload, fill_max_width=True),
+            ui.button("Stop", self.stop_payload, style="tonal", fill_max_width=True),
+            ui.button(
+                "Safety switch: on" if self.armed else "Safety switch: off",
+                self.toggle_armed,
+                style="outlined",
+                fill_max_width=True,
+            ),
+        ]
+        return ui.scaffold(
+            title="BadUSB Studio",
+            content=ui.lazy_column(
+                [
+                    ui.card(
+                        [
+                            ui.row(
+                                [
+                                    ui.icon("usb", 36),
+                                    ui.column(
+                                        [
+                                            ui.text("HID transport", "titleLarge"),
+                                            ui.text("DuckyScript 3.0 compiler and runner", "bodySmall"),
+                                        ],
+                                        spacing=2,
+                                    ),
+                                ],
+                                spacing=12,
+                            ),
+                            ui.lazy_row(rows, spacing=6),
+                            ui.text(str(self.state.get("reason", "Ready")), "bodySmall"),
+                        ]
+                    ),
+                    ui.card(actions),
+                    ui.card(
+                        [
+                            ui.text("Current payload", "titleMedium"),
+                            ui.text(PAYLOADS[self.selected]["title"], "titleLarge"),
+                            ui.text("%d steps · %d warnings" % (self.steps, self.warning_count), "bodySmall"),
+                            ui.text(self.status, "bodySmall"),
+                            ui.function_row("Payload library", "Bundled DuckyScript demos", "list", on_click=self.open_library),
+                            ui.function_row("Script editor", "Edit and validate DuckyScript source", "code", on_click=self.open_editor),
+                            ui.button("Reload transport status", self.reload, style="tonal", fill_max_width=True),
+                        ]
+                    ),
+                    ui.card(
+                        [
+                            ui.text("Run log", "titleMedium"),
+                            ui.log_panel("\n".join(self.log_lines) or (self.last_run or "No payload has run yet"), 200),
+                        ]
+                    ),
+                ],
+                padding=16,
+                spacing=12,
+                fill_max_size=True,
+            ),
+        )
+
+    def screen_library(self, ui, api, state):
+        rows = []
+        for item in PAYLOADS:
+            rows.append(
+                ui.function_row(
+                    item["title"],
+                    item["subtitle"],
+                    "keyboard",
+                    on_click=self.payload_callback(item["id"]),
+                )
+            )
+        return ui.scaffold(
+            title="Payload library",
+            content=ui.lazy_column(
+                [
+                    ui.card(
+                        [
+                            ui.text("Bundled payloads", "titleLarge"),
+                            ui.text("Every script is plain DuckyScript 3.0 and can be edited before running.", "bodySmall"),
+                        ]
+                    ),
+                    ui.segmented_list(rows),
+                ],
+                padding=16,
+                spacing=12,
+                fill_max_size=True,
+            ),
+        )
+
+    def payload_callback(self, payload_id):
+        def callback(value=None):
+            self.select_payload(payload_id)
+
+        return callback
+
+    def screen_editor(self, ui, api, state):
+        errors = ""
+        if self.error_count:
+            errors = str(self.error_count) + " errors must be fixed before running"
+        return ui.scaffold(
+            title="Script editor",
+            content=ui.lazy_column(
+                [
+                    ui.card(
+                        [
+                            ui.text("DuckyScript source", "titleLarge"),
+                            ui.text("DuckyScript 3.0 · STRING, DELAY, VAR, IF, WHILE, FUNCTION, MEDIA and MOUSE", "bodySmall"),
+                        ]
+                    ),
+                    ui.text_field(self.script, self.update_script, "Payload source", single_line=False),
+                    ui.card(
+                        [
+                            ui.text(self.status, "bodySmall"),
+                            ui.text(errors or "%d steps · %d warnings" % (self.steps, self.warning_count), "bodySmall"),
+                            ui.button("Validate", self.validate_and_refresh, style="tonal", fill_max_width=True),
+                            ui.button("Run payload", self.run_payload, fill_max_width=True),
+                        ]
+                    ),
+                ],
+                padding=16,
+                spacing=12,
+                fill_max_size=True,
+            ),
+        )
+
+    def validate_and_refresh(self):
+        self.validate()
+        self.refresh()

@@ -260,11 +260,13 @@ class KeyboardService : Service() {
                             )
 
                             connection?.injectProxy(proxy)
+                            connection?.let { BadUsbRuntime.attachBluetooth(it) }
                             Log.d(tag, "Connection injected, proxyProvided=${proxy != null}")
                             listener?.onConnection(connection!!)
                             listener?.onHidStateChanged(device, state)
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
+                            connection?.let { BadUsbRuntime.detachBluetooth(it) }
                             connection?.close()
                             connection = null
                             listener?.onHidStateChanged(device, state)
@@ -306,6 +308,7 @@ class KeyboardService : Service() {
     override fun onDestroy() {
         stopSilentRetries()
         setSilentBlueDuckyMode(false)
+        connection?.let { BadUsbRuntime.detachBluetooth(it) }
         connection?.close()
         releaseHidProxy()
         super.onDestroy()
@@ -380,6 +383,7 @@ class KeyboardService : Service() {
         stopSilentRetries()
         setSilentBlueDuckyMode(false)
         val conn = connection ?: return
+        BadUsbRuntime.detachBluetooth(conn)
         conn.close()
         connection = null
     }

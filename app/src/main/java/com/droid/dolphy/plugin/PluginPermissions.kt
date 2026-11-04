@@ -81,7 +81,7 @@ object PluginPermissions {
             PluginPermission.BLUETOOTH to listOf("bleStartScan", "bleConnect", "bluetooth", "gatt"),
             PluginPermission.WIFI to listOf("wifi", "WifiManager", "networkSuggest"),
             PluginPermission.INFRARED to listOf("infrared", "irTransmit", "ir_remote"),
-            PluginPermission.USB to listOf("UsbManager", "usb", "bad_hid", "bad_usb"),
+            PluginPermission.USB to listOf("UsbManager", "usb", "bad_hid", "bad_usb", "badUsb"),
             PluginPermission.ROOT to listOf("rootExec", "root_exec"),
             PluginPermission.SHIZUKU to listOf("shizukuExec", "shizuku_exec"),
             PluginPermission.SHELL to listOf("shellExec", "shell_exec", "smartExec"),

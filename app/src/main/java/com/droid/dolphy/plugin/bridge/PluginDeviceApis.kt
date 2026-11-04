@@ -26,6 +26,7 @@ import com.droid.dolphy.IrCatalogSync
 import com.droid.dolphy.IrSyncOutcome
 import com.droid.dolphy.RootUtils
 import com.droid.dolphy.ShizukuHelper
+import com.droid.dolphy.hid.BadUsbRuntime
 import com.droid.dolphy.plugin.PluginManager
 import com.droid.dolphy.plugin.PluginPermission
 import com.droid.dolphy.plugin.PluginPermissions
@@ -1786,8 +1787,133 @@ class PluginDeviceApis(
             .toString()
     }
 
+    // ---- BadUSB / DuckyScript ------------------------------------------------
+
+    private fun badUsbDenied(): String = JSONObject()
+        .put("ok", false)
+        .put("error", "permission_denied")
+        .put("permission", PluginPermission.USB.token)
+        .toString()
+
+    /** Reports which HID transport is available and whether a payload is running. */
+    fun badUsbStatusJson(): String {
+        if (!PluginPermissions.has(permissions, PluginPermission.USB)) return badUsbDenied()
+        return runCatching {
+            val status = BadUsbRuntime.status()
+            JSONObject()
+                .put("ok", true)
+                .put("mode", status.mode.name.lowercase())
+                .put("rooted", status.rooted)
+                .put("usbGadgetReady", status.usbGadgetReady)
+                .put("bluetoothConnected", status.bluetoothConnected)
+                .put("running", status.running)
+                .put("reason", status.reason ?: "")
+                .toString()
+        }.getOrElse { error ->
+            JSONObject()
+                .put("ok", false)
+                .put("error", error.message ?: error.javaClass.simpleName)
+                .toString()
+        }
+    }
+
+    /** Compiles [script] without running it and returns steps plus diagnostics. */
+    fun badUsbValidateJson(script: String): String {
+        if (!PluginPermissions.has(permissions, PluginPermission.USB)) return badUsbDenied()
+        if (script.length > MAX_BAD_USB_CHARS) return badUsbTooLarge()
+        return runCatching {
+            val program = BadUsbRuntime.validate(script)
+            val errors = JSONArray()
+            program.errors.forEach { diagnostic ->
+                errors.put(JSONObject().put("line", diagnostic.line).put("message", diagnostic.message))
+            }
+            val warnings = JSONArray()
+            program.warnings.forEach { diagnostic ->
+                warnings.put(JSONObject().put("line", diagnostic.line).put("message", diagnostic.message))
+            }
+            JSONObject()
+                .put("ok", program.isValid)
+                .put("steps", program.stepCount)
+                .put("errors", errors)
+                .put("warnings", warnings)
+                .toString()
+        }.getOrElse { error ->
+            JSONObject()
+                .put("ok", false)
+                .put("error", error.message ?: error.javaClass.simpleName)
+                .toString()
+        }
+    }
+
+    /**
+     * Compiles and runs a payload, streaming `log`, `done` and `error` events to
+     * [callback]. Only one payload may run at a time.
+     */
+    fun badUsbRun(script: String, callback: PyObject): Boolean {
+        if (!PluginPermissions.has(permissions, PluginPermission.USB)) {
+            mainHandler.post { runCatching { callback.call(badUsbDenied()) } }
+            return false
+        }
+        if (script.length > MAX_BAD_USB_CHARS) {
+            mainHandler.post { runCatching { callback.call(badUsbTooLarge()) } }
+            return false
+        }
+        if (BadUsbRuntime.isRunning()) {
+            mainHandler.post {
+                runCatching {
+                    callback.call(
+                        JSONObject()
+                            .put("type", "error")
+                            .put("error", "already_running")
+                            .put("message", "Another payload is already running")
+                            .toString(),
+                    )
+                }
+            }
+            return false
+        }
+        val emit: (String) -> Unit = { payload ->
+            // Payload events originate on an IO thread; deliver them on the main thread
+            // so the plugin runtime and its UI stay on the same thread.
+            mainHandler.post { runCatching { callback.call(payload) } }
+        }
+        return BadUsbRuntime.run(
+            source = script,
+            log = { message ->
+                emit(JSONObject().put("type", "log").put("message", message).toString())
+            },
+            onFinished = { result, error ->
+                val payload = if (error != null) {
+                    JSONObject().put("type", "error").put("message", error)
+                } else {
+                    JSONObject()
+                        .put("type", "done")
+                        .put("executed", result?.executed ?: 0)
+                        .put("elapsedMs", result?.elapsedMs ?: 0L)
+                        .put("stopped", result?.stopped ?: false)
+                        .put("restarts", result?.restarts ?: 0)
+                }
+                emit(payload.toString())
+            },
+        )
+    }
+
+    /** Cancels the running payload; held keys are released by the runner. */
+    fun badUsbStop(): Boolean {
+        if (!PluginPermissions.has(permissions, PluginPermission.USB)) return false
+        BadUsbRuntime.stop()
+        return true
+    }
+
+    private fun badUsbTooLarge(): String = JSONObject()
+        .put("ok", false)
+        .put("error", "script_too_large")
+        .put("message", "Payload source exceeds $MAX_BAD_USB_CHARS characters")
+        .toString()
+
     companion object {
         private const val TAG = "PluginDeviceApis"
+        private const val MAX_BAD_USB_CHARS = 64_000
         private const val DEFAULT_WIFI_MAX = 40
         private const val WIFI_SCAN_MIN_INTERVAL_MS = 8_000L
         private const val BLE_BATCH_MS = 400L

@@ -31,6 +31,7 @@ Plugins are executable user-provided code with broad access to application and d
 | [Shizuku Console](shizuku_console.dolphyplugin) | Other | `shizuku` | Privileged shell through Shizuku, including the permission request. |
 | [Shell Console](shell_console.dolphyplugin) | Other | `shell` | Unprivileged shell commands running as the Dolphy app. |
 | [USB Inspector](usb_inspector.dolphyplugin) | Other | `usb` | Attached USB devices with vendor, product and interface classes. |
+| [BadUSB Studio](badusb.dolphyplugin) | USB | `usb` | DuckyScript 3.0 payload library, validated editor and runner over Bluetooth HID or a rooted USB gadget. |
 
 ## Scanner examples
 
@@ -185,6 +186,27 @@ Required permission group: `shell`.
 Lists attached USB devices, decodes the vendor and product ids, and shows the device class, subclass, protocol and interface count.
 
 Required permission group: `usb`.
+
+### BadUSB Studio
+
+[Download the plugin](badusb.dolphyplugin)
+
+Compiles DuckyScript 3.0 payloads with the in-app compiler, validates them with line-numbered diagnostics and executes them over the Bluetooth HID session or a rooted USB gadget (`/dev/hidg0`). The plugin ships a small library of harmless demo payloads (Notepad, TextEdit, URL, loop, consumer keys), a source editor, a safety switch and a live run log.
+
+Supported syntax: `REM`/`REM_BLOCK`, `DEFAULT_DELAY`, `DELAY`, `STRING`/`STRINGLN` (inline and blocks), key and modifier combos, `INJECT_MOD`, `HOLD`/`RELEASE`, `REPEAT`, `DEFINE`, `VAR`, arithmetic/comparison/logical/bitwise expressions, `IF`/`ELSE`, `WHILE`, `FUNCTION`/`RETURN`, `RANDOM_*` keystrokes, `MEDIA_*`, `MOUSE_*`, `STOP_PAYLOAD`, `RESTART_PAYLOAD` and `RESET`. Device-only commands (`ATTACKMODE`, `LED_*`, `BUTTON_*`, `WAIT_FOR_*`, `HIDE_PAYLOAD`, `MATCH`, `SAVEKEYS`, `JITTER`) compile as no-ops and are reported as warnings, so unmodified Hak5 and Flipper payloads run.
+
+Payload sources worth following:
+
+- [DuckyScript 3.0 reference](https://documentation.hak5.org/hak5-usb-rubber-ducky/duckyscript-tm-quick-reference) — the language definition.
+- [hak5/usbrubberducky-payloads](https://github.com/hak5/usbrubberducky-payloads) — official payload repository.
+- [Hak5 Payload Studio](https://payloadstudio.hak5.org) — browser IDE and compiler for DuckyScript 3.0.
+- [Flipper Zero BadUSB](https://docs.flipper.net/zero/bad-usb) — Flipper's BadUSB documentation.
+- [I-Am-Jakoby/Flipper-Zero-BadUSB](https://github.com/I-Am-Jakoby/Flipper-Zero-BadUSB) — large community payload collection.
+- [TapDucky](https://github.com/iodn/tap-ducky) and [DroidDucky](https://github.com/anbud/DroidDucky) — Android references for gadget/HID payload execution.
+
+Required permission group: `usb`.
+
+Payloads can type, open applications and run shortcuts on the connected host, so run only scripts you wrote or reviewed.
 
 ## Примеры сканеров
 
