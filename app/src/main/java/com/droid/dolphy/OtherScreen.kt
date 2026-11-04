@@ -13,7 +13,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
@@ -33,7 +35,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -48,13 +49,36 @@ import kotlin.math.hypot
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
+fun OtherScreen(
+    navController: NavController,
+    spamViewModel: SpamViewModel,
+    categoryId: String? = null,
+    showBackButton: Boolean = true,
+) {
     val haptics = LocalHapticFeedback.current
     val context = LocalContext.current
     val density = LocalDensity.current
     val accent = MaterialTheme.colorScheme.primary
     val baseSections = functionDestinationSections()
-    var currentSections by remember(baseSections) { mutableStateOf(baseSections) }
+    val displaySections = remember(baseSections, categoryId) {
+        if (categoryId == null) {
+            baseSections
+        } else {
+            val filtered = baseSections.flatMap { it.second }.filter { item ->
+                val itemCategory = if (item.isPlugin) {
+                    com.droid.dolphy.feature.catalog.FeatureTaxonomy.categoryIdForPlugin(
+                        item.section, item.title, item.description,
+                    )
+                } else {
+                    com.droid.dolphy.feature.catalog.FeatureTaxonomy.categoryIdForRoute(item.route)
+                        ?: com.droid.dolphy.feature.catalog.FeatureTaxonomy.OTHER
+                }
+                itemCategory == categoryId
+            }.distinctBy { it.route }
+            if (filtered.isEmpty()) emptyList() else listOf(categoryId to filtered)
+        }
+    }
+    var currentSections by remember(displaySections) { mutableStateOf(displaySections) }
 
     var draggingItem by remember { mutableStateOf<FunctionDestination?>(null) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -71,7 +95,7 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
     var menuExpandedKey by remember { mutableStateOf<String?>(null) }
     var infoDialogDestination by remember { mutableStateOf<FunctionDestination?>(null) }
 
-    val flipperFontFamily = remember { FontFamily(Font(R.font.born2b_sporty_v2)) }
+    val flipperFontFamily = FontFamily.Default
 
     val allDestinations = remember(currentSections) {
         currentSections.flatMap { it.second }.distinctBy { it.route }
@@ -208,8 +232,60 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
     }
 
     MaterialBackground(accentColor = accent) {
-        Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
-            if (appStyleMode == 1) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (categoryId != null && showBackButton) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                                tint = MaterialTheme.colorScheme.onBackground,
+                            )
+                        }
+                        Text(
+                            text = sectionTitle(categoryId),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    FilledTonalIconButton(onClick = { navController.navigate("settings") }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.nav_settings),
+                        )
+                    }
+                }
+            },
+        ) { paddingValues ->
+            if (currentSections.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.cat_empty),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            } else if (appStyleMode == 1) {
                 if (functionsMenuViewType == 0) {
                     LazyColumn(
                         modifier = Modifier
@@ -690,10 +766,10 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                         .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(top = 24.dp, bottom = 120.dp),
+                    contentPadding = PaddingValues(top = 24.dp, bottom = 24.dp),
                 ) {
                     currentSections.forEach { (section, destinations) ->
-                        item(
+                        if (categoryId == null) item(
                             key = "header_$section",
                             span = { GridItemSpan(maxLineSpan) }
                         ) {
@@ -801,10 +877,10 @@ fun OtherScreen(navController: NavController, spamViewModel: SpamViewModel) {
                         .padding(paddingValues)
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing),
-                    contentPadding = PaddingValues(top = 24.dp, bottom = 120.dp),
+                    contentPadding = PaddingValues(top = 24.dp, bottom = 24.dp),
                 ) {
                     currentSections.forEach { (section, destinations) ->
-                        item(key = "header_$section") {
+                        if (categoryId == null) item(key = "header_$section") {
                             Box(
                                 modifier = Modifier
                                     .padding(top = 16.dp, bottom = 4.dp)

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-04
+
+Dolphy 1.1.0 delivers a unified category experience, contextual device
+readiness, and a more expressive visual system.
+
+### Added
+
+- **Unified category hubs:** all eight categories now share a swipeable hub
+  with hero summaries, service counts, search, pinned services, list and grid
+  modes, and consistent navigation.
+- **Scrollable bottom navigation:** the floating navigation bar can be dragged
+  horizontally and reserves enough width for each label, automatically
+  revealing the active category when it is off screen.
+- **Contextual device readiness:** every category now probes the hardware and
+  permissions it actually uses. Bluetooth, Wi-Fi, IR, NFC, camera, USB, and
+  media readiness are surfaced directly in the category hero.
+- **One-tap permission actions:** missing permissions and disabled radios expose
+  compact, category-specific actions that request the required permission or
+  open the relevant system settings.
+- **AMOLED theme:** a fourth appearance mode with pure-black backgrounds for
+  deeper contrast and reduced power use on OLED displays.
+- **Inline appearance pickers:** theme and accent selection now use the same
+  expandable, preview-rich picker pattern as language selection.
+
 ### Security
 
 - **Plugin integrity:** `.dolphyplugin` packages can carry an ECDSA P-256
@@ -22,6 +46,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Category experience:** navigation now uses a horizontal pager, and the
+  bottom bar scrolls instead of compressing all destinations into one row.
+- **Status semantics:** ready and granted states use a dedicated success green;
+  disabled, unavailable, permission-required, and busy states use red.
+- **Permission flow:** runtime permissions are requested in context from the
+  relevant category instead of being prompted automatically at app startup.
+- **Device action chips:** permission and settings actions are compact,
+  descriptive, and integrated into the category hero rather than shown as a
+  separate card.
+- **Appearance:** the settings screen and shared navigation surfaces use the
+  refreshed typography, shape, and motion system, with AMOLED labels localized
+  in Arabic, English, and Russian.
 - **Local-network egress:** every LAN HTTP call site (router manager, LAN and
   camera scanning, IPP printing, TV cast, bandwidth test) now goes through
   `LocalHttpPolicy.requireLocal`, so a bug or a malicious plugin cannot point
@@ -37,6 +73,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI now runs the unit tests of every module. The previous step executed
   `:app:testDebugUnitTest`, which had no sources, so no test ever ran.
 - Added `SECURITY.md`, `CONTRIBUTING.md` and `docs/ARCHITECTURE.md`.
+
+### Fixed
+
+- Removed the automatic Bluetooth permission prompt shown on every launch;
+  permission state is synchronized silently and refreshed on resume.
+- Prevented bottom-navigation labels from being truncated by making the bar
+  horizontally scrollable with a comfortable minimum item width.
+- Kept category navigation, search, pinning, and list/grid mode available while
+  device permissions or radios are unavailable.
+- Corrected positive and negative status colors across the category hub and
+  permission center, including permission rows and access badges.
+
+### Upgrade notes
+
+- **Version:** `versionName` 1.1.0, `versionCode` 30100.
+- No breaking API or project-format changes are required for this release.
 
 ## [1.0.0] - 2026-10-30
 
@@ -193,4 +245,5 @@ private release signing, and a modern Android toolchain.
 - [`plugin-examples/README.md`](plugin-examples/README.md) — plugin catalog and
   example descriptions.
 
+[1.1.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.0.0

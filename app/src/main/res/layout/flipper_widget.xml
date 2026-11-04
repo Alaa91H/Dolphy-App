@@ -44,7 +44,7 @@
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/main_item_ir"
@@ -54,7 +54,7 @@
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -136,7 +136,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/ir_item_1"
@@ -146,7 +146,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/ir_item_2"
@@ -156,7 +156,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/ir_item_3"
@@ -166,7 +166,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/ir_item_4"
@@ -176,7 +176,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/ir_item_5"
@@ -186,7 +186,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:id="@+id/ir_item_6"
@@ -196,7 +196,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:fontFamily="@font/born2b_sporty_v2" />
+                        android:fontFamily="sans-serif-medium" />
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>

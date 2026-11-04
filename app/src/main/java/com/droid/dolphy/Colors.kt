@@ -1,6 +1,9 @@
 package com.droid.dolphy
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 
 val DarkBackground = Color(0xFF0F0E0D)
@@ -181,3 +184,8 @@ fun getSplashGradientColors(accentColor: Color): List<Color> {
     }
 }
 
+@Composable
+fun successGreenColor(): Color {
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    return if (isDarkTheme) Color(0xFF8BE28F) else Color(0xFF1F7A3D)
+}

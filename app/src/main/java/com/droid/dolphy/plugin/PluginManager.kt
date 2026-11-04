@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import com.droid.dolphy.R
+import com.droid.dolphy.permissions.PluginAccessPolicy
 import com.droid.dolphy.plugin.js.JsPluginSession
 import com.droid.dolphy.plugin.model.LoadedPlugin
 import com.droid.dolphy.plugin.model.PluginManifest
@@ -64,6 +65,7 @@ object PluginManager {
         appContext = context.applicationContext
         if (initialized) return
         initialized = true
+        PluginAccessPolicy.initialize(appContext)
 
         val safety = appContext.getSharedPreferences(SAFE_MODE_PREFS, Context.MODE_PRIVATE)
         _safeMode.value = safety.getBoolean(KEY_SAFE_MODE, false)
@@ -524,6 +526,7 @@ object PluginManager {
 
         permanentlyDeleted.add(pluginId)
         saveDeletedIds()
+        PluginAccessPolicy.clear(pluginId)
 
         PluginRegistry.clearPlugin(pluginId)
         PluginLibraryRegistry.clearPlugin(pluginId)
@@ -894,10 +897,15 @@ object PluginManager {
     }
 
     private fun createSession(runtime: String, manifest: PluginManifest, raw: String): PluginSession {
+        // Capabilities the user switched off in the permission center are dropped
+        // before the session starts, so every bridge simply sees a narrower set.
+        val effective = manifest.copy(
+            permissions = PluginAccessPolicy.effective(manifest.id, manifest.permissions),
+        )
         return if (runtime == "python") {
-            PythonPluginSession(appContext, manifest, raw)
+            PythonPluginSession(appContext, effective, raw)
         } else {
-            JsPluginSession(appContext, manifest, raw)
+            JsPluginSession(appContext, effective, raw)
         }
     }
 

@@ -2,6 +2,9 @@
 
 package com.droid.dolphy
 
+import com.droid.dolphy.feature.catalog.FeatureCategory
+import com.droid.dolphy.feature.catalog.FeatureTaxonomy
+
 import android.Manifest
 import android.app.Activity
 import android.app.Application
@@ -33,6 +36,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -57,6 +62,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -73,6 +83,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -114,9 +125,11 @@ import com.droid.dolphy.plugin.ui.PluginSettingsSections
 import com.droid.dolphy.plugin.PluginManager
 import com.droid.dolphy.plugin.PluginBluetoothHooks
 import com.droid.dolphy.plugin.PluginRuntimeAccess
+import com.droid.dolphy.permissions.PermissionCenterScreen
 import com.droid.dolphy.printer.WifiPrintScreen
 import com.droid.dolphy.qr.*
 import com.droid.dolphy.tvcast.SmartTvCastScreen
+import com.droid.dolphy.ui.theme.DolphyShapes
 import com.droid.dolphy.ui.theme.ExpressiveShapes
 import com.droid.dolphy.ui.theme.buildAppTypography
 import com.droid.dolphy.ui.theme.buildExpressiveTypography
@@ -139,7 +152,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import rikka.shizuku.Shizuku
 import kotlin.random.Random
 enum class SpamType {
     CONTINUITY, EASY_SETUP, FAST_PAIR, SWIFT_PAIR, XIAOMI, VIVO, PHANTOM
@@ -223,25 +235,27 @@ fun DolphyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     accentColor: Color = OrangeAccent,
     isAdaptiveColor: Boolean = false,
-    useFlipperFont: Boolean = true,
     flipperFontScale: Float = 1.08f,
     uiScale: Float = 1f,
     animatedBackgroundEnabled: Boolean = false,
     expressiveEnabled: Boolean = false,
+    amoled: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
 
-    val expressiveScheme = if (isAdaptiveColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else remember(accentColor, darkTheme) {
-        googleExpressiveColorScheme(accentColor, darkTheme)
+    val effectiveDarkTheme = darkTheme || amoled
+    val baseScheme = if (isAdaptiveColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (effectiveDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    } else remember(accentColor, effectiveDarkTheme) {
+        googleExpressiveColorScheme(accentColor, effectiveDarkTheme)
     }
+    val expressiveScheme = if (amoled) baseScheme.withAmoledSurfaces() else baseScheme
 
     val typography = if (expressiveEnabled) {
-        buildExpressiveTypography(useFlipperFont = useFlipperFont, fontScale = flipperFontScale)
+        buildExpressiveTypography(fontScale = flipperFontScale)
     } else {
-        buildAppTypography(useFlipperFont = useFlipperFont, fontScale = flipperFontScale)
+        buildAppTypography(fontScale = flipperFontScale)
     }
 
     val baseDensity = LocalDensity.current
@@ -255,13 +269,29 @@ fun DolphyTheme(
         LocalAnimatedBackgroundEnabled provides animatedBackgroundEnabled,
         LocalDensity provides scaledDensity,
     ) {
+        val shapes = if (expressiveEnabled) ExpressiveShapes else DolphyShapes
         MaterialTheme(
             colorScheme = expressiveScheme,
             typography = typography,
-            content = content
+            shapes = shapes,
+            content = content,
         )
     }
 }
+
+private fun ColorScheme.withAmoledSurfaces(): ColorScheme = copy(
+    background = Color.Black,
+    surface = Color.Black,
+    surfaceDim = Color.Black,
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = Color(0xFF050505),
+    surfaceContainer = Color(0xFF080808),
+    surfaceContainerHigh = Color(0xFF0E0E0E),
+    surfaceContainerHighest = Color(0xFF151515),
+    surfaceVariant = Color(0xFF121212),
+    surfaceBright = Color(0xFF1E1E1E),
+    scrim = Color.Black,
+)
 
 private fun googleExpressiveColorScheme(seedColor: Color, darkTheme: Boolean): ColorScheme {
     val scheme = SchemeTonalSpot(Hct.fromInt(seedColor.toArgb()), darkTheme, 0.0)
@@ -531,10 +561,6 @@ class MainActivity : ComponentActivity() {
     private val pendingNavRoute = mutableStateOf<String?>(null)
     private val pendingPluginUri = mutableStateOf<String?>(null)
 
-    private val requestBluetoothPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        if (permissions.values.any { it }) spamViewModel.onPermissionsGranted() else spamViewModel.onPermissionsDenied()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PluginRuntimeAccess.attach(this)
@@ -555,19 +581,13 @@ class MainActivity : ComponentActivity() {
         UsbIrManager.init(this)
 
         val openedPluginUri = pluginUriFromIntent(intent)
-        if (openedPluginUri == null) requestPermissions()
+        syncBluetoothPermissionState()
         nfcViewModel.handleNfcIntent(intent)
         pendingNavRoute.value = intent.getStringExtra(EXTRA_NAV_ROUTE)
         pendingPluginUri.value = openedPluginUri
 
         window.decorView.post {
             IrRepository.warmIndexInBackground(applicationContext)
-            window.decorView.postDelayed({
-                if (openedPluginUri == null) {
-                    requestShizukuPermissionOnLaunch()
-                    requestRootOnLaunch()
-                }
-            }, 2500L)
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -582,13 +602,10 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val quickStartup by spamViewModel.quickStartupEnabled.collectAsState()
-            var showSplash by remember { mutableStateOf(!quickStartup) }
             val isDarkTheme by spamViewModel.isDarkTheme.collectAsState()
+            val themeMode by spamViewModel.themeMode.collectAsState()
             val accentColor by spamViewModel.accentColor.collectAsState()
             val isAdaptiveColor by spamViewModel.isAdaptiveColor.collectAsState()
-            val onboardingCompleted by spamViewModel.onboardingCompleted.collectAsState()
-            val flipperFontEnabled by spamViewModel.flipperFontEnabled.collectAsState()
             val flipperFontScale by spamViewModel.flipperFontScale.collectAsState()
             val animatedBackgroundEnabled by spamViewModel.animatedBackgroundEnabled.collectAsState()
             val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
@@ -599,11 +616,11 @@ class MainActivity : ComponentActivity() {
                 darkTheme = isDarkTheme,
                 accentColor = accentColor,
                 isAdaptiveColor = isAdaptiveColor,
-                useFlipperFont = flipperFontEnabled,
                 flipperFontScale = flipperFontScale,
                 uiScale = uiScale,
                 animatedBackgroundEnabled = animatedBackgroundEnabled && !performanceModeEnabled,
-                expressiveEnabled = expressiveEnabled && !performanceModeEnabled
+                expressiveEnabled = expressiveEnabled && !performanceModeEnabled,
+                amoled = themeMode == 3,
             ) {
                 val backgroundColor = MaterialTheme.colorScheme.background
 
@@ -621,13 +638,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if (showSplash) {
-                    SplashScreen(
-                        onSplashComplete = { showSplash = false }
-                    )
-                } else {
-                    MainScreen(spamViewModel, dolphyViewModel, nfcViewModel, pendingNavRoute, pendingPluginUri)
-                }
+                MainScreen(spamViewModel, dolphyViewModel, nfcViewModel, pendingNavRoute, pendingPluginUri)
             }
         }
     }
@@ -635,6 +646,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         UsbIrManager.scanDevices()
+        syncBluetoothPermissionState()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -665,7 +677,7 @@ class MainActivity : ComponentActivity() {
         return uri.toString()
     }
 
-    private fun requestPermissions() {
+    private fun syncBluetoothPermissionState() {
         val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
                 Manifest.permission.BLUETOOTH_SCAN,
@@ -676,54 +688,15 @@ class MainActivity : ComponentActivity() {
         } else {
             arrayOf(Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        requestBluetoothPermissionLauncher.launch(requiredPermissions)
-    }
-
-
-
-
-
-    private fun requestShizukuPermissionOnLaunch() {
-        val tryRequest = Runnable {
-            try {
-                if (!Shizuku.pingBinder()) return@Runnable
-                if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
-                    Shizuku.requestPermission(PluginManager.SHIZUKU_REQUEST_CODE)
-                }
-            } catch (e: Exception) {
-                Log.w("MainActivity", "Shizuku permission request failed", e)
-            }
+        val granted = requiredPermissions.all {
+            ActivityCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
-        try {
-            if (Shizuku.pingBinder()) {
-                tryRequest.run()
-            } else {
-                Shizuku.addBinderReceivedListenerSticky(object : Shizuku.OnBinderReceivedListener {
-                    override fun onBinderReceived() {
-                        try {
-                            Shizuku.removeBinderReceivedListener(this)
-                        } catch (_: Exception) {
-                        }
-                        tryRequest.run()
-                    }
-                })
-            }
-        } catch (e: Exception) {
-            Log.w("MainActivity", "Shizuku not available on launch", e)
-        }
+        if (granted) spamViewModel.onPermissionsGranted() else spamViewModel.onPermissionsDenied()
     }
 
 
-    private fun requestRootOnLaunch() {
-        Thread({
-            try {
-                val (code, out) = RootUtils.executeRootCommand("id")
-                Log.i("MainActivity", "Root probe: code=$code out=${out.take(80)}")
-            } catch (e: Exception) {
-                Log.w("MainActivity", "Root probe failed", e)
-            }
-        }, "root-probe").start()
-    }
+
+
 
 }
 
@@ -737,9 +710,6 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
-    val lastSeenVersion by spamViewModel.lastSeenVersion.collectAsState()
-    val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     var activePluginUri by rememberSaveable { mutableStateOf(pendingPluginUri.value) }
 
     LaunchedEffect(pendingPluginUri.value) {
@@ -749,29 +719,6 @@ fun MainScreen(
             launchSingleTop = true
         }
         pendingPluginUri.value = null
-    }
-
-    val currentVersion = remember {
-        runCatching {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrNull()?.takeIf { !it.isNullOrBlank() } ?: "2.3"
-    }
-
-
-    if (lastSeenVersion != currentVersion) {
-        if (currentVersion == "2.5") {
-            PluginSystemWarningDialog(onConfirm = { spamViewModel.completeWelcomeDialog() })
-        } else {
-            WelcomeDialog(
-                onDismiss = { spamViewModel.completeWelcomeDialog() },
-                onSubscribe = {
-                    runCatching { uriHandler.openUri("https://t.me/Dolphy_app_official") }
-                },
-                onSupport = {
-                    runCatching { uriHandler.openUri("https://yoomoney.ru/fundraise/1GT6KC59M2D.260402") }
-                }
-            )
-        }
     }
 
     NavHost(
@@ -815,10 +762,6 @@ fun MainScaffold(
     val liquidGlassButtons = false
     val liquidGlassTopBars = false
     val liquidGlassNav = false
-    val fabDestinationRoute by spamViewModel.fabDestinationRoute.collectAsState()
-    val fabEnabled by spamViewModel.fabEnabled.collectAsState()
-    val functionDestinations = functionDestinationSections().flatMap { it.second }
-    val fabDestination = functionDestinations.firstOrNull { it.route == fabDestinationRoute }
 
     LaunchedEffect(nfcViewModel) {
         nfcViewModel.openResultEvents.collect { id ->
@@ -839,9 +782,14 @@ fun MainScaffold(
     val navBackStackEntry by screenNavController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route.orEmpty()
-    val visibleRoute = currentRoute.ifEmpty { "bluetooth" }
+    val visibleRoute = currentRoute.ifEmpty { "categories" }
     val sectionTopBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val appStyleMode by spamViewModel.appStyleMode.collectAsState()
+    var bottomBarHeightPx by remember { mutableStateOf(0) }
+    val categoryPages = remember { FeatureCategory.entries }
+    val pagerState = rememberPagerState(pageCount = { categoryPages.size })
+    val pagerScope = rememberCoroutineScope()
+    var pendingCategoryPage by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(visibleRoute) {
         sectionTopBarScrollBehavior.state.heightOffset = 0f
@@ -849,9 +797,11 @@ fun MainScaffold(
         PluginManager.dispatchEvent("navigation", visibleRoute)
     }
 
-    val bluetoothSelected = visibleRoute == "bluetooth" || visibleRoute.startsWith("ble_section/")
-    val settingsSelected = isSettingsSectionRoute(visibleRoute)
-    val otherSelected = isOtherSectionRoute(visibleRoute)
+    val activeCategoryId = if (currentRoute == "categories") {
+        categoryPages.getOrNull(pagerState.currentPage)?.id
+    } else {
+        FeatureTaxonomy.categoryIdForRoute(visibleRoute)
+    }
     val usesCollapsingTopBar = visibleRoute !in setOf(
         "bluetooth",
         "settings",
@@ -866,19 +816,37 @@ fun MainScaffold(
         "other/plugin_security",
         "plugin_about",
         "other/plugin_about",
+        "permissions",
+        "other/permissions",
         "customize_animations",
     ) && !visibleRoute.startsWith("ble_section/") && !visibleRoute.startsWith("plugin_")
 
-    fun navigateToSectionRoot(route: String) {
-        if (currentRoute == route) return
+    fun selectCategory(category: FeatureCategory) {
+        val index = categoryPages.indexOf(category)
+        if (index < 0) return
         vibrate(context)
-        screenNavController.navigate(route) {
-            popUpTo(screenNavController.graph.startDestinationId) {
-                saveState = true
+        if (currentRoute == "categories") {
+            pagerScope.launch { pagerState.animateScrollToPage(index) }
+        } else {
+            pendingCategoryPage = index
+            screenNavController.navigate("categories") {
+                popUpTo(screenNavController.graph.startDestinationId) { inclusive = false }
+                launchSingleTop = true
             }
-            launchSingleTop = true
-            restoreState = true
         }
+    }
+
+    LaunchedEffect(currentRoute, pendingCategoryPage) {
+        if (currentRoute == "categories") {
+            pendingCategoryPage?.let { index ->
+                pagerState.scrollToPage(index)
+                pendingCategoryPage = null
+            }
+        }
+    }
+
+    BackHandler(enabled = currentRoute == "categories" && pagerState.currentPage > 0) {
+        pagerScope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
     }
 
     val contentBackdrop = rememberLayerBackdrop()
@@ -927,6 +895,7 @@ fun MainScaffold(
 
         val density = LocalDensity.current
         val bottomBlurHeight = with(density) { 105.dp.toPx() }
+        val bottomBarInset = with(density) { bottomBarHeightPx.toDp() }
 
         ProgressiveBlurContent(
             modifier = Modifier.fillMaxSize(),
@@ -936,8 +905,10 @@ fun MainScaffold(
         ) {
         NavHost(
             navController = screenNavController,
-            startDestination = if (appStyleMode == 1) "other" else "bluetooth",
-            modifier = Modifier.fillMaxSize(),
+            startDestination = "categories",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = bottomBarInset),
             enterTransition = {
                 rootSectionEnterTransition(
                     initialRoute = initialState.destination.route.orEmpty(),
@@ -963,6 +934,19 @@ fun MainScaffold(
                 ) ?: if (expressiveEnabled) expressivePopExitTransition() else cornerPopExitTransition()
             }
         ) {
+            composable("categories") {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    beyondViewportPageCount = 1,
+                ) { page ->
+                    CategoryHubScreen(
+                        navController = screenNavController,
+                        spamViewModel = spamViewModel,
+                        category = categoryPages[page],
+                    )
+                }
+            }
             composable(
                 "bluetooth"
             ) {
@@ -971,6 +955,8 @@ fun MainScaffold(
             composable(
                 "settings"
             ) { SettingsScreen(spamViewModel, dolphyViewModel, screenNavController) }
+            composable("permissions") { PermissionCenterScreen(screenNavController) }
+            composable("other/permissions") { PermissionCenterScreen(screenNavController) }
             composable(
                 "other"
             ) { OtherScreen(screenNavController, spamViewModel) }
@@ -1306,30 +1292,21 @@ fun MainScaffold(
         }
 
         AnimatedVisibility(
-            visible = appStyleMode != 1,
+            visible = true,
             enter = slideInVertically(initialOffsetY = { it }),
             exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            PluginSurfaceExtensionHost("bottom_bar", screenNavController) {
-                DolphyUnifiedBottomBar(
-                    bluetoothSelected = bluetoothSelected,
-                    modulesSelected = otherSelected,
-                    settingsSelected = settingsSelected,
-                    onBluetoothClick = { navigateToSectionRoot("bluetooth") },
-                    onModulesClick = { navigateToSectionRoot("other") },
-                    onSettingsClick = { navigateToSectionRoot("settings") },
-                    fabIcon = fabDestination?.icon ?: Icons.Default.Extension,
-                    fabTitle = fabDestination?.title ?: stringResource(R.string.nav_modules),
-                    onFabClick = {
-                        if (fabDestination == null) {
-                            navigateToSectionRoot("other")
-                        } else {
-                            openFunctionDestination(fabDestination, screenNavController, context)
-                        }
-                    },
-                    fabEnabled = fabEnabled,
-                )
+            Box(
+                modifier = Modifier.onSizeChanged { bottomBarHeightPx = it.height }
+            ) {
+                PluginSurfaceExtensionHost("bottom_bar", screenNavController) {
+                    DolphyUnifiedBottomBar(
+                        categories = categoryPages,
+                        selectedCategoryId = activeCategoryId,
+                        onCategoryClick = { category -> selectCategory(category) },
+                    )
+                }
             }
         }
 
@@ -1451,104 +1428,235 @@ private data class DolphyNavigationItem(
 
 @Composable
 private fun DolphyUnifiedBottomBar(
-    bluetoothSelected: Boolean,
-    modulesSelected: Boolean,
-    settingsSelected: Boolean,
-    onBluetoothClick: () -> Unit,
-    onModulesClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    fabIcon: ImageVector,
-    fabTitle: String,
-    onFabClick: () -> Unit,
-    fabEnabled: Boolean = true,
+    categories: List<FeatureCategory>,
+    selectedCategoryId: String?,
+    onCategoryClick: (FeatureCategory) -> Unit,
 ) {
-    val items = listOf(
-        DolphyNavigationItem(stringResource(R.string.nav_bluetooth), Icons.Default.Bluetooth, bluetoothSelected, onBluetoothClick),
-        DolphyNavigationItem(stringResource(R.string.nav_modules), Icons.Default.Extension, modulesSelected, onModulesClick),
-        DolphyNavigationItem(stringResource(R.string.nav_settings), Icons.Default.Settings, settingsSelected, onSettingsClick),
-    )
+    val items = categories.map { category ->
+        DolphyNavigationItem(
+            title = when (category) {
+                FeatureCategory.BLUETOOTH -> stringResource(R.string.nav_bluetooth)
+                FeatureCategory.NETWORK -> stringResource(R.string.nav_wifi)
+                FeatureCategory.INFRARED -> stringResource(R.string.nav_ir)
+                FeatureCategory.NFC -> stringResource(R.string.nav_nfc)
+                FeatureCategory.QR -> stringResource(R.string.cat_qr)
+                FeatureCategory.USB -> stringResource(R.string.nav_usb)
+                FeatureCategory.MEDIA -> stringResource(R.string.nav_media)
+                FeatureCategory.OTHER -> stringResource(R.string.nav_other)
+            },
+            icon = category.icon,
+            selected = selectedCategoryId == category.id,
+            onClick = { onCategoryClick(category) },
+        )
+    }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 16.dp)
-            .navigationBarsPadding(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .navigationBarsPadding()
+            .padding(horizontal = 10.dp, vertical = 6.dp),
     ) {
-        val contentRow: @Composable () -> Unit = {
-            items.forEach { item ->
-                val shape = RoundedCornerShape(24.dp)
-                val containerColor by animateColorAsState(
-                    targetValue = if (item.selected) MaterialTheme.colorScheme.primaryFixed else MaterialTheme.colorScheme.surfaceContainer,
-                    label = "bottom_bar_container",
-                )
-                val contentColor by animateColorAsState(
-                    targetValue = if (item.selected) MaterialTheme.colorScheme.onPrimaryFixed else MaterialTheme.colorScheme.onSurfaceVariant,
-                    label = "bottom_bar_content",
-                )
-                Row(
-                    modifier = Modifier
-                        .clip(shape)
-                        .background(containerColor, shape)
-                        .clickable(onClick = item.onClick)
-                        .padding(horizontal = if (item.selected) 16.dp else 12.dp, vertical = 12.dp)
-                        .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.title,
-                        tint = contentColor,
-                    )
-                    if (item.selected) {
-                        Spacer(Modifier.size(8.dp))
-                        Text(
-                            text = item.title,
-                            color = contentColor,
-                            style = MaterialTheme.typography.labelLarge,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(26.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.97f),
+            tonalElevation = 2.dp,
+            shadowElevation = 12.dp,
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+            ),
+        ) {
+            val navListState = rememberLazyListState()
+            LaunchedEffect(selectedCategoryId) {
+                val index = categories.indexOfFirst { it.id == selectedCategoryId }
+                if (index >= 0) {
+                    val visible = navListState.layoutInfo.visibleItemsInfo
+                    val first = visible.firstOrNull()?.index ?: 0
+                    val last = visible.lastOrNull()?.index ?: 0
+                    if (index !in first..last) {
+                        navListState.animateScrollToItem(index)
                     }
                 }
             }
-        }
-
-        Surface(
-            modifier = Modifier.widthIn(max = 480.dp),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp,
-        ) {
-            Row(
-                modifier = Modifier.padding(6.dp),
+            LazyRow(
+                state = navListState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                if (fabEnabled) {
-                    FilledIconButton(
-                        onClick = onFabClick,
-                        modifier = Modifier.size(52.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryFixed,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryFixed,
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = fabIcon,
-                            contentDescription = fabTitle,
-                        )
-                    }
+                items(
+                    items = items,
+                    key = { it.title },
+                ) { item ->
+                    DolphyBottomBarItem(
+                        item = item,
+                        modifier = Modifier.widthIn(min = 82.dp, max = 116.dp),
+                    )
                 }
-                contentRow()
             }
         }
     }
 }
 
+@Composable
+private fun DolphyBottomBarItem(
+    item: DolphyNavigationItem,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val containerColor by animateColorAsState(
+        targetValue = if (item.selected) MaterialTheme.colorScheme.primaryFixed else Color.Transparent,
+        label = "bottom_bar_container",
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (item.selected) MaterialTheme.colorScheme.onPrimaryFixed else MaterialTheme.colorScheme.onSurfaceVariant,
+        label = "bottom_bar_content",
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (item.selected) 1.12f else 1f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 500f),
+        label = "bottom_bar_icon_scale",
+    )
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.94f else 1f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 900f),
+        label = "bottom_bar_press",
+    )
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(containerColor)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = item.onClick,
+            )
+            .semantics {
+                selected = item.selected
+                role = Role.Tab
+            }
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .padding(horizontal = 2.dp, vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Icon(
+            imageVector = item.icon,
+            contentDescription = item.title,
+            tint = contentColor,
+            modifier = Modifier
+                .size(21.dp)
+                .graphicsLayer {
+                    scaleX = iconScale
+                    scaleY = iconScale
+                },
+        )
+        Text(
+            text = item.title,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (item.selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MoreCategoriesSheet(
+    onDismiss: () -> Unit,
+    onNavigate: (String) -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+    ) {
+        val sections = functionDestinationSections()
+        val counts = androidx.compose.runtime.remember(sections) {
+            sections.flatMap { it.second }.groupingBy { destination ->
+                if (destination.isPlugin) {
+                    FeatureTaxonomy.categoryIdForPlugin(
+                        destination.section, destination.title, destination.description,
+                    )
+                } else {
+                    FeatureTaxonomy.categoryIdForRoute(destination.route) ?: FeatureTaxonomy.OTHER
+                }
+            }.eachCount()
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.nav_more),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
+            )
+            FeatureCategory.entries
+                .filter { it.id !in FeatureTaxonomy.bottomBar && (counts[it.id] ?: 0) > 0 }
+                .forEach { category ->
+                    MoreSheetRow(
+                        icon = category.icon,
+                        title = stringResource(category.titleRes),
+                    ) { onNavigate("category/${category.id}") }
+                }
+            MaterialDivider()
+            MoreSheetRow(
+                icon = Icons.Default.Settings,
+                title = stringResource(R.string.nav_settings),
+            ) { onNavigate("settings") }
+        }
+    }
+}
+
+@Composable
+private fun MoreSheetRow(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
 
 @Composable
 private fun LiquidGlassBottomNavigation(
@@ -1884,7 +1992,7 @@ fun BluetoothContainerScreen(viewModel: SpamViewModel, navController: NavControl
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AdvertiseSpamScreen(viewModel: SpamViewModel) {
-    val bottomOverlayPadding = 124.dp
+    val bottomOverlayPadding = 16.dp
     val context = LocalContext.current
     val presets by viewModel.advertisePresets.collectAsState()
     val activePresetId by viewModel.activeAdvertisePresetId.collectAsState()
@@ -2277,7 +2385,7 @@ private fun requiredBleAdvertisePermissions(): Array<String> {
 
 @Composable
 fun AllSpamScreen(viewModel: SpamViewModel) {
-    val bottomOverlayPadding = 124.dp
+    val bottomOverlayPadding = 16.dp
     val selectedDevice by viewModel.selectedDevice.collectAsState()
     val isSpamming by viewModel.isSpamming.collectAsState()
     val sliderValue by viewModel.sliderValue.collectAsState()
@@ -2513,7 +2621,7 @@ internal fun RandomExternalDolphinAnimation(modifier: Modifier = Modifier) {
 
 @Composable
 fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit) {
-    val bottomScrollPadding = 220.dp
+    val bottomScrollPadding = 24.dp
     val spammingStates by viewModel.spammingStates.collectAsState()
     val kitchenSinkActive by viewModel.kitchenSinkActive.collectAsState()
     val pluginBleModes by PluginBleModeRegistry.modes.collectAsState()
@@ -2807,160 +2915,88 @@ fun BleSpamScreen(viewModel: SpamViewModel, onSectionClick: (BleSection) -> Unit
 }
 
 @Composable
-fun LevelUpAnimation(modifier: Modifier = Modifier) {
-    val frames = remember {
-        listOf(
-            R.drawable.levelup_frame_00, R.drawable.levelup_frame_01,
-            R.drawable.levelup_frame_02, R.drawable.levelup_frame_03,
-            R.drawable.levelup_frame_04, R.drawable.levelup_frame_05,
-            R.drawable.levelup_frame_06, R.drawable.levelup_frame_07,
-            R.drawable.levelup_frame_08, R.drawable.levelup_frame_09,
-            R.drawable.levelup_frame_10
-        )
-    }
-
-    var currentFrame by remember { mutableIntStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(100)
-            currentFrame = (currentFrame + 1) % frames.size
-        }
-    }
-
-    Image(
-        painter = painterResource(id = frames[currentFrame]),
-        contentDescription = null,
-        modifier = modifier,
-        contentScale = ContentScale.Fit
-    )
-}
-
-@Composable
-fun WelcomeDialog(
-    onDismiss: () -> Unit,
-    onSubscribe: () -> Unit,
-    onSupport: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                stringResource(R.string.welcome_dialog_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                LevelUpAnimation(modifier = Modifier.size(128.dp, 64.dp))
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    stringResource(R.string.welcome_dialog_text),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Start
+private fun SettingsHero(version: String, accent: Color) {
+    val shape = RoundedCornerShape(30.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        accent.copy(alpha = 0.24f),
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
+                    )
                 )
-            }
-        },
-        confirmButton = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            )
+            .border(1.dp, accent.copy(alpha = 0.16f), shape)
+            .padding(20.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                AccentButton(
-                    onClick = onSubscribe,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                Surface(
+                    modifier = Modifier.size(58.dp),
+                    shape = RoundedCornerShape(19.dp),
+                    color = accent.copy(alpha = 0.17f),
+                    contentColor = accent,
                 ) {
-                    Text(stringResource(R.string.welcome_dialog_btn_tg))
-                }
-                AccentButton(
-                    onClick = onSupport,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.AttachMoney, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.welcome_dialog_btn_support))
-                }
-                AccentButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                ) {
-                    Text(stringResource(R.string.welcome_dialog_btn_ok))
-                }
-            }
-        },
-        shape = RoundedCornerShape(28.dp)
-    )
-}
-
-@Composable
-fun PluginSystemWarningDialog(onConfirm: () -> Unit) {
-    var secondsRemaining by remember { mutableIntStateOf(10) }
-
-    LaunchedEffect(Unit) {
-        while (secondsRemaining > 0) {
-            delay(1000)
-            secondsRemaining--
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = {},
-        icon = {
-            Icon(
-                imageVector = Icons.Default.Security,
-                contentDescription = null,
-                modifier = Modifier.size(36.dp),
-            )
-        },
-        title = {
-            Text(
-                text = stringResource(R.string.plugin_system_warning_title),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-        },
-        text = {
-            Text(
-                text = stringResource(R.string.plugin_system_warning_text),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        },
-        confirmButton = {
-            AccentButton(
-                onClick = onConfirm,
-                enabled = secondsRemaining == 0,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text(
-                    if (secondsRemaining > 0) {
-                        stringResource(R.string.plugin_system_warning_countdown, secondsRemaining)
-                    } else {
-                        stringResource(R.string.welcome_dialog_btn_ok)
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(30.dp))
                     }
-                )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "DOLPHY",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.4.sp,
+                        ),
+                        color = accent,
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_title),
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_hero_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-        },
-        shape = RoundedCornerShape(28.dp),
-    )
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.72f),
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Text(
+                        text = stringResource(R.string.settings_version_label, version),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
 fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewModel, navController: NavController) {
-    val bottomScrollPadding = 180.dp
+    val bottomScrollPadding = 24.dp
     val isDarkTheme by spamViewModel.isDarkTheme.collectAsState()
     val accentColor = MaterialTheme.colorScheme.primary
     val selectedAccentColor by spamViewModel.accentColor.collectAsState()
-    val flipperFontEnabled by spamViewModel.flipperFontEnabled.collectAsState()
     val uiScale by spamViewModel.uiScale.collectAsState()
     val cyclicDolphinAnimationEnabled by spamViewModel.cyclicDolphinAnimationEnabled.collectAsState()
     val dolphyState by dolphyViewModel.dolphyState.collectAsState()
@@ -2989,35 +3025,8 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
             verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)
         ) {
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, top = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_title),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                SettingsHero(version = appVersion, accent = accentColor)
             }
-
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
-                    M3SegmentedListSectionHeader(title = stringResource(R.string.passport_title).uppercase())
-
-
-                    MaterialCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        accentColor = accentColor,
-                        contentPadding = 12.dp
-                    ) {
-                        DolphyScreen(dolphyViewModel, navController)
-                    }
-                }
-            }
-
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
@@ -3054,16 +3063,31 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                                 stringResource(R.string.language_russian) to "ru",
                                 stringResource(R.string.language_english) to "en",
                             )
-                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                languages.forEachIndexed { index, (label, language) ->
-                                    SegmentedButton(
+                            var languagePickerExpanded by remember { mutableStateOf(false) }
+                            val selectedLanguageLabel = languages.firstOrNull { it.second == appLanguage }?.first
+                                ?: languages.first().first
+                            SpringExpandablePicker(
+                                expanded = languagePickerExpanded,
+                                onToggle = { languagePickerExpanded = !languagePickerExpanded },
+                                collapsedContent = {
+                                    SpringPickerHeader(
+                                        title = selectedLanguageLabel,
+                                        expanded = languagePickerExpanded,
+                                        accentColor = accentColor,
+                                    )
+                                },
+                            ) {
+                                languages.forEach { (label, language) ->
+                                    LanguageOptionChip(
+                                        text = label,
                                         selected = appLanguage == language,
+                                        accentColor = accentColor,
+                                        modifier = Modifier.fillMaxWidth(),
                                         onClick = {
                                             spamViewModel.setAppLanguage(language)
                                             applyInAppLocale(context)
+                                            languagePickerExpanded = false
                                         },
-                                        shape = SegmentedButtonDefaults.itemShape(index, languages.size),
-                                        label = { Text(label) },
                                     )
                                 }
                             }
@@ -3071,33 +3095,24 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     }
 
 
-                    val quickStartupEnabled by spamViewModel.quickStartupEnabled.collectAsState()
                     MaterialCard(
                         modifier = Modifier.fillMaxWidth(),
                         accentColor = accentColor,
                         shape = getSegmentedShape(1, generalItems),
-                        contentPadding = 0.dp
+                        contentPadding = 0.dp,
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp).fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayCircle,
-                                contentDescription = null,
-                                tint = accentColor,
-                                modifier = Modifier.size(22.dp)
-                            )
+                        SettingsItem(onClick = { navController.navigate("permissions") }) {
+                            Icon(Icons.Default.AdminPanelSettings, null, tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.width(10.dp))
-                            Text(
-                                stringResource(R.string.settings_quick_startup),
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
-                            )
-                            DolphySwitch(
-                                checked = quickStartupEnabled,
-                                onCheckedChange = { spamViewModel.setQuickStartupEnabled(it) }
-                            )
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.settings_permissions), style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    stringResource(R.string.settings_permissions_summary),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -3164,38 +3179,12 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                 Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
                     M3SegmentedListSectionHeader(title = stringResource(R.string.settings_personalisation).uppercase())
                     val liquidGlassEnabled by spamViewModel.liquidGlassEnabled.collectAsState()
-                    val functionsMenuViewType by spamViewModel.functionsMenuViewType.collectAsState()
-                    val functionsTileSize by spamViewModel.functionsTileSize.collectAsState()
-                    val appStyleMode by spamViewModel.appStyleMode.collectAsState()
-                    val interfaceItems = 5 + 1 + 1 + (if (functionsMenuViewType == 1) 1 else 0) + (if (liquidGlassEnabled) 1 else 0)
+                    val interfaceItems = 4 + (if (liquidGlassEnabled) 1 else 0)
 
                     MaterialCard(
                         modifier = Modifier.fillMaxWidth(),
                         accentColor = accentColor,
                         shape = getSegmentedShape(0, interfaceItems),
-                        contentPadding = 0.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp).fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                stringResource(R.string.settings_flipper_font),
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
-                            )
-                            DolphySwitch(
-                                checked = flipperFontEnabled,
-                                onCheckedChange = { spamViewModel.setFlipperFontEnabled(it) }
-                            )
-                        }
-                    }
-
-
-                    MaterialCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        accentColor = accentColor,
-                        shape = getSegmentedShape(1, interfaceItems),
                         contentPadding = 10.dp
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
@@ -3237,7 +3226,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     MaterialCard(
                         modifier = Modifier.fillMaxWidth(),
                         accentColor = accentColor,
-                        shape = getSegmentedShape(2, interfaceItems),
+                        shape = getSegmentedShape(1, interfaceItems),
                         contentPadding = 0.dp
                     ) {
                         Row(
@@ -3257,61 +3246,72 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     }
 
 
-                    var themeMenuExpanded by remember { mutableStateOf(false) }
+                    var themePickerExpanded by remember { mutableStateOf(false) }
                     val themeMode by spamViewModel.themeMode.collectAsState()
-                    val themeModeText = when (themeMode) {
-                        1 -> stringResource(R.string.settings_theme_dark)
-                        2 -> stringResource(R.string.settings_theme_light)
-                        else -> stringResource(R.string.settings_theme_auto)
-                    }
+                    val themeOptions = themeModeChoices()
+                    val selectedTheme = themeOptions.firstOrNull { it.mode == themeMode } ?: themeOptions.first()
                     MaterialCard(
                         modifier = Modifier.fillMaxWidth(),
                         accentColor = accentColor,
-                        shape = getSegmentedShape(3, interfaceItems),
-                        contentPadding = 0.dp
+                        shape = getSegmentedShape(2, interfaceItems),
+                        contentPadding = 12.dp
                     ) {
-                        Box {
-                            SettingsItem(onClick = { themeMenuExpanded = true }) {
-                                Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                                Text(
-                                    text = themeModeText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = themeMenuExpanded,
-                                onDismissRequest = { themeMenuExpanded = false },
-                                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = stringResource(R.string.settings_theme),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 4.dp),
+                            )
+                            SpringExpandablePicker(
+                                expanded = themePickerExpanded,
+                                onToggle = { themePickerExpanded = !themePickerExpanded },
+                                collapsedContent = {
+                                    SpringPickerHeader(
+                                        title = selectedTheme.name,
+                                        expanded = themePickerExpanded,
+                                        accentColor = accentColor,
+                                        leading = { ThemeModeDot(selectedTheme.mode, Modifier.size(24.dp)) },
+                                    )
+                                },
                             ) {
-                                DropdownMenuItem(text = { Text(stringResource(R.string.settings_theme_auto)) }, onClick = { spamViewModel.setThemeMode(0); themeMenuExpanded = false })
-                                DropdownMenuItem(text = { Text(stringResource(R.string.settings_theme_dark)) }, onClick = { spamViewModel.setThemeMode(1); themeMenuExpanded = false })
-                                DropdownMenuItem(text = { Text(stringResource(R.string.settings_theme_light)) }, onClick = { spamViewModel.setThemeMode(2); themeMenuExpanded = false })
+                                themeOptions.forEach { option ->
+                                    ThemeOptionRow(
+                                        option = option,
+                                        selected = themeMode == option.mode,
+                                        onClick = {
+                                            vibrate(context)
+                                            spamViewModel.setThemeMode(option.mode)
+                                            themePickerExpanded = false
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
 
 
                     val isAdaptiveColor by spamViewModel.isAdaptiveColor.collectAsState()
-                    val colorOptions = remember {
-                        val base = listOf(
+                    val autoAccentLabel = stringResource(R.string.settings_accent_auto)
+                    val redAccentLabel = stringResource(R.string.settings_color_red)
+                    val greenAccentLabel = stringResource(R.string.settings_color_green)
+                    val purpleAccentLabel = stringResource(R.string.settings_color_purple)
+                    val cyanAccentLabel = stringResource(R.string.settings_color_cyan)
+                    val colorOptions = remember(autoAccentLabel, redAccentLabel, greenAccentLabel, purpleAccentLabel, cyanAccentLabel) {
+                        listOf(
+                            SettingColorOption(autoAccentLabel, Color.Transparent, isAdaptive = true),
                             SettingColorOption("Dolphy", OrangeAccent),
-                            SettingColorOption("Red", RedThemeAccent),
-                            SettingColorOption("Green", GreenThemeAccent),
-                            SettingColorOption("Purple", PurpleThemeAccent),
-                            SettingColorOption("Cyan", CyanThemeAccent),
+                            SettingColorOption(redAccentLabel, RedThemeAccent),
+                            SettingColorOption(greenAccentLabel, GreenThemeAccent),
+                            SettingColorOption(purpleAccentLabel, PurpleThemeAccent),
+                            SettingColorOption(cyanAccentLabel, CyanThemeAccent),
                         )
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            listOf(SettingColorOption("Adaptive", Color.Transparent, isAdaptive = true)) + base
-                        } else {
-                            base
-                        }
                     }
 
                     MaterialCard(
                         modifier = Modifier.fillMaxWidth(),
                         accentColor = accentColor,
-                        shape = getSegmentedShape(4, interfaceItems),
+                        shape = getSegmentedShape(3, interfaceItems),
                         contentPadding = 12.dp,
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3321,181 +3321,37 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(horizontal = 4.dp),
                             )
-                            AccentColorCarousel(
-                                options = colorOptions,
-                                isAdaptiveColor = isAdaptiveColor,
-                                currentAccent = selectedAccentColor,
-                                onSelect = { option ->
-                                    if (option.isAdaptive) {
-                                        spamViewModel.setAdaptiveColor(true)
-                                    } else {
-                                        spamViewModel.setAccentColor(option.color)
-                                    }
+                            var accentPickerExpanded by remember { mutableStateOf(false) }
+                            val selectedAccentOption = colorOptions.firstOrNull { option ->
+                                if (option.isAdaptive) isAdaptiveColor
+                                else !isAdaptiveColor && selectedAccentColor.toArgb() == option.color.toArgb()
+                            } ?: colorOptions.first()
+                            SpringExpandablePicker(
+                                expanded = accentPickerExpanded,
+                                onToggle = { accentPickerExpanded = !accentPickerExpanded },
+                                collapsedContent = {
+                                    SpringPickerHeader(
+                                        title = selectedAccentOption.name,
+                                        expanded = accentPickerExpanded,
+                                        accentColor = accentColor,
+                                        leading = { AccentColorDot(selectedAccentOption, Modifier.size(24.dp)) },
+                                    )
                                 },
-                            )
-                        }
-                    }
-
-                    MaterialCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        accentColor = accentColor,
-                        shape = getSegmentedShape(5, interfaceItems),
-                        contentPadding = 12.dp,
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.GridView,
-                                    contentDescription = null,
-                                    tint = accentColor,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    stringResource(R.string.settings_functions_menu_view),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            val viewOptions = listOf(
-                                stringResource(R.string.settings_functions_menu_containers),
-                                stringResource(R.string.settings_functions_menu_tiles)
-                            )
-                            SingleChoiceSegmentedButtonRow(
-                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                viewOptions.forEachIndexed { index, title ->
-                                    SegmentedButton(
-                                        selected = functionsMenuViewType == index,
+                                colorOptions.forEach { option ->
+                                    val selected = if (option.isAdaptive) isAdaptiveColor
+                                        else !isAdaptiveColor && selectedAccentColor.toArgb() == option.color.toArgb()
+                                    AccentOptionRow(
+                                        option = option,
+                                        selected = selected,
                                         onClick = {
-                                            if (functionsMenuViewType != index) {
-                                                vibrate(context)
-                                                spamViewModel.setFunctionsMenuViewType(index)
+                                            if (option.isAdaptive) {
+                                                spamViewModel.setAdaptiveColor(true)
+                                            } else {
+                                                spamViewModel.setAccentColor(option.color)
                                             }
+                                            accentPickerExpanded = false
                                         },
-                                        shape = SegmentedButtonDefaults.itemShape(index, viewOptions.size),
-                                        colors = SegmentedButtonDefaults.colors(
-                                            activeContainerColor = MaterialTheme.colorScheme.primaryFixed,
-                                            activeContentColor = MaterialTheme.colorScheme.onPrimaryFixed,
-                                            activeBorderColor = MaterialTheme.colorScheme.primaryFixed,
-                                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                            inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            inactiveBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                        ),
-                                        icon = {},
-                                        label = {
-                                            Text(
-                                                text = title,
-                                                fontWeight = if (functionsMenuViewType == index) FontWeight.Bold else FontWeight.Medium
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (functionsMenuViewType == 1) {
-                        MaterialCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            accentColor = accentColor,
-                            shape = getSegmentedShape(6, interfaceItems),
-                            contentPadding = 10.dp
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(M3SegmentedListItemSpacing)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.AspectRatio,
-                                        contentDescription = null,
-                                        tint = accentColor,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                    Spacer(Modifier.width(10.dp))
-                                    Text(
-                                        stringResource(R.string.settings_functions_tile_size),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text(
-                                        "${functionsTileSize.toInt()} dp",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = accentColor,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                DolphySlider(
-                                    value = functionsTileSize,
-                                    onValueChange = { spamViewModel.setFunctionsTileSize(it) },
-                                    valueRange = 100f..200f,
-                                    steps = 9,
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = accentColor,
-                                        activeTrackColor = accentColor,
-                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    MaterialCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        accentColor = accentColor,
-                        shape = getSegmentedShape(if (functionsMenuViewType == 1) 7 else 6, interfaceItems),
-                        contentPadding = 12.dp,
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Style,
-                                    contentDescription = null,
-                                    tint = accentColor,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    stringResource(R.string.settings_app_style),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            val styleOptions = listOf(
-                                stringResource(R.string.settings_app_style_old),
-                                stringResource(R.string.settings_app_style_new)
-                            )
-                            SingleChoiceSegmentedButtonRow(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                styleOptions.forEachIndexed { index, title ->
-                                    SegmentedButton(
-                                        selected = appStyleMode == index,
-                                        onClick = {
-                                            if (appStyleMode != index) {
-                                                vibrate(context)
-                                                spamViewModel.setAppStyleMode(index)
-                                                if (index == 1) {
-                                                    navController.navigate("other") {
-                                                        popUpTo("other") { inclusive = true }
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        shape = SegmentedButtonDefaults.itemShape(index, styleOptions.size),
-                                        colors = SegmentedButtonDefaults.colors(
-                                            activeContainerColor = MaterialTheme.colorScheme.primaryFixed,
-                                            activeContentColor = MaterialTheme.colorScheme.onPrimaryFixed,
-                                            activeBorderColor = MaterialTheme.colorScheme.primaryFixed,
-                                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                            inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            inactiveBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                        ),
-                                        icon = {},
-                                        label = {
-                                            Text(
-                                                text = title,
-                                                fontWeight = if (appStyleMode == index) FontWeight.Bold else FontWeight.Medium
-                                            )
-                                        }
                                     )
                                 }
                             }
@@ -3511,7 +3367,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                     MaterialCard(
                         modifier = Modifier.fillMaxWidth(),
                         accentColor = accentColor,
-                        shape = getSegmentedShape(if (functionsMenuViewType == 1) 8 else 7, interfaceItems),
+                        shape = getSegmentedShape(4, interfaceItems),
                         contentPadding = 0.dp
                     ) {
                         Column {
@@ -3630,10 +3486,6 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
 
             item {
                 PluginSettingsSections(navController)
-            }
-
-            item {
-                NavigationCustomizationSections(spamViewModel)
             }
 
 
@@ -3990,7 +3842,7 @@ fun BleSectionScreen(section: BleSection, onBack: () -> Unit) {
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 160.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
@@ -4386,6 +4238,82 @@ fun AccentColorScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
     }
 }
 
+private data class ThemeModeOption(
+    val mode: Int,
+    val name: String,
+    val description: String,
+)
+
+@Composable
+private fun themeModeChoices(): List<ThemeModeOption> = listOf(
+    ThemeModeOption(0, stringResource(R.string.settings_theme_auto), stringResource(R.string.theme_mode_auto_desc)),
+    ThemeModeOption(1, stringResource(R.string.settings_theme_dark), stringResource(R.string.theme_mode_dark_desc)),
+    ThemeModeOption(2, stringResource(R.string.settings_theme_light), stringResource(R.string.theme_mode_light_desc)),
+    ThemeModeOption(3, stringResource(R.string.settings_theme_amoled), stringResource(R.string.theme_mode_amoled_desc)),
+)
+
+@Composable
+private fun ThemeModeDot(mode: Int, modifier: Modifier = Modifier) {
+    val borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    val brush = when (mode) {
+        1 -> Brush.linearGradient(listOf(Color(0xFF303036), Color(0xFF121214)))
+        2 -> Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFFE6E6E6)))
+        3 -> Brush.linearGradient(listOf(Color.Black, Color.Black))
+        else -> Brush.linearGradient(listOf(Color(0xFFFFFFFF), Color(0xFF202024)))
+    }
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(brush)
+            .border(1.dp, borderColor, CircleShape),
+    )
+}
+
+@Composable
+private fun ThemeOptionRow(
+    option: ThemeModeOption,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primaryFixed
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ThemeModeDot(option.mode, Modifier.size(26.dp))
+        Spacer(Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = option.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryFixed else MaterialTheme.colorScheme.onSurface,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            )
+            Text(
+                text = option.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryFixed.copy(alpha = 0.72f)
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        }
+        if (selected) {
+            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ThemeModeScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
@@ -4394,12 +4322,7 @@ fun ThemeModeScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
     val context = LocalContext.current
 
 
-    data class ThemeModeOption(val mode: Int, val name: String, val description: String)
-    val themeModes = listOf(
-        ThemeModeOption(0, stringResource(R.string.settings_theme_auto), stringResource(R.string.theme_mode_auto_desc)),
-        ThemeModeOption(1, stringResource(R.string.settings_theme_dark), stringResource(R.string.theme_mode_dark_desc)),
-        ThemeModeOption(2, stringResource(R.string.settings_theme_light), stringResource(R.string.theme_mode_light_desc))
-    )
+    val themeModes = themeModeChoices()
 
     Box(modifier = Modifier.fillMaxSize()) {
         MaterialBackground(accentColor = accentColor) {
@@ -4467,10 +4390,11 @@ fun ThemeModeScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 ) {
-                                    Column {
+                                    ThemeModeDot(option.mode, Modifier.size(26.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = option.name,
                                             style = MaterialTheme.typography.titleMedium,
@@ -4484,7 +4408,7 @@ fun ThemeModeScreen(viewModel: SpamViewModel, onNavigateBack: () -> Unit) {
                                     }
                                     if (isSelected) {
                                         Icon(
-                                            imageVector = Icons.Default.Info,
+                                            imageVector = Icons.Default.Check,
                                             contentDescription = null,
                                             tint = accentColor
                                         )
@@ -5085,9 +5009,14 @@ fun AccentColorCarousel(
     )
     val scope = rememberCoroutineScope()
 
+    val springSpec = spring<Float>(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessLow,
+    )
+
     LaunchedEffect(selectedIndex) {
         if (carouselState.currentItem != selectedIndex) {
-            carouselState.animateScrollToItem(selectedIndex)
+            carouselState.animateScrollToItem(selectedIndex, animationSpec = springSpec)
         }
     }
 
@@ -5145,7 +5074,7 @@ fun AccentColorCarousel(
                     .maskClip(itemShape)
                     .clickable {
                         onSelect(option)
-                        scope.launch { carouselState.animateScrollToItem(index) }
+                        scope.launch { carouselState.animateScrollToItem(index, animationSpec = springSpec) }
                     },
                 contentAlignment = Alignment.Center,
             ) {
@@ -5165,22 +5094,176 @@ fun AccentColorCarousel(
                             },
                         ),
                 )
-                if (selected) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.28f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.fillMaxSize(0.55f),
-                        )
-                    }
-                }
+                AccentCarouselSelection(
+                    isAdaptive = option.isAdaptive,
+                    selected = selected,
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun AccentCarouselSelection(
+    isAdaptive: Boolean,
+    selected: Boolean,
+) {
+    if (isAdaptive) {
+        Icon(
+            imageVector = Icons.Default.AutoAwesome,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.9f),
+            modifier = Modifier.size(20.dp),
+        )
+    }
+    val selectionScale by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "accent_selection_scale",
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                scaleX = selectionScale
+                scaleY = selectionScale
+            }
+            .background(Color.Black.copy(alpha = 0.28f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Check,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.fillMaxSize(0.55f),
+        )
+    }
+}
+
+@Composable
+private fun SpringExpandablePicker(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    collapsedContent: @Composable () -> Unit,
+    expandedContent: @Composable () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .clickable(onClick = onToggle)
+        ) {
+            collapsedContent()
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = expanded,
+            enter = androidx.compose.animation.expandVertically(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                )
+            ) + androidx.compose.animation.fadeIn(
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+            ),
+            exit = androidx.compose.animation.shrinkVertically(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                )
+            ) + androidx.compose.animation.fadeOut(),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { expandedContent() }
+        }
+    }
+}
+
+@Composable
+private fun SpringPickerHeader(
+    title: String,
+    expanded: Boolean,
+    accentColor: Color,
+    leading: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+            .border(1.dp, accentColor.copy(alpha = 0.55f), RoundedCornerShape(14.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (leading != null) {
+            leading()
+            Spacer(Modifier.width(10.dp))
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = accentColor,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = null,
+            tint = accentColor,
+        )
+    }
+}
+
+@Composable
+private fun AccentColorDot(option: SettingColorOption, modifier: Modifier = Modifier) {
+    val brush = if (option.isAdaptive) {
+        Brush.linearGradient(
+            listOf(
+                Color(0xFFFF1744),
+                Color(0xFFFFEA00),
+                Color(0xFF00E676),
+                Color(0xFF2979FF),
+                Color(0xFFD500F9),
+                Color(0xFFFF1744),
+            )
+        )
+    } else {
+        Brush.linearGradient(listOf(option.color, option.color))
+    }
+    Box(modifier.clip(CircleShape).background(brush))
+}
+
+@Composable
+private fun AccentOptionRow(
+    option: SettingColorOption,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primaryFixed
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AccentColorDot(option, Modifier.size(24.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = option.name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (selected) MaterialTheme.colorScheme.onPrimaryFixed else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            modifier = Modifier.weight(1f),
+        )
+        if (selected) {
+            Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -5193,11 +5276,32 @@ fun LanguageOptionChip(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val bg = if (selected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
-    val borderColor = if (selected) accentColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
-    val textColor = if (selected) accentColor else MaterialTheme.colorScheme.onSurface
+    val bg by animateColorAsState(
+        targetValue = if (selected) accentColor.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        label = "language_chip_bg",
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (selected) accentColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+        label = "language_chip_border",
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (selected) accentColor else MaterialTheme.colorScheme.onSurface,
+        label = "language_chip_text",
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.06f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "language_chip_scale",
+    )
     Box(
         modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .clip(RoundedCornerShape(10.dp))
             .border(1.dp, borderColor, RoundedCornerShape(10.dp))
             .background(bg)
@@ -5209,7 +5313,9 @@ fun LanguageOptionChip(
             text = text,
             style = MaterialTheme.typography.labelMedium,
             color = textColor,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
     }
 }
@@ -5785,7 +5891,7 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
 
     private val _isDarkTheme = MutableStateFlow(
         when (prefs.getInt("theme_mode", 0)) {
-            1 -> true
+            1, 3 -> true
             2 -> false
             else -> (application.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
         }
@@ -5931,7 +6037,7 @@ class SpamViewModel(private val application: Application) : AndroidViewModel(app
         prefs.edit { putInt("theme_mode", mode) }
         _themeMode.value = mode
         _isDarkTheme.value = when (mode) {
-            1 -> true
+            1, 3 -> true
             2 -> false
             else -> (application.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
         }

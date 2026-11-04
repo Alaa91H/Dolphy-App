@@ -53,6 +53,7 @@ fun DolphyTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = DolphyShapes,
         content = content
     )
 }

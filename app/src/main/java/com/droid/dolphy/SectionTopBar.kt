@@ -63,8 +63,12 @@ fun SectionTopBar(
         }
     }
     val colors = TopAppBarDefaults.topAppBarColors(
-        containerColor = MaterialTheme.colorScheme.background,
-        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+        containerColor = if (transparent) Color.Transparent else MaterialTheme.colorScheme.background,
+        scrolledContainerColor = if (transparent) {
+            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.94f)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
         navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,

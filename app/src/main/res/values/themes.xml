@@ -1,17 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Dolphy" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- Single launch window: it matches the Compose background so the first
+         frame replaces it without a flash. There is no splash graphic. -->
+    <style name="Theme.Dolphy" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowBackground">@android:color/black</item>
-    </style>
-    
-    <style name="Theme.Dolphy.Splash" parent="Theme.Dolphy">
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">#0F1115</item>
+        <item name="android:windowDisablePreview">true</item>
     </style>
 </resources>

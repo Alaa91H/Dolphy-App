@@ -17,12 +17,17 @@ import com.droid.dolphy.plugin.PluginRegistry
 import com.droid.dolphy.plugin.model.OtherSections
 
 @Composable
-fun sectionTitle(section: String): String = when (section) {
-    OtherSections.INFRARED -> stringResource(R.string.section_infrared)
-    OtherSections.BLUETOOTH -> stringResource(R.string.section_bluetooth)
-    OtherSections.OTHER -> stringResource(R.string.section_other)
-    OtherSections.PLUGINS -> stringResource(R.string.section_plugins)
-    else -> section
+fun sectionTitle(section: String): String {
+    com.droid.dolphy.feature.catalog.FeatureCategory.fromId(section)?.let {
+        return stringResource(it.titleRes)
+    }
+    return when (section) {
+        OtherSections.INFRARED -> stringResource(R.string.section_infrared)
+        OtherSections.BLUETOOTH -> stringResource(R.string.section_bluetooth)
+        OtherSections.OTHER -> stringResource(R.string.section_other)
+        OtherSections.PLUGINS -> stringResource(R.string.section_plugins)
+        else -> section
+    }
 }
 
 data class FunctionDestination(
