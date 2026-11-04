@@ -21,6 +21,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import com.chaquo.python.PyObject
 import com.droid.dolphy.IrCatalogSync
 import com.droid.dolphy.IrSyncOutcome
 import com.droid.dolphy.RootUtils
@@ -541,7 +542,16 @@ class PluginDeviceApis(
         }
     }
 
-    fun irdbSync(callback: (String) -> Unit): Boolean {
+    /**
+     * Python passes bound methods as `PyObject`. Chaquopy cannot convert a
+     * method object to a Kotlin function type, so adapt it explicitly here.
+     */
+    fun irdbSync(callback: PyObject): Boolean =
+        irdbSyncInternal { payload -> runCatching { callback.call(payload) } }
+
+    fun irdbSync(callback: (String) -> Unit): Boolean = irdbSyncInternal(callback)
+
+    private fun irdbSyncInternal(callback: (String) -> Unit): Boolean {
         if (denied(PluginPermission.IRDB, callback)) return false
         io.execute {
             fun emit(payload: JSONObject) {
