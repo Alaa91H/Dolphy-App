@@ -29,7 +29,7 @@ data class CatalogPlugin(
     val icon: String,
     val permissions: List<String>,
     @StringRes val descriptionRes: Int,
-    val url: String = "https://raw.githubusercontent.com/unvoiddd/Dolphy-App/main/plugin-examples/$fileName",
+    val url: String = "https://raw.githubusercontent.com/Alaa91H/Dolphy-App/main/plugin-examples/$fileName",
 )
 
 val PLUGIN_CATALOG: List<CatalogPlugin> = listOf(

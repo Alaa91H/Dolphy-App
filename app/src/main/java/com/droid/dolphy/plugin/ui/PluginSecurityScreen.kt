@@ -75,7 +75,7 @@ fun PluginSecurityScreen(navController: NavController) {
             }
             MaterialButton(
                 text = stringResource(R.string.plugin_documentation_site),
-                onClick = { uriHandler.openUri("https://unvoiddd.github.io/Dolphy-App/") },
+                onClick = { uriHandler.openUri("https://github.com/Alaa91H/Dolphy-App/tree/main/plugin-examples") },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             )
         }

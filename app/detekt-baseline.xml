@@ -126,7 +126,7 @@
     <ID>CyclomaticComplexMethod:PluginAndroidApis.kt:PluginAndroidApis$fun openSettings: Boolean</ID>
     <ID>CyclomaticComplexMethod:PluginDeviceApis.kt:PluginDeviceApis$fun httpDownloadApproved</ID>
     <ID>CyclomaticComplexMethod:PluginDexRegistry.kt:PluginDexRegistry$fun loadBytes: ClassLoader</ID>
-    <ID>CyclomaticComplexMethod:PluginHostScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun PluginHostScreen</ID>
+    <ID>CyclomaticComplexMethod:PluginHostScreen.kt:@Composable fun PluginHostScreen</ID>
     <ID>CyclomaticComplexMethod:PluginIcons.kt:PluginIcons$fun resolve: ImageVector</ID>
     <ID>CyclomaticComplexMethod:PluginIcons.kt:PluginIcons$private fun resolveDynamic: ImageVector?</ID>
     <ID>CyclomaticComplexMethod:PluginManager.kt:PluginManager$fun importFromUrl: Result&lt;Uri&gt;</ID>
@@ -243,9 +243,9 @@
     <ID>LongMethod:OtherScreen.kt:@Composable private fun RenderTileCard</ID>
     <ID>LongMethod:OtherScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun OtherScreen</ID>
     <ID>LongMethod:PluginAboutScreen.kt:@Composable fun PluginAboutScreen</ID>
-    <ID>LongMethod:PluginHostScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun PluginHostScreen</ID>
+    <ID>LongMethod:PluginHostScreen.kt:@Composable fun PluginHostScreen</ID>
     <ID>LongMethod:PluginManagerScreen.kt:@Composable private fun CatalogCard</ID>
-    <ID>LongMethod:PluginPreviewScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun PluginPreviewScreen</ID>
+    <ID>LongMethod:PluginPreviewScreen.kt:@Composable fun PluginPreviewScreen</ID>
     <ID>LongMethod:PluginUiRenderer.kt:@Composable fun PluginUiRenderer</ID>
     <ID>LongMethod:QrToolsScreens.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun QrAudioSpooferScreen</ID>
     <ID>LongMethod:SmartTvCastScreen.kt:@Composable fun SmartTvCastScreen</ID>

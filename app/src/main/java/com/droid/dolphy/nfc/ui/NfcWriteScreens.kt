@@ -14,10 +14,6 @@ import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +54,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -225,20 +220,13 @@ private fun WaitingBlock(nfcReady: Boolean, accent: Color, waitMessage: String) 
 
 @Composable
 private fun SuccessBlock() {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        AnimatedVisibility(
-            visible = visible,
-            enter = fadeIn(tween(300)) + scaleIn(tween(380), initialScale = 0.5f),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = stringResource(R.string.cd_nfc_success),
-                tint = Color(0xFF43A047),
-                modifier = Modifier.size(72.dp),
-            )
-        }
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = stringResource(R.string.cd_nfc_success),
+            tint = Color(0xFF43A047),
+            modifier = Modifier.size(72.dp),
+        )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = stringResource(R.string.nfc_data_written),

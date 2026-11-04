@@ -5,11 +5,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -111,7 +106,7 @@ fun PluginManagerScreen(navController: NavController) {
                     contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp),
                 ) {
                     item("safe_mode") {
-                        SafeModeAnimated(safeMode)
+                        SafeModeSection(safeMode)
                     }
                     item("import_card") {
                         PluginImportCard(navController)
@@ -630,12 +625,8 @@ private fun formatSize(bytes: Long): String = when {
 }
 
 @Composable
-private fun SafeModeAnimated(visible: Boolean) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn() + expandVertically(),
-        exit = fadeOut() + shrinkVertically(),
-    ) {
+private fun SafeModeSection(visible: Boolean) {
+    if (visible) {
         SafeModeCard()
     }
 }

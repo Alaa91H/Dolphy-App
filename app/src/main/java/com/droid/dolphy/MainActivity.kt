@@ -29,7 +29,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.*
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -564,6 +566,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
         PluginRuntimeAccess.attach(this)
         PluginManager.dispatchEvent("activity_create", this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -646,6 +650,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
         UsbIrManager.scanDevices()
         syncBluetoothPermissionState()
     }
@@ -710,7 +716,6 @@ fun MainScreen(
     pendingPluginUri: MutableState<String?>,
 ) {
     val navController = rememberNavController()
-    val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
     var activePluginUri by rememberSaveable { mutableStateOf(pendingPluginUri.value) }
 
     LaunchedEffect(pendingPluginUri.value) {
@@ -725,10 +730,10 @@ fun MainScreen(
     NavHost(
         navController = navController,
         startDestination = "main_scaffold",
-        enterTransition = { if (expressiveEnabled) expressiveEnterTransition() else cornerEnterTransition() },
-        exitTransition = { if (expressiveEnabled) expressiveExitTransition() else cornerExitTransition() },
-        popEnterTransition = { if (expressiveEnabled) expressivePopEnterTransition() else cornerPopEnterTransition() },
-        popExitTransition = { if (expressiveEnabled) expressivePopExitTransition() else cornerPopExitTransition() }
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None }
     ) {
         composable("main_scaffold") { MainScaffold(spamViewModel, dolphyViewModel, nfcViewModel, navController, pendingNavRoute) }
         composable("accent_color") { AccentColorScreen(spamViewModel) { navController.popBackStack() } }
@@ -758,7 +763,6 @@ fun MainScaffold(
     val accentColor = MaterialTheme.colorScheme.primary
     val animatedBackgroundEnabled by spamViewModel.animatedBackgroundEnabled.collectAsState()
     val performanceModeEnabled by spamViewModel.performanceModeEnabled.collectAsState()
-    val expressiveEnabled by spamViewModel.expressiveEnabled.collectAsState()
     val liquidGlassEnabled = false
     val liquidGlassButtons = false
     val liquidGlassTopBars = false
@@ -827,7 +831,7 @@ fun MainScaffold(
         if (index < 0) return
         vibrate(context)
         if (currentRoute == "categories") {
-            pagerScope.launch { pagerState.animateScrollToPage(index) }
+            pagerScope.launch { pagerState.scrollToPage(index) }
         } else {
             pendingCategoryPage = index
             screenNavController.navigate("categories") {
@@ -847,7 +851,7 @@ fun MainScaffold(
     }
 
     BackHandler(enabled = currentRoute == "categories" && pagerState.currentPage > 0) {
-        pagerScope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
+        pagerScope.launch { pagerState.scrollToPage(pagerState.currentPage - 1) }
     }
 
     val contentBackdrop = rememberLayerBackdrop()
@@ -910,30 +914,10 @@ fun MainScaffold(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = bottomBarInset),
-            enterTransition = {
-                rootSectionEnterTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressiveEnterTransition() else cornerEnterTransition()
-            },
-            exitTransition = {
-                rootSectionExitTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressiveExitTransition() else cornerExitTransition()
-            },
-            popEnterTransition = {
-                rootSectionEnterTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressivePopEnterTransition() else cornerPopEnterTransition()
-            },
-            popExitTransition = {
-                rootSectionExitTransition(
-                    initialRoute = initialState.destination.route.orEmpty(),
-                    targetRoute = targetState.destination.route.orEmpty()
-                ) ?: if (expressiveEnabled) expressivePopExitTransition() else cornerPopExitTransition()
-            }
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
         ) {
             composable("categories") {
                 HorizontalPager(
@@ -1292,10 +1276,7 @@ fun MainScaffold(
         PluginScreenExtensionHost(visibleRoute, screenNavController)
         }
 
-        AnimatedVisibility(
-            visible = true,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
+        Box(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             Box(
@@ -1476,7 +1457,7 @@ private fun DolphyUnifiedBottomBar(
                     val first = visible.firstOrNull()?.index ?: 0
                     val last = visible.lastOrNull()?.index ?: 0
                     if (index !in first..last) {
-                        navListState.animateScrollToItem(index)
+                        navListState.scrollToItem(index)
                     }
                 }
             }
@@ -1721,15 +1702,6 @@ private fun LiquidGlassBottomNavigation(
     }
 }
 
-private fun rootSectionIndex(route: String): Int? {
-    return when {
-        route == "bluetooth" || route.startsWith("ble_section/") -> 0
-        isOtherSectionRoute(route) -> 1
-        isSettingsSectionRoute(route) -> 2
-        else -> null
-    }
-}
-
 private fun isSettingsSectionRoute(route: String): Boolean {
 
     if (route == "plugin_manager" || route == "plugin_security" ||
@@ -1790,95 +1762,6 @@ private fun isOtherSectionRoute(route: String): Boolean {
     return OTHER_ROUTE_PREFIXES.any { prefix ->
         route == prefix.removeSuffix("/") || route.startsWith(prefix)
     }
-}
-
-private fun rootSectionEnterTransition(
-    initialRoute: String,
-    targetRoute: String
-): EnterTransition? {
-    val initialIndex = rootSectionIndex(initialRoute) ?: return null
-    val targetIndex = rootSectionIndex(targetRoute) ?: return null
-    if (initialIndex == targetIndex) return null
-
-    return fadeIn(animationSpec = tween(durationMillis = 180, easing = LinearOutSlowInEasing)) +
-        slideInHorizontally(
-            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-            initialOffsetX = { fullWidth ->
-                val dir = if (targetIndex > initialIndex) 1 else -1
-                dir * (fullWidth / 10)
-            }
-        )
-}
-
-private fun rootSectionExitTransition(
-    initialRoute: String,
-    targetRoute: String
-): ExitTransition? {
-    val initialIndex = rootSectionIndex(initialRoute) ?: return null
-    val targetIndex = rootSectionIndex(targetRoute) ?: return null
-    if (initialIndex == targetIndex) return null
-
-    return fadeOut(animationSpec = tween(durationMillis = 130, easing = FastOutLinearInEasing))
-}
-
-private fun cornerEnterTransition(): EnterTransition {
-    return slideInHorizontally(
-        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
-        initialOffsetX = { it }
-    ) + fadeIn(animationSpec = tween(durationMillis = 180))
-}
-
-private fun cornerExitTransition(): ExitTransition {
-    return slideOutHorizontally(
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-        targetOffsetX = { -it }
-    ) + fadeOut(animationSpec = tween(durationMillis = 120))
-}
-
-private fun cornerPopEnterTransition(): EnterTransition {
-    return slideInHorizontally(
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
-        initialOffsetX = { -it }
-    ) + fadeIn(animationSpec = tween(durationMillis = 160))
-}
-
-private fun cornerPopExitTransition(): ExitTransition {
-    return slideOutHorizontally(
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-        targetOffsetX = { it }
-    ) + fadeOut(animationSpec = tween(durationMillis = 120))
-}
-
-private fun expressiveEnterTransition(): EnterTransition {
-    return scaleIn(
-        initialScale = 0.92f,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 420f)
-    ) + fadeIn(animationSpec = tween(durationMillis = 160)) +
-        slideInVertically(
-            initialOffsetY = { it / 8 },
-            animationSpec = spring(dampingRatio = 0.8f, stiffness = 380f)
-        )
-}
-
-private fun expressiveExitTransition(): ExitTransition {
-    return scaleOut(
-        targetScale = 0.98f,
-        animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
-    ) + fadeOut(animationSpec = tween(durationMillis = 120))
-}
-
-private fun expressivePopEnterTransition(): EnterTransition {
-    return scaleIn(
-        initialScale = 0.96f,
-        animationSpec = spring(dampingRatio = 0.75f, stiffness = 420f)
-    ) + fadeIn(animationSpec = tween(durationMillis = 140))
-}
-
-private fun expressivePopExitTransition(): ExitTransition {
-    return scaleOut(
-        targetScale = 0.94f,
-        animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing)
-    ) + fadeOut(animationSpec = tween(durationMillis = 100))
 }
 
 @Composable
@@ -3418,13 +3301,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                                 )
                             }
 
-                            androidx.compose.animation.AnimatedVisibility(
-                                visible = liquidGlassDetailsExpanded,
-                                enter = androidx.compose.animation.expandVertically() +
-                                    androidx.compose.animation.fadeIn(),
-                                exit = androidx.compose.animation.shrinkVertically() +
-                                    androidx.compose.animation.fadeOut(),
-                            ) {
+                            if (liquidGlassDetailsExpanded) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -3518,7 +3395,7 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             MaterialDivider()
-                            SettingsItem(onClick = { uriHandler.openUri("https://github.com/unvoiddd/Dolphy-App") }) {
+                            SettingsItem(onClick = { uriHandler.openUri("https://github.com/Alaa91H/Dolphy-App") }) {
                                 Icon(Icons.Default.Circle, null, tint = accentColor, modifier = Modifier.size(24.dp))
                                 Spacer(Modifier.width(12.dp))
                                 Text("Github", style = MaterialTheme.typography.bodyLarge)
@@ -5159,28 +5036,15 @@ private fun SpringExpandablePicker(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .clickable(onClick = onToggle)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onToggle,
+                )
         ) {
             collapsedContent()
         }
-        androidx.compose.animation.AnimatedVisibility(
-            visible = expanded,
-            enter = androidx.compose.animation.expandVertically(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMediumLow,
-                )
-            ) + androidx.compose.animation.fadeIn(
-                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-            ),
-            exit = androidx.compose.animation.shrinkVertically(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMediumLow,
-                )
-            ) + androidx.compose.animation.fadeOut(),
-        ) {
+        if (expanded) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { expandedContent() }
         }
     }
@@ -5193,12 +5057,13 @@ private fun SpringPickerHeader(
     accentColor: Color,
     leading: (@Composable () -> Unit)? = null,
 ) {
+    val shape = RoundedCornerShape(14.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .border(1.5.dp, accentColor.copy(alpha = 0.55f), shape)
+            .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
-            .border(1.dp, accentColor.copy(alpha = 0.55f), RoundedCornerShape(14.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -5301,14 +5166,15 @@ fun LanguageOptionChip(
         ),
         label = "language_chip_scale",
     )
+    val shape = RoundedCornerShape(10.dp)
     Box(
         modifier = modifier
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(RoundedCornerShape(10.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .border(1.5.dp, borderColor, shape)
+            .clip(shape)
             .background(bg)
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 10.dp),

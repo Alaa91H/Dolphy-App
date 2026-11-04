@@ -1,7 +1,6 @@
 package com.droid.dolphy.nrf
 
 import com.droid.dolphy.R
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,7 +42,6 @@ fun NrfDeviceCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize()
             .clickable { expanded = !expanded },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(

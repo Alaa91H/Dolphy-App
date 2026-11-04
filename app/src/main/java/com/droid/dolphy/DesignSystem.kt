@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Vibrator
 import android.os.VibrationEffect
 import android.bluetooth.BluetoothDevice
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas

@@ -1,24 +1,33 @@
 package com.droid.dolphy.plugin.ui
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -39,7 +48,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PluginHostScreen(
     pluginId: String,
@@ -447,37 +455,60 @@ fun PluginHostScreen(
 
                     val sh = sheet
                     if (sh != null) {
-                        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                        ModalBottomSheet(
-                            onDismissRequest = {
-                                if (sh.cancelable) session.dismissBottomSheet()
-                            },
-                            sheetState = sheetState,
+                        BackHandler(enabled = sh.cancelable) {
+                            session.dismissBottomSheet()
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.45f))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    enabled = sh.cancelable,
+                                    onClick = { session.dismissBottomSheet() },
+                                ),
+                            contentAlignment = Alignment.BottomCenter,
                         ) {
-                            Column(
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = {},
+                                    ),
+                                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
                             ) {
-                                if (sh.title.isNotBlank()) {
-                                    Text(
-                                        sh.title,
-                                        style = MaterialTheme.typography.titleLarge,
-                                    )
-                                }
-                                if (sh.message.isNotBlank()) {
-                                    Text(
-                                        sh.message,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(top = 8.dp),
-                                    )
-                                }
-                                sh.buttons.forEach { btn ->
-                                    com.droid.dolphy.AccentButton(
-                                        onClick = { session.onBottomSheetButton(btn.onClickId) },
-                                        modifier = Modifier.padding(top = 4.dp),
-                                    ) {
-                                        Text(btn.text)
+                                Column(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 560.dp)
+                                        .verticalScroll(rememberScrollState())
+                                        .navigationBarsPadding()
+                                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                                ) {
+                                    if (sh.title.isNotBlank()) {
+                                        Text(
+                                            sh.title,
+                                            style = MaterialTheme.typography.titleLarge,
+                                        )
+                                    }
+                                    if (sh.message.isNotBlank()) {
+                                        Text(
+                                            sh.message,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(top = 8.dp),
+                                        )
+                                    }
+                                    sh.buttons.forEach { btn ->
+                                        com.droid.dolphy.AccentButton(
+                                            onClick = { session.onBottomSheetButton(btn.onClickId) },
+                                            modifier = Modifier.padding(top = 4.dp),
+                                        ) {
+                                            Text(btn.text)
+                                        }
                                     }
                                 }
                             }

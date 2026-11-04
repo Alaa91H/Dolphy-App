@@ -1,10 +1,5 @@
 package com.droid.dolphy
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -64,11 +59,8 @@ fun DolphyToastHost() {
             .padding(horizontal = 24.dp, vertical = 112.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        AnimatedVisibility(
-            visible = message != null,
-            enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(),
-        ) {
+        val shown = message
+        if (shown != null) {
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.inverseSurface,
@@ -86,7 +78,7 @@ fun DolphyToastHost() {
                         tint = MaterialTheme.colorScheme.inversePrimary,
                         modifier = Modifier.size(22.dp),
                     )
-                    Text(message?.text.orEmpty(), fontWeight = FontWeight.SemiBold)
+                    Text(shown.text, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

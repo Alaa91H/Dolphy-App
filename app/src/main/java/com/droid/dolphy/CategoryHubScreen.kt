@@ -22,7 +22,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
@@ -433,7 +432,7 @@ private fun CategoryList(
                     onInfo = { onInfo(item) },
                     onClick = { onOpen(item) },
                     onLongClick = { onLongPress(item) },
-                    modifier = Modifier.animateItem(),
+                    modifier = Modifier,
                 )
             }
         }
@@ -460,7 +459,7 @@ private fun CategoryList(
                     onInfo = { onInfo(item) },
                     onClick = { onOpen(item) },
                     onLongClick = { onLongPress(item) },
-                    modifier = Modifier.animateItem(),
+                    modifier = Modifier,
                 )
             }
         }
@@ -545,7 +544,7 @@ private fun CategoryGrid(
                     onInfo = { onInfo(item) },
                     onClick = { onOpen(item) },
                     onLongClick = { onLongPress(item) },
-                    modifier = Modifier.animateItem(),
+                    modifier = Modifier,
                 )
             }
         }
@@ -572,7 +571,7 @@ private fun CategoryGrid(
                     onInfo = { onInfo(item) },
                     onClick = { onOpen(item) },
                     onLongClick = { onLongPress(item) },
-                    modifier = Modifier.animateItem(),
+                    modifier = Modifier,
                 )
             }
         }
@@ -1125,8 +1124,7 @@ private fun FeatureTile(
                     role = androidx.compose.ui.semantics.Role.Button,
                     onClick = onClick,
                     onLongClick = onLongClick,
-                )
-                .animateContentSize(),
+                ),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

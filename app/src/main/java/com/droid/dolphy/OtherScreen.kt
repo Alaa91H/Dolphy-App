@@ -466,7 +466,6 @@ fun OtherScreen(
                                             }
                                         },
                                         modifier = Modifier
-                                            .animateItem()
                                             .onGloballyPositioned { coords ->
                                                 val parent = coords.parentCoordinates
                                                 if (parent != null && !isBeingDragged) {
@@ -719,7 +718,6 @@ fun OtherScreen(
                                         menuExpandedKey = null
                                     },
                                     modifier = Modifier
-                                        .animateItem()
                                         .onGloballyPositioned { coords ->
                                             val parent = coords.parentCoordinates
                                             if (parent != null && !isBeingDragged) {
@@ -833,7 +831,6 @@ fun OtherScreen(
                                     menuExpandedKey = null
                                 },
                                 modifier = Modifier
-                                    .animateItem()
                                     .onGloballyPositioned { coords ->
                                         val parent = coords.parentCoordinates
                                         if (parent != null && !isBeingDragged) {
@@ -941,7 +938,6 @@ fun OtherScreen(
                                         }
                                     },
                                     modifier = Modifier
-                                        .animateItem()
                                         .onGloballyPositioned { coords ->
                                             val parent = coords.parentCoordinates
                                             if (parent != null && !isBeingDragged) {
