@@ -27,6 +27,8 @@ import com.droid.dolphy.IrSyncOutcome
 import com.droid.dolphy.RootUtils
 import com.droid.dolphy.ShizukuHelper
 import com.droid.dolphy.hid.BadUsbRuntime
+import com.droid.dolphy.hid.HidKeyboardActivity
+import com.droid.dolphy.hid.RootHidController
 import com.droid.dolphy.plugin.PluginManager
 import com.droid.dolphy.plugin.PluginPermission
 import com.droid.dolphy.plugin.PluginPermissions
@@ -1784,6 +1786,58 @@ class PluginDeviceApis(
             .put("serviceUuids", svcUuids)
             .put("manufacturerData", mfg)
             .put("raw", record?.bytes?.let { bytesToHex(it) } ?: "")
+            .toString()
+    }
+
+    // ---- HID transport helpers ------------------------------------------------
+
+    /** Opens Dolphy's Bluetooth HID screen so the user can pair a host device. */
+    fun hidKeyboardOpen(): Boolean {
+        if (!PluginPermissions.has(permissions, PluginPermission.USB)) return false
+        return runCatching {
+            context.startActivity(
+                Intent(context, HidKeyboardActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            true
+        }.getOrElse { error ->
+            Log.w("PluginDeviceApis", "hidKeyboardOpen failed", error)
+            false
+        }
+    }
+
+    /**
+     * Creates the rooted USB HID gadget (`/dev/hidg0`) and reports the outcome,
+     * so a plugin can offer one-tap USB setup instead of a shell script.
+     */
+    fun hidUsbSetupJson(): String {
+        if (!PluginPermissions.has(permissions, PluginPermission.USB)) return badUsbDenied()
+        val rooted = runCatching { RootUtils.isRooted() }.getOrDefault(false)
+        if (!rooted) {
+            return JSONObject()
+                .put("ok", false)
+                .put("rooted", false)
+                .put("message", "Root is required to create a USB HID gadget")
+                .toString()
+        }
+        if (!java.io.File("/sys/kernel/config/usb_gadget").exists()) {
+            return JSONObject()
+                .put("ok", false)
+                .put("rooted", true)
+                .put(
+                    "message",
+                    "This kernel has no USB gadget support (configfs usb_gadget missing); use Bluetooth HID",
+                )
+                .toString()
+        }
+        val ready = runCatching { RootHidController().setupHidGadget() }.getOrDefault(false)
+        return JSONObject()
+            .put("ok", ready)
+            .put("rooted", true)
+            .put(
+                "message",
+                if (ready) "USB HID gadget is ready" else "USB HID gadget setup failed; check kernel gadget support",
+            )
             .toString()
     }
 

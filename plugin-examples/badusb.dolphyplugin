@@ -2,7 +2,7 @@ import json
 
 __id__ = "badusb"
 __name__ = "BadUSB Studio"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Compile, validate and run DuckyScript 3.0 payloads over Bluetooth HID or a rooted USB gadget"
 __icon__ = "rounded:keyboard"
@@ -177,6 +177,28 @@ class BadUsbStudio(BasePlugin):
     def transport_ready(self):
         return str(self.state.get("mode", "none")) != "none"
 
+    def connect_bluetooth(self):
+        try:
+            opened = bool(self.api.getDevice().hidKeyboardOpen())
+        except Exception as error:
+            self.status = "Bridge error: " + str(error)
+            self.refresh()
+            return
+        if opened:
+            self.status = "Pair your computer in HID Keyboard, then return and reload the transport"
+        else:
+            self.status = "Could not open the HID Keyboard screen"
+        self.refresh()
+
+    def setup_usb(self):
+        try:
+            result = json.loads(str(self.api.getDevice().hidUsbSetupJson()))
+        except Exception as error:
+            result = {"ok": False, "message": "Bridge error: " + str(error)}
+        self.reload()
+        self.status = str(result.get("message", "USB HID setup finished"))
+        self.refresh()
+
     def update_script(self, value):
         self.script = str(value)
         self.validate()
@@ -314,6 +336,18 @@ class BadUsbStudio(BasePlugin):
                             ),
                             ui.lazy_row(rows, spacing=6),
                             ui.text(str(self.state.get("reason", "Ready")), "bodySmall"),
+                            ui.button(
+                                "Connect via Bluetooth",
+                                self.connect_bluetooth,
+                                style="tonal",
+                                fill_max_width=True,
+                            ),
+                            ui.button(
+                                "Set up USB HID",
+                                self.setup_usb,
+                                style="outlined",
+                                fill_max_width=True,
+                            ),
                         ]
                     ),
                     ui.card(actions),

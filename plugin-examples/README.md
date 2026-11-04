@@ -31,7 +31,7 @@ Plugins are executable user-provided code with broad access to application and d
 | [Shizuku Console](shizuku_console.dolphyplugin) | Other | `shizuku` | Privileged shell through Shizuku, including the permission request. |
 | [Shell Console](shell_console.dolphyplugin) | Other | `shell` | Unprivileged shell commands running as the Dolphy app. |
 | [USB Inspector](usb_inspector.dolphyplugin) | Other | `usb` | Attached USB devices with vendor, product and interface classes. |
-| [BadUSB Studio](badusb.dolphyplugin) | USB | `usb` | DuckyScript 3.0 payload library, validated editor and runner over Bluetooth HID or a rooted USB gadget. |
+| [BadUSB Studio](badusb.dolphyplugin) | Other | `usb` | DuckyScript 3.0 payload library, validated editor and runner over Bluetooth HID or a rooted USB gadget. |
 
 ## Scanner examples
 
