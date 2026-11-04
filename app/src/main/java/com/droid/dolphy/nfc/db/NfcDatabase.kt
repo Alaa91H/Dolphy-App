@@ -29,6 +29,11 @@ abstract class NfcDatabase : RoomDatabase() {
                     .also { INSTANCE = it }
             }
         }
+
+        fun close() {
+            INSTANCE?.close()
+            INSTANCE = null
+        }
     }
 }
 

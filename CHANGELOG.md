@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-04
+
+Dolphy 1.2.0 adds a complete, portable backup and restore workflow for all
+durable app-managed data, including installed plugins, their settings, SQLite
+databases, and custom files.
+
+### Added
+
+- **Complete backup and restore:** a new Settings card creates and restores a
+  single JSON backup through the Storage Access Framework, so no storage
+  permission is required.
+- **Full data coverage:** backups include every `SharedPreferences` file except
+  the internal backup history, installed plugin sources and metadata, plugin
+  settings (`plugin_prefs_*`), plugin data, permission vetoes, `filesDir`
+  content, app-specific external files, SQLite databases, and WebView storage.
+- **NFC scan history:** the Room database `nfc_scans.db` and its SQLite sidecar
+  files are captured. A WAL checkpoint runs before collection, and the database
+  is closed before an in-place restore.
+- **Plugin completeness:** enabled and pinned state, deleted-plugin markers,
+  plugin capabilities, and all plugin-created files are preserved.
+- **Restore controls:** the UI previews the backup date, settings count, plugin
+  count, file count, and size before replacing local state.
+- **Localization:** the complete backup and restore experience is available in
+  Arabic, English, and Russian.
+
+### Security
+
+- Backups carry a SHA-256 checksum over the canonical JSON payload; modified or
+  corrupted files are rejected before any data is changed.
+- Restore paths are canonicalized and checked against their roots, blocking
+  absolute paths, `..` traversal, and preference names that escape the app's
+  private storage.
+- Plugin signatures are verified during inspect and restore. Invalid signatures
+  are rejected, while unsigned or unknown-key plugins require explicit user
+  consent before restore.
+- Backup payloads are limited to 256 MB and 20,000 files to avoid unbounded
+  memory and storage use.
+
+### Fixed
+
+- Empty files are now valid backup entries. This is required for zero-length
+  SQLite `-wal` and `-shm` sidecars created after a checkpoint.
+
+### Upgrade notes
+
+- **Version:** `versionName` 1.2.0, `versionCode` 30200.
+- Backups containing database, WebView, or external-file roots require Dolphy
+  1.2.0 or newer to restore. Older backups remain readable by 1.2.0.
+- Restore replaces the current app state with the state captured in the backup
+  and requires a restart. Plugins, settings, files, or database rows created
+  after the backup are removed.
+- The backup file is plain JSON and is not encrypted. Store it somewhere safe.
+- Cache and code cache are intentionally excluded. Android runtime permissions,
+  home-screen widget bindings, and the APK itself are owned by the system and
+  are not part of the backup.
+
 ## [1.1.0] - 2026-11-04
 
 Dolphy 1.1.0 delivers a unified category experience, contextual device
@@ -245,5 +301,6 @@ private release signing, and a modern Android toolchain.
 - [`plugin-examples/README.md`](plugin-examples/README.md) — plugin catalog and
   example descriptions.
 
+[1.2.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Alaa91H/Dolphy-App/releases/tag/v1.0.0

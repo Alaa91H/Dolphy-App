@@ -100,6 +100,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.droid.dolphy.backup.BackupRestoreSection
 import com.droid.dolphy.bluetooth.audio.AudioScannerScreen
 import com.droid.dolphy.bluetooth.audio.BtAudioStressRunScreen
 import com.droid.dolphy.bluetooth.audio.BtAudioStressScanScreen
@@ -3173,6 +3174,10 @@ fun SettingsScreen(spamViewModel: SpamViewModel, dolphyViewModel: DolphyViewMode
                         }
                     }
                 }
+            }
+
+            item {
+                BackupRestoreSection(accentColor = accentColor)
             }
 
             item {
