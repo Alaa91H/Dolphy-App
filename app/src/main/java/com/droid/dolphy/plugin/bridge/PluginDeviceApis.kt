@@ -26,6 +26,7 @@ import com.droid.dolphy.IrCatalogSync
 import com.droid.dolphy.IrSyncOutcome
 import com.droid.dolphy.RootUtils
 import com.droid.dolphy.ShizukuHelper
+import com.droid.dolphy.network.SavedWifiCredentials
 import com.droid.dolphy.hid.BadUsbRuntime
 import com.droid.dolphy.hid.HidKeyboardActivity
 import com.droid.dolphy.hid.RootHidController
@@ -231,6 +232,101 @@ class PluginDeviceApis(
             "[]"
         }
     }
+
+    /**
+     * Saved Wi-Fi passwords live in a root-only config store, so this bridge
+     * needs Shizuku or root on top of the `wifi` capability.
+     */
+    fun wifiSavedPasswords(callback: (String) -> Unit) {
+        if (denied(PluginPermission.WIFI, callback)) return
+        io.execute {
+            val payload = runCatching { wifiSavedPasswordsJson() }
+                .getOrElse { t ->
+                    Log.w(TAG, "wifiSavedPasswords", t)
+                    JSONObject()
+                        .put("ok", false)
+                        .put("error", t.message ?: "read_failed")
+                        .put("networks", JSONArray())
+                        .toString()
+                }
+            mainHandler.post { callback(payload) }
+        }
+    }
+
+    /** Blocking variant used by the Python bridge. */
+    fun wifiSavedPasswordsJson(): String {
+        if (!PluginPermissions.has(permissions, PluginPermission.WIFI)) {
+            return JSONObject()
+                .put("ok", false)
+                .put("error", "permission_denied")
+                .put("permission", PluginPermission.WIFI.token)
+                .put("networks", JSONArray())
+                .toString()
+        }
+        val command = SavedWifiCredentials.dumpCommand()
+        val (code, out) = when {
+            shizukuHasPermission() -> {
+                val result = runCatching {
+                    JSONObject(ShizukuHelper.runShellCommandWithOutput(command))
+                }.getOrNull()
+                if (result != null && result.optInt("code", -1) == 0) {
+                    0 to result.optString("out")
+                } else if (rootAvailable()) {
+                    rootStore(command)
+                } else {
+                    return JSONObject()
+                        .put("ok", false)
+                        .put("error", "read_failed")
+                        .put("code", result?.optInt("code", -1) ?: -1)
+                        .put("networks", JSONArray())
+                        .toString()
+                }
+            }
+            rootAvailable() -> rootStore(command)
+            else -> return JSONObject()
+                .put("ok", false)
+                .put("error", "no_root")
+                .put("networks", JSONArray())
+                .toString()
+        }
+        if (code != 0) {
+            return JSONObject()
+                .put("ok", false)
+                .put("error", "read_failed")
+                .put("code", code)
+                .put("networks", JSONArray())
+                .toString()
+        }
+        val lines = out.lines()
+        val markerIndex = lines.indexOfFirst { it.startsWith(SavedWifiCredentials.SOURCE_MARKER) }
+        if (markerIndex < 0) {
+            return JSONObject()
+                .put("ok", false)
+                .put("error", "wifi_store_not_found")
+                .put("networks", JSONArray())
+                .toString()
+        }
+        val source = lines[markerIndex].removePrefix(SavedWifiCredentials.SOURCE_MARKER).trim()
+        val xml = lines.drop(markerIndex + 1).joinToString("\n")
+        val entries = SavedWifiCredentials.parse(xml)
+        val networks = JSONArray()
+        entries.forEach { entry ->
+            networks.put(
+                JSONObject()
+                    .put("ssid", entry.ssid)
+                    .put("password", entry.password)
+                    .put("security", entry.security),
+            )
+        }
+        return JSONObject()
+            .put("ok", true)
+            .put("source", source)
+            .put("count", entries.size)
+            .put("networks", networks)
+            .toString()
+    }
+
+    private fun rootStore(command: String): Pair<Int, String> = RootUtils.executeRootCommand(command)
 
     @SuppressLint("MissingPermission")
     fun wifiIs5GHzBandSupported(): Boolean = try {

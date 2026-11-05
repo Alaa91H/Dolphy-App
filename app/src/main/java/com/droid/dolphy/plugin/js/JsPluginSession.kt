@@ -685,6 +685,11 @@ class JsPluginSession(
             put("enable") { device.wifiSetEnabled(true) }
             put("disable") { device.wifiSetEnabled(false) }
             put("configuredNetworks") { device.wifiConfiguredNetworksJson() }
+            put("savedPasswords") { args ->
+                val cb = args.getOrNull(0)
+                device.wifiSavedPasswords { invokeJs(cb, it) }
+                null
+            }
             put("is5GHzSupported") { device.wifiIs5GHzBandSupported() }
             put("isP2pSupported") { device.wifiIsP2pSupported() }
             put("addSuggestion") { args ->
