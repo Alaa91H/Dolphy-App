@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-11-05
+
+Dolphy 1.5.2 exposes the saved Wi-Fi networks a device already knows about to
+plugins, so the Wi-Fi Wordlist Lab can build a wordlist from real networks. The
+release also finishes the plugin's Arabic, English and Russian metadata and
+fixes the root daemon's foreground notification on older Android versions.
+Catalog formats, the plugin API surface and user data are unchanged.
+
+### Added
+
+- **Saved Wi-Fi passwords bridge:** `api.getDevice().wifiSavedPasswordsJson()`
+  for Python plugins and `api.getDevice().wifi.savedPasswords(callback)` for JS
+  plugins return `{ok, source, count, networks[{ssid, password, security}]}`.
+  Access needs the `wifi` capability plus root or a granted Shizuku shell.
+- **`SavedWifiCredentials` reader:** probes the Android 11+ Wi-Fi APEX store and
+  the legacy `/data/misc/wifi` path, parses `WifiConfigStore.xml`, unescapes XML
+  entities and skips open or enterprise networks that carry no pre-shared key.
+- **Parser unit tests:** `SavedWifiCredentialsTest` covers the current and legacy
+  store layouts, entity escaping, password-less networks and the dump command.
+
+### Fixed
+
+- **Foreground service on Android 9 and older:** `RootdService` passed a
+  `foregroundServiceType` to `startForeground` unconditionally, which throws
+  before API 29. The type is now only passed on Android 10 and newer.
+- **Localized password count:** the count string used two bare `%d`
+  placeholders, so the Arabic and Russian translations could not format it. Both
+  are now positional (`%1$d`, `%2$d`).
+
+### Changed
+
+- **Wi-Fi Wordlist Lab 3.1.1:** the shipped bundle adds the missing module title,
+  module subtitle and settings subtitles in all three languages and reads saved
+  network passwords through the new bridge.
+- **Version:** `versionName` 1.5.2, `versionCode` 30502.
+
+### Upgrade notes
+
+- Devices running 1.5.1 can update in place with the release-signed APK. No
+  plugin reinstall, settings migration or backup change is needed.
+- Reading saved passwords requires root or a granted Shizuku shell; without
+  either, the bridge returns `{ok: false, error: "no_root"}` and the plugin keeps
+  working from its generated wordlists.
+
 ## [1.5.1] - 2026-11-04
 
 Dolphy 1.5.1 is a BadUSB Studio maintenance release. It adds one-tap HID setup

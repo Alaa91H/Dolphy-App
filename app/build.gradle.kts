@@ -42,8 +42,8 @@ val hasReleaseSigning = listOf(
 
 // CI passes these so every published APK has a predictable, monotonic version.
 // Local builds fall back to the values below.
-val dolphyVersionCode = providers.gradleProperty("dolphy.versionCode").orNull?.toIntOrNull() ?: 30501
-val dolphyVersionName = providers.gradleProperty("dolphy.versionName").orNull ?: "1.5.1"
+val dolphyVersionCode = providers.gradleProperty("dolphy.versionCode").orNull?.toIntOrNull() ?: 30502
+val dolphyVersionName = providers.gradleProperty("dolphy.versionName").orNull ?: "1.5.2"
 
 android {
     namespace = "com.droid.dolphy"
