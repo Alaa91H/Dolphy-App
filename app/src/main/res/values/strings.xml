@@ -1002,7 +1002,7 @@
     <string name="wifi_brute_force_passwords">Пароли для Brute-Force</string>
     <string name="wifi_brute_force_desc">Включите группы паролей для подбора. Порядок групп = порядок перебора.</string>
     <string name="wifi_import_passwords">Импорт из .txt</string>
-    <string name="wifi_passwords_count">%d паролей • %d валидных (>= 8 символов)</string>
+    <string name="wifi_passwords_count">%1$d паролей • %2$d валидных (>= 8 символов)</string>
     <string name="wifi_brute_force_active">Brute Force Active</string>
     <string name="wifi_bruteforce_successful">Bruteforce успешен</string>
     <string name="wifi_password_label">PASSWORD:</string>

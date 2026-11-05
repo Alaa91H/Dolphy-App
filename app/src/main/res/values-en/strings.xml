@@ -989,7 +989,7 @@
     <string name="wifi_brute_force_passwords">Passwords for Brute-Force</string>
     <string name="wifi_brute_force_desc">Enable password groups for brute-forcing. Order = processing order.</string>
     <string name="wifi_import_passwords">Import from .txt</string>
-    <string name="wifi_passwords_count">%d passwords • %d valid (>= 8 chars)</string>
+    <string name="wifi_passwords_count">%1$d passwords • %2$d valid (>= 8 chars)</string>
     <string name="wifi_brute_force_active">Brute Force Active</string>
     <string name="wifi_bruteforce_successful">Bruteforce successful</string>
     <string name="wifi_password_label">PASSWORD:</string>

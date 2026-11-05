@@ -1058,7 +1058,7 @@
     <string name="wifi_brute_force_passwords">كلمات المرور للكسر</string>
     <string name="wifi_brute_force_desc">شغّل مجموعات كلمات المرور للتخمين. ترتيب المجموعات = ترتيب التخمين.</string>
     <string name="wifi_import_passwords">استيراد من .txt</string>
-    <string name="wifi_passwords_count">%d كلمة مرور • %d صالحة (>= 8 أحرف)</string>
+    <string name="wifi_passwords_count">%1$d كلمة مرور • %2$d صالحة (>= 8 أحرف)</string>
     <string name="wifi_brute_force_active">الكسر نشط</string>
     <string name="wifi_bruteforce_successful">نجح الكسر</string>
     <string name="wifi_password_label">كلمة المرور:</string>
