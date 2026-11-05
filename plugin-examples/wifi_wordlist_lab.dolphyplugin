@@ -23,7 +23,7 @@ Use it only on networks you own or are explicitly authorised to audit.
 
 __id__ = "wifi_wordlist_lab"
 __name__ = "Wi-Fi Wordlist Lab"
-__version__ = "3.1.0"
+__version__ = "3.1.1"
 __author__ = "DCA"
 __description__ = "SSID-aware WPA wordlist studio — one-tap start, saved-network passwords and plugin integration"
 __icon__ = "rounded:key"
@@ -393,6 +393,11 @@ STRINGS = {
     "ar": {
         "app_title": "Wi-Fi Wordlist Lab",
         "app_subtitle": "استوديو قوائم كلمات WPA حسب اسم الشبكة",
+        "module_title": "مختبر قوائم كلمات Wi-Fi",
+        "module_description": "استوديو قوائم كلمات WPA حسب اسم الشبكة",
+        "settings_native_autodetect_sub": "استخدام اتصال Wi-Fi الحالي",
+        "settings_generator_sub": "القوالب والمتغيّرات",
+        "settings_results_sub": "معاينة وبحث وتصدير",
         "nav_title": "التنقّل",
         "nav_home": "الرئيسية",
         "nav_editor": "القوالب",
@@ -810,6 +815,11 @@ STRINGS = {
     "en": {
         "app_title": "Wi-Fi Wordlist Lab",
         "app_subtitle": "SSID-aware WPA wordlist studio",
+        "module_title": "Wi-Fi Wordlist Lab",
+        "module_description": "SSID-aware WPA wordlist studio",
+        "settings_native_autodetect_sub": "Use the current Wi-Fi connection",
+        "settings_generator_sub": "Templates and variables",
+        "settings_results_sub": "Preview, search and export",
         "nav_title": "Navigation",
         "nav_home": "Home",
         "nav_editor": "Templates",
@@ -1227,6 +1237,11 @@ STRINGS = {
     "ru": {
         "app_title": "Wi-Fi Wordlist Lab",
         "app_subtitle": "Студия словарей WPA с учётом имени сети",
+        "module_title": "Лаборатория Wi-Fi-словарей",
+        "module_description": "Студия WPA-словарей с учётом SSID",
+        "settings_native_autodetect_sub": "Использовать текущее подключение Wi-Fi",
+        "settings_generator_sub": "Шаблоны и переменные",
+        "settings_results_sub": "Просмотр, поиск и экспорт",
         "nav_title": "Навигация",
         "nav_home": "Главная",
         "nav_editor": "Шаблоны",
@@ -3116,8 +3131,8 @@ class WifiWordlistLab(BasePlugin):  # noqa: F821 - injected by Dolphy
 
     def _register_module(self):
         self.add_module(
-            title=APP_NAME,
-            description="SSID-aware WPA wordlist studio",
+            title=self._t("module_title"),
+            description=self._t("module_description"),
             icon="key",
             screen="main",
             section="PLUGINS",
@@ -3131,29 +3146,29 @@ class WifiWordlistLab(BasePlugin):  # noqa: F821 - injected by Dolphy
 
     def _register_native_settings(self):
         items = [
-            {"type": "header", "title": APP_NAME},
+            {"type": "header", "title": self._t("app_title")},
             {
                 "type": "switch",
                 "key": "auto_detect",
-                "title": "Auto-detect SSID",
-                "subtitle": "Use the current Wi-Fi connection",
+                "title": self._t("settings_autodetect"),
+                "subtitle": self._t("settings_native_autodetect_sub"),
                 "default": True,
             },
             {
                 "type": "slider",
                 "key": "limit",
-                "title": "Maximum results",
+                "title": self._t("settings_limit"),
                 "subtitle": "%s – %s" % (format_count(MIN_LIMIT), format_count(MAX_LIMIT)),
                 "min": MIN_LIMIT,
                 "max": MAX_LIMIT,
                 "default": DEFAULT_LIMIT,
                 "steps": 198,
             },
-            {"type": "nav", "title": "Generator", "subtitle": "Templates and variables", "icon": "key", "screen": "editor"},
-            {"type": "nav", "title": "Results", "subtitle": "Preview, search and export", "icon": "list", "screen": "results"},
-            {"type": "nav", "title": "Help", "subtitle": "Template syntax", "icon": "info", "screen": "help"},
+            {"type": "nav", "title": self._t("nav_editor"), "subtitle": self._t("settings_generator_sub"), "icon": "key", "screen": "editor"},
+            {"type": "nav", "title": self._t("nav_results"), "subtitle": self._t("settings_results_sub"), "icon": "list", "screen": "results"},
+            {"type": "nav", "title": self._t("nav_help"), "subtitle": self._t("help_syntax"), "icon": "info", "screen": "help"},
         ]
-        self.api.registerSettings(APP_NAME, json.dumps(items, ensure_ascii=False), 20)
+        self.api.registerSettings(self._t("app_title"), json.dumps(items, ensure_ascii=False), 20)
 
     def on_setting_changed(self, payload):
         key = str(self._payload_get(payload, "key", "") or "")
