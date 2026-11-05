@@ -1542,7 +1542,7 @@
     <string name="plugin_catalog_desc_wifi_scanner">ماسح شبكات Wi-Fi بواجهة Material 3: الاتصال الحالي والشبكات القريبة والأمان والقناة وقوة الإشارة.</string>
     <string name="plugin_catalog_desc_wordlist">استوديو قوائم كلمات WPA حسب اسم الشبكة: بدء بلمسة واحدة، قراءة كلمات سر الجهاز المحفوظة (Root/Shizuku) ومشاركة القائمة مع بقية الإضافات.</string>
     <string name="plugin_catalog_desc_identity_guard">تدقيق هوية الشبكة وتدوير MAC الواي فاي باحترافية: كشف ما تراه التطبيقات، حالة العشوائية لكل شبكة، ومحاولة تغيير موثّقة بالنتيجة (بدون IMEI/SN).</string>
-    <string name="plugin_catalog_desc_captive">مدقق بوابة التقاط وأدوات شبكة احترافية: استطلاع Wi-Fi، كشف AP مزيّف، PMF/WPA3، TLS والشهادات، بصمة الخادم وWAF، فحص منافذ البوابة وDHCP/DNS، ودرجة خطورة مع تقرير إصلاحات.</string>
+    <string name="plugin_catalog_desc_captive">مجموعة أدوات شبكة دفاعية: استطلاع Wi-Fi وكشف AP مزيّف، PMF/WPA3، TLS والشهادات، بصمة خادم وWAF ومسارات ويب، فحص منافذ وخدمات، استطلاع DNS، DHCP/DNS، تجزئة وقوة كلمات المرور، ودرجة خطورة مع تقرير إصلاحات.</string>
     <string name="plugin_catalog_desc_ble_scanner">ماسح BLE: الأجهزة القريبة مع تقدير المسافة ونوع الإعلان وبيانات الشركة المصنّعة.</string>
     <string name="plugin_catalog_desc_radio_lab">تشخيصات Bluetooth وWi-Fi مع مسح BLE مباشر وقائمة أجهزة حيّة.</string>
     <string name="plugin_catalog_desc_integration_hooks">مثال تكامل يضيف زرًا عائمًا وخطّافًا لإرسال الأشعة تحت الحمراء داخل شاشات Dolphy.</string>

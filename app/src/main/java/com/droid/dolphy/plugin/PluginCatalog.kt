@@ -29,7 +29,7 @@ data class CatalogPlugin(
     val icon: String,
     val permissions: List<String>,
     @StringRes val descriptionRes: Int,
-    val url: String = "https://raw.githubusercontent.com/Alaa91H/Dolphy-App/main/plugin-examples/$fileName",
+    val url: String = "https://raw.githubusercontent.com/Alaa91H/Dolphy-App/main/plugin-examples/$fileName?v=$version",
 )
 
 val PLUGIN_CATALOG: List<CatalogPlugin> = listOf(
@@ -301,9 +301,9 @@ val PLUGIN_CATALOG: List<CatalogPlugin> = listOf(
         id = "captive_portal_auditor",
         name = "Captive Portal Auditor",
         author = "Dolphy",
-        version = "1.2.0",
+        version = "1.3.0",
         fileName = "captive_portal_auditor.dolphyplugin",
-        sizeBytes = 112111,
+        sizeBytes = 127216,
         icon = "rounded:wifi",
         permissions = listOf("network", "wifi", "files"),
         descriptionRes = R.string.plugin_catalog_desc_captive,

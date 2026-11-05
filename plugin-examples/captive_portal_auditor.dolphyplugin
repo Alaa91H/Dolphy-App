@@ -1,5 +1,7 @@
+import hashlib
 import html
 import json
+import math
 import random
 import re
 import threading
@@ -8,7 +10,7 @@ import urllib.parse
 
 __id__ = "captive_portal_auditor"
 __name__ = "Captive Portal Auditor"
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "Dolphy"
 __description__ = "Professional captive portal and Wi-Fi audit toolkit: Kismet-style survey, rogue AP detection, testssl/WhatWeb-class checks and Nmap-style gateway ports"
 __icon__ = "rounded:wifi"
@@ -17,7 +19,7 @@ __permissions__ = ["network", "wifi", "files"]
 EXPORT_KEY = "dolphy.net.captive.audit"
 SERVICE_ID = "net.captive"
 REPORT_PATH = "reports/captive_portal_audit.txt"
-UA = "Dolphy-CaptivePortalAuditor/1.2"
+UA = "Dolphy-CaptivePortalAuditor/1.3"
 MAX_BODY = 300000
 
 PROBES = (
@@ -79,6 +81,24 @@ GATEWAY_PORTS = (
     (8888, "http-alt"),
 )
 
+TOP_PORTS = (
+    (21, "FTP"), (22, "SSH"), (23, "Telnet"), (25, "SMTP"), (53, "DNS"),
+    (80, "HTTP"), (110, "POP3"), (111, "rpcbind"), (135, "MSRPC"),
+    (139, "NetBIOS"), (143, "IMAP"), (161, "SNMP"), (443, "HTTPS"),
+    (445, "SMB"), (587, "SMTP-sub"), (631, "IPP"), (993, "IMAPS"),
+    (995, "POP3S"), (1723, "PPTP"), (1883, "MQTT"), (2049, "NFS"),
+    (2375, "Docker"), (3306, "MySQL"), (3389, "RDP"), (5432, "PostgreSQL"),
+    (5900, "VNC"), (6379, "Redis"), (7547, "TR-069"), (8000, "HTTP-alt"),
+    (8080, "HTTP-alt"), (8443, "HTTPS-alt"), (8888, "HTTP-alt"),
+    (9100, "Printer"), (27017, "MongoDB"),
+)
+COMMON_PATHS = (
+    "/robots.txt", "/sitemap.xml", "/.well-known/security.txt", "/admin",
+    "/login", "/api", "/server-status", "/.git/HEAD", "/.env",
+)
+SUBDOMAINS = ("www", "mail", "vpn", "portal", "admin", "api", "dev", "test")
+RISKY_PORTS = {21, 23, 445, 3306, 5432, 6379, 7547, 27017}
+
 FINDINGS = {
     "portal": ("info", ""),
     "http_portal": ("high", "fix_tls"),
@@ -118,6 +138,8 @@ FINDINGS = {
     "gateway_admin_exposed": ("high", "fix_gateway"),
     "dhcp_mismatch": ("medium", "fix_dhcp"),
     "dns_public": ("info", "fix_dns"),
+    "open_risky_port": ("high", "fix_gateway"),
+    "admin_panel": ("info", "fix_gateway"),
 }
 SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 
@@ -777,6 +799,91 @@ for _lang, _extra in {
 }.items():
     STRINGS[_lang].update(_extra)
 
+for _lang, _extra in {
+    "ar": {
+        "tools_title": "أدوات الشبكة",
+        "host": "المضيف",
+        "host_hint": "IP أو نطاق مصرّح به (الافتراضي: البوابة)",
+        "scan_ports": "فحص المنافذ",
+        "dns_recon": "استطلاع DNS",
+        "web_paths": "مسارات الويب",
+        "crypto_lab": "مختبر التجزئة",
+        "hash_input": "نص للتجزئة وتحليل القوة",
+        "hash_now": "احسب",
+        "strength": "القوة",
+        "weak": "ضعيفة",
+        "medium": "متوسطة",
+        "strong": "قوية",
+        "port_results": "المنافذ المفتوحة",
+        "dns_results": "نتائج DNS",
+        "path_results": "المسارات",
+        "no_results": "لا نتائج بعد",
+        "reverse_dns": "DNS عكسي",
+        "find_open_risky_port": "خدمة حساسة مفتوحة على المضيف",
+        "fix_open_risky_port": "عطّل الخدمات غير اللازمة، وقيّدها بجدار ناري، ولا تعرّض الإدارة للإنترنت.",
+        "find_admin_panel": "لوحة إدارة مكشوفة",
+        "fix_admin_panel": "قيّد لوحة الإدارة بـ VPN/شبكة محلية وفعّل MFA.",
+        "check_ports": "فحص المنافذ",
+        "check_dns": "استطلاع DNS",
+        "check_paths": "مسارات الويب",
+    },
+    "en": {
+        "tools_title": "Network tools",
+        "host": "Host",
+        "host_hint": "Authorized IP or domain (default: gateway)",
+        "scan_ports": "Port scan",
+        "dns_recon": "DNS recon",
+        "web_paths": "Web paths",
+        "crypto_lab": "Hash lab",
+        "hash_input": "Text to hash and score",
+        "hash_now": "Compute",
+        "strength": "Strength",
+        "weak": "weak",
+        "medium": "medium",
+        "strong": "strong",
+        "port_results": "Open ports",
+        "dns_results": "DNS results",
+        "path_results": "Paths",
+        "no_results": "No results yet",
+        "reverse_dns": "Reverse DNS",
+        "find_open_risky_port": "Sensitive service exposed on the host",
+        "fix_open_risky_port": "Disable unneeded services, firewall them, and never expose admin services to the internet.",
+        "find_admin_panel": "Admin panel exposed",
+        "fix_admin_panel": "Restrict admin access to VPN/LAN and enable MFA.",
+        "check_ports": "Port scan",
+        "check_dns": "DNS recon",
+        "check_paths": "Web paths",
+    },
+    "ru": {
+        "tools_title": "Сетевые инструменты",
+        "host": "Хост",
+        "host_hint": "Разрешённый IP или домен (по умолчанию: шлюз)",
+        "scan_ports": "Скан портов",
+        "dns_recon": "DNS-разведка",
+        "web_paths": "Веб-пути",
+        "crypto_lab": "Лаборатория хэшей",
+        "hash_input": "Текст для хэша и оценки",
+        "hash_now": "Вычислить",
+        "strength": "Стойкость",
+        "weak": "слабая",
+        "medium": "средняя",
+        "strong": "сильная",
+        "port_results": "Открытые порты",
+        "dns_results": "Результаты DNS",
+        "path_results": "Пути",
+        "no_results": "Пока нет результатов",
+        "reverse_dns": "Обратный DNS",
+        "find_open_risky_port": "Чувствительная служба открыта на хосте",
+        "fix_open_risky_port": "Отключите лишние службы, закройте их фаерволом и не выставляйте админ-сервисы в интернет.",
+        "find_admin_panel": "Панель администрирования открыта",
+        "fix_admin_panel": "Ограничьте доступ к админке VPN/LAN и включите MFA.",
+        "check_ports": "Скан портов",
+        "check_dns": "DNS-разведка",
+        "check_paths": "Веб-пути",
+    },
+}.items():
+    STRINGS[_lang].update(_extra)
+
 
 def device_language():
     try:
@@ -864,6 +971,14 @@ class CaptivePortalAuditor(BasePlugin):
         self._fingerprint = {}
         self._dhcp = {}
         self._survey_summary = {}
+        self._host = ""
+        self._port_results = []
+        self._dns_results = {}
+        self._path_results = []
+        self._hash_result = {}
+        self._hash_input = ""
+        self._tools_busy = False
+        self._tool_status = ""
         self._target_ssid = ""
         self._saved_networks = []
         self._networks = []
@@ -923,6 +1038,7 @@ class CaptivePortalAuditor(BasePlugin):
         self._gateway = str(info.get("gateway", "") or "")
         self._meta["ip"] = str(info.get("ip", "") or "")
         self._meta["dns1"] = str(info.get("dns1", "") or "")
+        self._host = self._host or self._gateway
         self._dhcp = {}
         try:
             detail = json.loads(str(self.api.getAndroid().wifiDetailedInfoJson()))
@@ -1549,6 +1665,143 @@ class CaptivePortalAuditor(BasePlugin):
                 pass
         return None
 
+    def _set_host(self, value):
+        self._host = str(value or "").strip()
+
+    def _set_hash_input(self, value):
+        self._hash_input = str(value or "")
+
+    def _run_tool(self, fn):
+        if self._tools_busy:
+            return
+        self._tools_busy = True
+        self.refresh()
+
+        def worker():
+            try:
+                fn()
+            finally:
+                self._tools_busy = False
+                if self._alive:
+                    try:
+                        self.refresh()
+                    except Exception:
+                        pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _port_scan_worker(self):
+        host = self._host or self._gateway
+        if not host:
+            self._tool_status = self._t("host_hint")
+            return
+        results = []
+        for port, service in TOP_PORTS:
+            if self._probe_port(host, port, 220):
+                results.append({"port": port, "service": service})
+        self._port_results = results
+        risky = [str(item["port"]) for item in results if item["port"] in RISKY_PORTS]
+        self._check("check_ports", bool(results), host + " · " + str(len(results)) + " open")
+        if risky:
+            self._add("open_risky_port", host + ": " + ", ".join(risky))
+        self._tool_status = host + " · " + str(len(results)) + " open"
+
+    def _resolve_host(self, host):
+        try:
+            from java import jclass
+
+            addresses = jclass("java.net.InetAddress").getAllByName(host)
+            ips = [str(item.getHostAddress()) for item in addresses]
+            reverse = str(addresses[0].getCanonicalHostName()) if ips else ""
+            return ips, reverse
+        except Exception:
+            return [], ""
+
+    def _doh_query(self, name, record):
+        url = "https://cloudflare-dns.com/dns-query?name=" + urllib.parse.quote(str(name)) + "&type=" + str(record)
+        response = self._http(url, headers={"accept": "application/dns-json"})
+        try:
+            data = json.loads(str(response.get("body", "") or "{}"))
+        except Exception:
+            return []
+        return [str(item.get("data", "")) for item in (data.get("Answer") or []) if isinstance(item, dict)]
+
+    def _dns_worker(self):
+        host = self._host or self._gateway
+        if not host:
+            self._tool_status = self._t("host_hint")
+            return
+        ips, reverse = self._resolve_host(host)
+        self._dns_results = {
+            "host": host,
+            "ips": ips,
+            "reverse": reverse,
+            "mx": self._doh_query(host, "MX"),
+            "txt": self._doh_query(host, "TXT"),
+            "subs": {},
+        }
+        for sub in SUBDOMAINS:
+            found = self._doh_query(sub + "." + host, "A")
+            if found:
+                self._dns_results["subs"][sub] = found
+        self._check("check_dns", bool(ips), host + " → " + (", ".join(ips) or "no A"))
+        self._tool_status = host + " · DNS"
+
+    def _path_scan_worker(self):
+        portal = self._portal or self._portal_url() or (("http://" + self._gateway + "/") if self._gateway else "")
+        origin = self._origin(portal) if portal else ""
+        if not origin:
+            self._tool_status = self._t("host_hint")
+            return
+        results = []
+        for path in COMMON_PATHS:
+            response = self._http(origin + path)
+            code = int(response.get("code", -1))
+            if code not in (-1, 404):
+                results.append({"path": path, "code": code, "size": len(str(response.get("body", "") or ""))})
+        self._path_results = results
+        sensitive = [item["path"] for item in results if item["path"] in ("/.env", "/.git/HEAD", "/server-status") and item["code"] == 200]
+        if sensitive:
+            self._add("exposed_file", ", ".join(sensitive))
+        if any(item["path"] == "/admin" and item["code"] == 200 for item in results):
+            self._add("admin_panel", origin + "/admin")
+        self._check("check_paths", not sensitive, ", ".join(item["path"] for item in results) or "none")
+        self._tool_status = origin + " · " + str(len(results)) + " path(s)"
+
+    def _hash_text(self, text):
+        data = str(text).encode("utf-8")
+        return {
+            "md5": hashlib.md5(data).hexdigest(),
+            "sha1": hashlib.sha1(data).hexdigest(),
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "sha512": hashlib.sha512(data).hexdigest(),
+        }
+
+    def _password_strength(self, text):
+        value = str(text or "")
+        pool = 0
+        if re.search(r"[a-z]", value):
+            pool += 26
+        if re.search(r"[A-Z]", value):
+            pool += 26
+        if re.search(r"[0-9]", value):
+            pool += 10
+        if re.search(r"[^A-Za-z0-9]", value):
+            pool += 33
+        entropy = len(value) * (math.log(pool, 2) if pool else 0)
+        if len(value) >= 14 and entropy >= 80:
+            label = "strong"
+        elif len(value) >= 10 and entropy >= 50:
+            label = "medium"
+        else:
+            label = "weak"
+        return {"length": len(value), "entropy": round(entropy, 1), "label": label}
+
+    def _compute_hash(self):
+        self._hash_result = self._hash_text(self._hash_input)
+        self._hash_result.update(self._password_strength(self._hash_input))
+        self.refresh()
+
     def _pick_target(self, ssid):
         def callback(value=None):
             self.set_setting("target_ssid", str(ssid))
@@ -1873,6 +2126,12 @@ class CaptivePortalAuditor(BasePlugin):
                 lines.append(self._t("fingerprint_card") + ": " + " · ".join(fp))
         if self._meta.get("dhcp_server") or self._meta.get("dns2"):
             lines.append(self._t("dhcp_server") + ": " + str(self._meta.get("dhcp_server", "?")) + " · " + self._t("dns_servers") + ": " + ", ".join([item for item in [self._meta.get("dns1", ""), self._meta.get("dns2", "")] if item]))
+        if self._port_results:
+            lines.append(self._t("port_results") + ": " + ", ".join(str(item["port"]) for item in self._port_results))
+        if self._dns_results.get("ips"):
+            lines.append("DNS: " + ", ".join(self._dns_results.get("ips", [])))
+        if self._path_results:
+            lines.append(self._t("path_results") + ": " + ", ".join(item["path"] + " (" + str(item["code"]) + ")" for item in self._path_results))
         if self._meta.get("garden"):
             lines.append("")
             lines.append(self._t("check_garden") + ": " + "; ".join(self._meta["garden"]))
@@ -2057,6 +2316,62 @@ class CaptivePortalAuditor(BasePlugin):
             content=ui.lazy_column(body, padding=16, spacing=12, fill_max_size=True),
         )
 
+    def screen_tools(self, ui, api, state):
+        host = self._host or self._gateway
+        port_rows = [ui.settings_row(str(item["port"]) + " · " + item["service"], "open", "lan") for item in self._port_results] or [ui.text(self._t("no_results"), "bodySmall")]
+        dns = self._dns_results or {}
+        dns_rows = []
+        if dns.get("ips"):
+            dns_rows.append(ui.settings_row("A/AAAA", ", ".join(dns.get("ips", [])), "dns"))
+        if dns.get("reverse"):
+            dns_rows.append(ui.settings_row(self._t("reverse_dns"), dns.get("reverse", ""), "swap_horiz"))
+        if dns.get("mx"):
+            dns_rows.append(ui.settings_row("MX", ", ".join(dns.get("mx", [])), "mail"))
+        if dns.get("txt"):
+            dns_rows.append(ui.settings_row("TXT", ", ".join(dns.get("txt", [])), "text_snippet"))
+        for sub, values in (dns.get("subs") or {}).items():
+            dns_rows.append(ui.settings_row(sub, ", ".join(values), "subdirectory_arrow_right"))
+        if not dns_rows:
+            dns_rows = [ui.text(self._t("no_results"), "bodySmall")]
+        path_rows = [ui.settings_row(item["path"], "HTTP " + str(item["code"]) + " · " + str(item["size"]) + " B", "link") for item in self._path_results] or [ui.text(self._t("no_results"), "bodySmall")]
+        hash_rows = []
+        for algorithm in ("md5", "sha1", "sha256", "sha512"):
+            if self._hash_result.get(algorithm):
+                hash_rows.append(ui.settings_row(algorithm.upper(), self._hash_result[algorithm], "fingerprint"))
+        if self._hash_result:
+            hash_rows.append(ui.settings_row(self._t("strength"), self._t(self._hash_result.get("label", "weak")) + " · " + str(self._hash_result.get("entropy", 0)) + " bits", "security"))
+        body = [
+            ui.card(
+                [
+                    ui.text_field(host, self._set_host, self._t("host_hint"), single_line=True),
+                    ui.row(
+                        [
+                            ui.button(self._t("scan_ports"), lambda value=None: self._run_tool(self._port_scan_worker), enabled=not self._tools_busy, fill_max_width=True),
+                            ui.button(self._t("dns_recon"), lambda value=None: self._run_tool(self._dns_worker), style="tonal", enabled=not self._tools_busy, fill_max_width=True),
+                            ui.button(self._t("web_paths"), lambda value=None: self._run_tool(self._path_scan_worker), style="outlined", enabled=not self._tools_busy, fill_max_width=True),
+                        ],
+                        spacing=6,
+                    ),
+                ]
+            ),
+            ui.card([ui.text(self._t("port_results"), "titleMedium"), ui.segmented_list(port_rows)]),
+            ui.card([ui.text(self._t("dns_results"), "titleMedium"), ui.segmented_list(dns_rows)]),
+            ui.card([ui.text(self._t("path_results"), "titleMedium"), ui.segmented_list(path_rows)]),
+            ui.card(
+                [
+                    ui.text(self._t("crypto_lab"), "titleMedium"),
+                    ui.text_field(self._hash_input, self._set_hash_input, self._t("hash_input"), single_line=True),
+                    ui.button(self._t("hash_now"), lambda value=None: self._compute_hash(), fill_max_width=True),
+                    ui.segmented_list(hash_rows or [ui.text(self._t("no_results"), "bodySmall")]),
+                ]
+            ),
+        ]
+        if self._tools_busy:
+            body.insert(1, ui.linear_progress(None))
+        if self._tool_status:
+            body.append(ui.text(self._tool_status, "bodySmall"))
+        return ui.scaffold(title=self._t("tools_title"), content=ui.lazy_column(body, padding=16, spacing=12, fill_max_size=True))
+
     def screen_main(self, ui, api, state):
         counts = self._counts()
         findings_rows = []
@@ -2127,6 +2442,7 @@ class CaptivePortalAuditor(BasePlugin):
                     enabled=not self._scanning,
                     fill_max_width=True,
                 ),
+                ui.button(self._t("tools_title"), self._go("tools"), style="text", fill_max_width=True),
             ],
             spacing=8,
         )
