@@ -2,11 +2,18 @@ import json
 
 __id__ = "device_inspector"
 __name__ = "Device Inspector"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Build information, battery state, connectivity and hardware features"
 __icon__ = "rounded:phone_android"
 __permissions__ = []
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Up":"أعلى","Validate":"تحقق","No":"لا","Supported":"مدعوم","Internet":"الإنترنت","No optional features reported":"لم يتم الإبلاغ عن ميزات اختيارية","None":"لا شيء","Snapshot loaded":"تم تحميل اللقطة","Security":"الأمان","Downstream":"التنزيل","Upstream":"الرفع","Device Inspector":"فاحص الجهاز","Build, battery, connectivity and hardware features":"البناء والبطارية والاتصال وميزات العتاد","Build":"البناء","Device":"الجهاز","Product":"المنتج","Board":"اللوحة","Hardware":"العتاد","ABI":"ABI","Security patch":"تحديث الأمان","App version":"إصدار التطبيق","Bluetooth name":"اسم البلوتوث","Bluetooth address":"عنوان البلوتوث","Connectivity":"الاتصال","Validated":"مُتحقق منه","Wi-Fi":"Wi-Fi","Cellular":"خلوي","VPN":"VPN","Ethernet":"إيثرنت","Bluetooth link":"رابط البلوتوث","Supported hardware":"العتاد المدعوم","supported":"مدعوم","Battery":"البطارية","unknown":"غير معروف","unavailable":"غير متاح","hidden":"مخفي","yes":"نعم","no":"لا","Charging":"قيد الشحن","On battery":"على البطارية","Offline":"غير متصل","Android":"Android","kbps":"كيلوبت/ث","max":"بحد أقصى"},"ru":{"Up":"Вверх","Validate":"Проверить","No":"Нет","Supported":"Поддерживается","Internet":"Интернет","No optional features reported":"Дополнительные функции не обнаружены","None":"Нет","Snapshot loaded":"Снимок загружен","Security":"Безопасность","Downstream":"Входящий трафик","Upstream":"Исходящий трафик","Device Inspector":"Инспектор устройства","Build, battery, connectivity and hardware features":"Сборка, батарея, подключение и оборудование","Build":"Сборка","Device":"Устройство","Product":"Продукт","Board":"Плата","Hardware":"Оборудование","ABI":"ABI","Security patch":"Патч безопасности","App version":"Версия приложения","Bluetooth name":"Имя Bluetooth","Bluetooth address":"Адрес Bluetooth","Connectivity":"Подключение","Validated":"Проверено","Wi-Fi":"Wi-Fi","Cellular":"Сотовая связь","VPN":"VPN","Ethernet":"Ethernet","Bluetooth link":"Связь Bluetooth","Supported hardware":"Поддерживаемое оборудование","supported":"поддерживается","Battery":"Батарея","unknown":"неизвестно","unavailable":"недоступно","hidden":"скрыто","yes":"да","no":"нет","Charging":"Заряжается","On battery":"От батареи","Offline":"Офлайн","Android":"Android","kbps":"Кбит/с","max":"макс."}}
+
+
+
+
 
 
 class DeviceInspector(BasePlugin):

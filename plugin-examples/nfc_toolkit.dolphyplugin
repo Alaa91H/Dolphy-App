@@ -3,11 +3,18 @@ import time
 
 __id__ = "nfc_toolkit"
 __name__ = "NFC Toolkit"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "NFC adapter status, live tag capture and technology inspection"
 __icon__ = "rounded:nfc"
 __permissions__ = ["nfc"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Ready":"جاهز","Clear":"مسح","History":"السجل","No":"لا","Unknown":"غير معروف","Available":"متاح","Enabled":"مفعّل","Disabled":"معطّل","No adapter":"لا يوجد محول","No HCE":"لا يوجد HCE","Reader mode":"وضع القارئ","No reader mode":"وضع القارئ غير متاح","Clear history":"مسح السجل","Open NFC settings":"فتح إعدادات NFC","No tags captured yet":"لم يتم التقاط أي وسوم بعد","No technologies reported":"لم يتم الإبلاغ عن تقنيات","None":"لا شيء","Unknown UID":"UID غير معروف","Waiting for a tag":"بانتظار وسم","Ready for a tag":"جاهز للوسم","This device has no NFC adapter":"هذا الجهاز لا يحتوي على محول NFC","NFC is disabled":"NFC معطّل","Opened NFC settings":"تم فتح إعدادات NFC","Could not open NFC settings":"تعذّر فتح إعدادات NFC","History cleared":"تم مسح السجل","Tag captured":"تم التقاط الوسم","Captured at":"تم الالتقاط في","unknown UID":"UID غير معروف","Open":"مفتوح","live":"نشط","NFC adapter":"محول NFC","Reader mode and host card emulation":"وضع القارئ ومحاكاة البطاقة المضيفة","Adapter status, live tag capture and technologies":"حالة المحول والتقاط الوسوم المباشر والتقنيات","NFC Toolkit":"صندوق أدوات NFC","Hold a tag against the NFC antenna. Dolphy delivers it to enabled plugins.":"قرّب الوسم من هوائي NFC. Dolphy يسلّمه إلى الإضافات المفعّلة.","Technology":"التقنية","Technologies":"التقنيات","Tag":"الوسم","captures":"عمليات التقاط","in history":"في السجل","Device":"الجهاز","unknown":"غير معروف","no":"لا","HCE":"HCE","Read":"قراءة","bytes":"بايت","max":"بحد أقصى"},"ru":{"Ready":"Готово","Clear":"Очистить","History":"История","No":"Нет","Unknown":"Неизвестно","Available":"Доступно","Enabled":"Включено","Disabled":"Отключено","No adapter":"Нет адаптера","No HCE":"HCE недоступен","Reader mode":"Режим чтения","No reader mode":"Режим чтения недоступен","Clear history":"Очистить историю","Open NFC settings":"Открыть настройки NFC","No tags captured yet":"Метки пока не захвачены","No technologies reported":"Технологии не обнаружены","None":"Нет","Unknown UID":"Неизвестный UID","Waiting for a tag":"Ожидание метки","Ready for a tag":"Готово к метке","This device has no NFC adapter":"На этом устройстве нет NFC-адаптера","NFC is disabled":"NFC отключён","Opened NFC settings":"Настройки NFC открыты","Could not open NFC settings":"Не удалось открыть настройки NFC","History cleared":"История очищена","Tag captured":"Метка захвачена","Captured at":"Захвачено в","unknown UID":"неизвестный UID","Open":"Открытые","live":"активных","NFC adapter":"NFC-адаптер","Reader mode and host card emulation":"Режим чтения и эмуляция карты","Adapter status, live tag capture and technologies":"Состояние адаптера, захват меток и технологии","NFC Toolkit":"Набор инструментов NFC","Hold a tag against the NFC antenna. Dolphy delivers it to enabled plugins.":"Приложите метку к NFC-антенне. Dolphy передаст её включённым плагинам.","Technology":"Технология","Technologies":"Технологии","Tag":"Метка","captures":"захватов","in history":"в истории","Device":"Устройство","unknown":"неизвестно","no":"нет","HCE":"HCE","Read":"Чтение","bytes":"байт","max":"макс."}}
+
+
+
+
 
 
 class NfcToolkit(BasePlugin):

@@ -3,11 +3,18 @@ import threading
 
 __id__ = "wifi_scanner_md3e"
 __name__ = "Wi-Fi Scanner MD3E"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Material 3 Expressive Wi-Fi scanner with connection, radio, security and channel details"
 __icon__ = "rounded:wifi"
 __permissions__ = ["wifi"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Not connected":"غير متصل","Scanning":"جارٍ الفحص","Start":"بدء","Run":"تشغيل","No":"لا","Unknown":"غير معروف","Hidden":"مخفي","Supported":"مدعوم","Enabled":"مفعّل","Scan networks":"فحص الشبكات","No capability flags":"لا توجد أعلام قدرات","No networks in this filter":"لا توجد شبكات في هذا التصفية","None":"لا شيء","Unknown BSSID":"BSSID غير معروف","Hidden network":"شبكة مخفية","Cached scan results":"نتائج فحص مخزنة","All":"الكل","Secure":"آمن","Open":"مفتوح","visible networks":"شبكات ظاهرة","Unknown band":"نطاق غير معروف","No network":"لا توجد شبكة","Networks, security, channels and connection details":"الشبكات والأمان والقنوات وتفاصيل الاتصال","Wi-Fi Scanner MD3E":"ماسح Wi-Fi MD3E","Wi-Fi Scanner":"ماسح Wi-Fi","Scanning nearby networks…":"جارٍ فحص الشبكات القريبة…","Using the latest results allowed by Android":"استخدام أحدث النتائج المسموح بها من Android","Scan completed ·":"اكتمل الفحص ·","networks":"شبكات","Run a scan and make sure Location and Wi-Fi permissions are granted.":"شغّل الفحص وتأكد من منح أذونات الموقع وWi-Fi.","Wi-Fi is disabled":"Wi-Fi معطّل","5 GHz ready":"5 GHz جاهز","2.4 GHz":"2.4 GHz","5 GHz":"5 GHz","6 GHz":"6 GHz","Security":"الأمان","Band":"النطاق","Channel":"القناة","Frequency":"التردد","Channel width":"عرض القناة","Signal":"الإشارة","Raw capabilities":"القدرات الخام","Device":"الجهاز","Wi-Fi":"Wi-Fi","no":"لا","Hz":"هرتز","Android":"Android","max":"بحد أقصى"},"ru":{"Not connected":"Не подключено","Scanning":"Сканирование","Start":"Запустить","Run":"Запустить","No":"Нет","Unknown":"Неизвестно","Hidden":"Скрыто","Supported":"Поддерживается","Enabled":"Включено","Scan networks":"Сканировать сети","No capability flags":"Нет флагов возможностей","No networks in this filter":"В этом фильтре нет сетей","None":"Нет","Unknown BSSID":"Неизвестный BSSID","Hidden network":"Скрытая сеть","Cached scan results":"Кэшированные результаты","All":"Все","Secure":"Защищённые","Open":"Открытые","visible networks":"видимых сетей","Unknown band":"Неизвестный диапазон","No network":"Нет сети","Networks, security, channels and connection details":"Сети, безопасность, каналы и сведения о подключении","Wi-Fi Scanner MD3E":"Сканер Wi-Fi MD3E","Wi-Fi Scanner":"Сканер Wi-Fi","Scanning nearby networks…":"Сканирование ближайших сетей…","Using the latest results allowed by Android":"Используются последние результаты, разрешённые Android","Scan completed ·":"Сканирование завершено ·","networks":"сетей","Run a scan and make sure Location and Wi-Fi permissions are granted.":"Запустите сканирование и убедитесь, что разрешения на местоположение и Wi-Fi предоставлены.","Wi-Fi is disabled":"Wi-Fi отключён","5 GHz ready":"5 GHz готов","2.4 GHz":"2.4 GHz","5 GHz":"5 GHz","6 GHz":"6 GHz","Security":"Безопасность","Band":"Диапазон","Channel":"Канал","Frequency":"Частота","Channel width":"Ширина канала","Signal":"Сигнал","Raw capabilities":"Необработанные возможности","Device":"Устройство","Wi-Fi":"Wi-Fi","no":"нет","Hz":"Гц","Android":"Android","max":"макс."}}
+
+
+
+
 
 
 class WifiScannerMd3e(BasePlugin):

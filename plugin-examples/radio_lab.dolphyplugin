@@ -2,11 +2,18 @@ import json
 
 __id__ = "radio_lab"
 __name__ = "Radio Lab"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Bluetooth and Wi-Fi diagnostics"
 __icon__ = "filled:bluetooth_searching"
 __permissions__ = ["bluetooth", "wifi"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Start":"بدء","Stop":"إيقاف","Start BLE scan":"بدء فحص BLE","Stop BLE scan":"إيقاف فحص BLE","devices":"أجهزة","Wi-Fi:":"Wi-Fi:","Nearby BLE:":"BLE القريب:","Devices will appear here":"ستظهر الأجهزة هنا","Wireless interface":"الواجهة اللاسلكية","Bluetooth and Wi-Fi diagnostics":"تشخيص البلوتوث وWi-Fi","Radio Lab":"مختبر الراديو","Device":"الجهاز","Wi-Fi":"Wi-Fi","RSSI":"RSSI","unknown":"غير معروف","no":"لا","max":"بحد أقصى"},"ru":{"Start":"Запустить","Stop":"Остановить","Start BLE scan":"Начать BLE-сканирование","Stop BLE scan":"Остановить BLE-сканирование","devices":"устройств","Wi-Fi:":"Wi-Fi:","Nearby BLE:":"BLE поблизости:","Devices will appear here":"Устройства появятся здесь","Wireless interface":"Беспроводной интерфейс","Bluetooth and Wi-Fi diagnostics":"Диагностика Bluetooth и Wi-Fi","Radio Lab":"Радиолаборатория","Device":"Устройство","Wi-Fi":"Wi-Fi","RSSI":"RSSI","unknown":"неизвестно","no":"нет","max":"макс."}}
+
+
+
+
 
 
 class RadioLab(BasePlugin):

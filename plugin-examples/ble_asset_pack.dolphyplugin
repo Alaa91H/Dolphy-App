@@ -4,11 +4,18 @@ import time
 
 __id__ = "ble_asset_pack"
 __name__ = "BLE Asset Pack"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Custom BLE mode and permission-aware asset download example"
 __icon__ = "rounded:radar"
 __permissions__ = ["ble_spam", "bluetooth", "download", "files", "infrared"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Start":"بدء","Stop":"إيقاف","No":"لا","None":"لا شيء","no":"لا","Android":"Android","max":"بحد أقصى","Lab Beacon":"منارة المختبر","Custom plugin advertising mode":"وضع إعلان مخصص للإضافة","Demo remote":"جهاز تحكم تجريبي"},"ru":{"Start":"Запустить","Stop":"Остановить","No":"Нет","None":"Нет","no":"нет","Android":"Android","max":"макс.","Lab Beacon":"Лабораторный маяк","Custom plugin advertising mode":"Пользовательский режим рекламы плагина","Demo remote":"Демонстрационный пульт"}}
+
+
+
+
 
 
 class BleAssetPack(BasePlugin):

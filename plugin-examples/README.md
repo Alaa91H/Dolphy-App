@@ -37,6 +37,8 @@ Plugins are executable user-provided code with broad access to application and d
 | [Captive Portal Auditor](captive_portal_auditor.dolphyplugin) | Plugins | `network`, `wifi`, `files` | Consent-gated defensive toolkit: Kismet-style Wi-Fi survey (channel/band/PMF/WPS/vendor), rogue AP detection, testssl-style TLS/certificate checks, WhatWeb/Nikto-style fingerprint/headers/paths, Nmap-style port and service scan, DNS recon, DHCP/DNS audit, hash/password-strength lab and a risk-scored remediation report. |
 | [Kali Arsenal Index](kali_arsenal_index.dolphyplugin) | Plugins | — | Searchable official reference index of 501 Kali Linux tools across 16 categories with package metadata, official descriptions, documented features, a workspace for every tool, quick steps and safe copy actions. Arabic, English and Russian interface. Offensive tools are documented but never executed. |
 
+All example plugins now follow the app language and include Arabic, English and Russian UI text. Technical names, commands, packet data and captured output intentionally stay in their original form.
+
 ## Cross-plugin wordlist integration
 
 Wi-Fi Wordlist Lab publishes its result so other plugins do not have to guess the same list twice. The

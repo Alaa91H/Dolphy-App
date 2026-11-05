@@ -2,11 +2,18 @@ import json
 
 __id__ = "shell_console"
 __name__ = "Shell Console"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Run unprivileged shell commands inside the Dolphy app sandbox"
 __icon__ = "rounded:terminal"
 __permissions__ = ["shell"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Idle":"خامل","Clear":"مسح","Run":"تشغيل","Output":"الإخراج","Presets":"الإعدادات الجاهزة","Command":"الأمر","No":"لا","No output yet":"لا يوجد إخراج بعد","None":"لا شيء","Product":"المنتج","ABI":"ABI","Exit code":"رمز الخروج","Shell Console":"وحدة تحكم الصدفة","Unprivileged shell commands":"أوامر صدفة بدون صلاحيات","Shell":"الصدفة","Runs as the Dolphy app user, without root":"يعمل كمستخدم تطبيق Dolphy دون روت","Battery":"البطارية","Product model":"طراز المنتج","Android release":"إصدار Android","Primary ABI":"ABI الأساسي","Installed packages":"الحزم المثبتة","Battery dump":"تفريغ بيانات البطارية","Environment":"البيئة","no":"لا","Preset":"إعداد مسبق","Enter a command":"أدخل أمرًا","Cleared":"تم المسح","Android":"Android","max":"بحد أقصى"},"ru":{"Idle":"Ожидание","Clear":"Очистить","Run":"Запустить","Output":"Вывод","Presets":"Шаблоны","Command":"Команда","No":"Нет","No output yet":"Вывода пока нет","None":"Нет","Product":"Продукт","ABI":"ABI","Exit code":"Код выхода","Shell Console":"Консоль оболочки","Unprivileged shell commands":"Команды оболочки без привилегий","Shell":"Оболочка","Runs as the Dolphy app user, without root":"Работает от пользователя Dolphy без root","Battery":"Батарея","Product model":"Модель продукта","Android release":"Релиз Android","Primary ABI":"Основной ABI","Installed packages":"Установленные пакеты","Battery dump":"Дамп батареи","Environment":"Среда","no":"нет","Preset":"Шаблон","Enter a command":"Введите команду","Cleared":"Очищено","Android":"Android","max":"макс."}}
+
+
+
+
 
 PRESETS = [
     ["model", "Product model", "getprop ro.product.model"],

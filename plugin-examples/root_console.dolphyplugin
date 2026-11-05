@@ -2,11 +2,18 @@ import json
 
 __id__ = "root_console"
 __name__ = "Root Console"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Run root commands with presets and keep the output on screen"
 __icon__ = "rounded:terminal"
 __permissions__ = ["root"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Idle":"خامل","Stopped":"متوقف","Stop":"إيقاف","Clear":"مسح","Run":"تشغيل","Output":"الإخراج","Presets":"الإعدادات الجاهزة","Command":"الأمر","No":"لا","Available":"متاح","No output yet":"لا يوجد إخراج بعد","No root access detected on this device.":"لم يُكتشف وصول روت على هذا الجهاز.","None":"لا شيء","Root":"روت","Device":"الجهاز","Root Console":"وحدة تحكم الروت","Guarded root shell with presets":"صدفة روت محمية مع إعدادات جاهزة","Root available":"الروت متاح","Root is not available":"الروت غير متاح","No root":"لا يوجد روت","Root shell":"صدفة الروت","Commands run through the Dolphy root broker":"تُنفّذ الأوامر عبر وسيط الروت في Dolphy","Root console ready":"وحدة تحكم الروت جاهزة","Exit code":"رمز الخروج","Packages":"الحزم","Identity":"الهوية","SELinux":"SELinux","Disk usage":"استخدام القرص","Processes":"العمليات","Properties":"الخصائص","no":"لا","Preset":"إعداد مسبق","Enter a command":"أدخل أمرًا","Cleared":"تم المسح","max":"بحد أقصى"},"ru":{"Idle":"Ожидание","Stopped":"Остановлено","Stop":"Остановить","Clear":"Очистить","Run":"Запустить","Output":"Вывод","Presets":"Шаблоны","Command":"Команда","No":"Нет","Available":"Доступно","No output yet":"Вывода пока нет","No root access detected on this device.":"Root-доступ на этом устройстве не обнаружен.","None":"Нет","Root":"Root","Device":"Устройство","Root Console":"Root-консоль","Guarded root shell with presets":"Защищённая root-оболочка с шаблонами","Root available":"Root доступен","Root is not available":"Root недоступен","No root":"Нет root","Root shell":"Root-оболочка","Commands run through the Dolphy root broker":"Команды выполняются через root-брокер Dolphy","Root console ready":"Root-консоль готова","Exit code":"Код выхода","Packages":"Пакеты","Identity":"Идентификация","SELinux":"SELinux","Disk usage":"Использование диска","Processes":"Процессы","Properties":"Свойства","no":"нет","Preset":"Шаблон","Enter a command":"Введите команду","Cleared":"Очищено","max":"макс."}}
+
+
+
+
 
 PRESETS = [
     ["identity", "Identity", "id; whoami; getprop ro.build.version.release"],

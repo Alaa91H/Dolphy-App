@@ -2,11 +2,18 @@ import json
 
 __id__ = "file_browser"
 __name__ = "Plugin File Browser"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Browse the plugin sandbox, preview text files, share and delete entries"
 __icon__ = "rounded:folder"
 __permissions__ = ["files"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Share":"مشاركة","Delete":"حذف","Cancel":"إلغاء","Refresh":"تحديث","Up":"أعلى","Files":"الملفات","File":"ملف","No":"لا","Create folder":"إنشاء مجلد","New folder name":"اسم المجلد الجديد","Delete entry?":"حذف العنصر؟","None":"لا شيء","Sandbox root":"جذر العزل","This folder is empty":"هذا المجلد فارغ","Enter a folder name":"أدخل اسم مجلد","Share failed":"فشلت المشاركة","Plugin File Browser":"متصفح ملفات الإضافات","Sandbox files with preview, share and delete":"ملفات العزل مع معاينة ومشاركة وحذف","Plugins can create files inside their private sandbox only.":"يمكن للإضافات إنشاء ملفات داخل عزلها الخاص فقط.","Plugin Files":"ملفات الإضافة","Permanently delete":"حذف نهائي","from the plugin sandbox?":"من عزل الإضافة؟","Deleted":"تم الحذف","Created":"تم الإنشاء","Could not create":"تعذّر الإنشاء","Could not delete":"تعذّر الحذف","Binary file or unreadable content":"ملف ثنائي أو محتوى غير قابل للقراءة","no":"لا","entries":"عناصر","MB":"ميغابايت","KB":"كيلوبايت","Share plugin file":"مشاركة ملف الإضافة","Android":"Android","Read":"قراءة","max":"بحد أقصى"},"ru":{"Share":"Поделиться","Delete":"Удалить","Cancel":"Отмена","Refresh":"Обновить","Up":"Вверх","Files":"Файлы","File":"Файл","No":"Нет","Create folder":"Создать папку","New folder name":"Имя новой папки","Delete entry?":"Удалить элемент?","None":"Нет","Sandbox root":"Корень песочницы","This folder is empty":"Эта папка пуста","Enter a folder name":"Введите имя папки","Share failed":"Не удалось поделиться","Plugin File Browser":"Браузер файлов плагинов","Sandbox files with preview, share and delete":"Файлы песочницы с предпросмотром, обменом и удалением","Plugins can create files inside their private sandbox only.":"Плагины могут создавать файлы только в своей песочнице.","Plugin Files":"Файлы плагина","Permanently delete":"Удалить навсегда","from the plugin sandbox?":"из песочницы плагина?","Deleted":"Удалено","Created":"Создано","Could not create":"Не удалось создать","Could not delete":"Не удалось удалить","Binary file or unreadable content":"Двоичный файл или нечитаемое содержимое","no":"нет","entries":"элементов","MB":"МБ","KB":"КБ","Share plugin file":"Поделиться файлом плагина","Android":"Android","Read":"Чтение","max":"макс."}}
+
+
+
+
 
 
 class PluginFileBrowser(BasePlugin):

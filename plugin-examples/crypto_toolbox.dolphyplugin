@@ -2,11 +2,18 @@ import json
 
 __id__ = "crypto_toolbox"
 __name__ = "Crypto Toolbox"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Hashes, Base64, hexadecimal conversion and random identifiers"
 __icon__ = "rounded:security"
 __permissions__ = []
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Ready":"جاهز","Clear":"مسح","Copy":"نسخ","History":"السجل","Hashes":"التجزئات","Encodings":"الترميزات","Random":"عشوائي","No":"لا","Use result":"استخدام النتيجة","Input text":"نص الإدخال","Result appears here":"تظهر النتيجة هنا","hash the input":"تجزئة الإدخال","cryptographically secure":"آمن تشفيريًا","new identifier":"معرّف جديد","No operations yet":"لا توجد عمليات بعد","None":"لا شيء","Crypto Toolbox":"صندوق أدوات التشفير","Hashes, encodings and random identifiers":"تجزئات وترميزات ومعرّفات عشوائية","Crypto and encoding":"التشفير والترميز","Everything runs locally on the device":"كل شيء يعمل محليًا على الجهاز","SHA-256":"SHA-256","SHA-512":"SHA-512","SHA-1":"SHA-1","MD5":"MD5","Base64 encode":"ترميز Base64","Base64 decode":"فك Base64","UTF-8 text to Base64":"نص UTF-8 إلى Base64","Base64 back to text":"Base64 إلى نص","Hex encode":"ترميز سداسي عشري","Hex decode":"فك سداسي عشري","UTF-8 text to hex":"نص UTF-8 إلى سداسي عشري","Hex back to text":"سداسي عشري إلى نص","Random 16 bytes":"16 بايت عشوائية","UUID v4":"UUID v4","Clipboard unavailable":"الحافظة غير متاحة","Copied to clipboard":"تم النسخ إلى الحافظة","unavailable":"غير متاح","no":"لا","Android":"Android","Read":"قراءة","bytes":"بايت","max":"بحد أقصى"},"ru":{"Ready":"Готово","Clear":"Очистить","Copy":"Копировать","History":"История","Hashes":"Хэши","Encodings":"Кодировки","Random":"Случайное","No":"Нет","Use result":"Использовать результат","Input text":"Входной текст","Result appears here":"Результат появится здесь","hash the input":"хэшировать ввод","cryptographically secure":"криптографически стойкий","new identifier":"новый идентификатор","No operations yet":"Операций пока нет","None":"Нет","Crypto Toolbox":"Криптографический набор","Hashes, encodings and random identifiers":"Хэши, кодировки и случайные идентификаторы","Crypto and encoding":"Криптография и кодирование","Everything runs locally on the device":"Всё выполняется локально на устройстве","SHA-256":"SHA-256","SHA-512":"SHA-512","SHA-1":"SHA-1","MD5":"MD5","Base64 encode":"Кодировать Base64","Base64 decode":"Декодировать Base64","UTF-8 text to Base64":"Текст UTF-8 в Base64","Base64 back to text":"Base64 обратно в текст","Hex encode":"Кодировать в hex","Hex decode":"Декодировать hex","UTF-8 text to hex":"Текст UTF-8 в hex","Hex back to text":"Hex обратно в текст","Random 16 bytes":"16 случайных байт","UUID v4":"UUID v4","Clipboard unavailable":"Буфер обмена недоступен","Copied to clipboard":"Скопировано в буфер обмена","unavailable":"недоступно","no":"нет","Android":"Android","Read":"Чтение","bytes":"байт","max":"макс."}}
+
+
+
+
 
 
 class CryptoToolbox(BasePlugin):

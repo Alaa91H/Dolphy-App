@@ -2,11 +2,18 @@ import json
 
 __id__ = "wifi_analyzer"
 __name__ = "Wi-Fi Analyzer"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Connection details, DHCP lease and per-channel congestion analysis"
 __icon__ = "rounded:wifi"
 __permissions__ = ["wifi"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Not connected":"غير متصل","Start":"بدء","Run":"تشغيل","Up":"أعلى","No":"لا","Supported":"مدعوم","Enabled":"مفعّل","Scan networks":"فحص الشبكات","Reading the current connection":"قراءة الاتصال الحالي","Open":"مفتوح","No BSSID":"لا يوجد BSSID","networks":"شبكات","Wi-Fi is disabled":"Wi-Fi معطّل","2.4 GHz":"2.4 GHz","5 GHz":"5 GHz","2.4 GHz only":"2.4 GHz فقط","Band":"النطاق","Channel":"القناة","Connection and DHCP":"الاتصال وDHCP","IPv4 address":"عنوان IPv4","Gateway":"البوابة","Netmask":"قناع الشبكة","DNS 1":"DNS 1","DNS 2":"DNS 2","DHCP server":"خادم DHCP","Lease":"مدة الإيجار","Interface MAC":"MAC الواجهة","Downstream":"التنزيل","Upstream":"الرفع","Channel congestion":"ازدحام القنوات","Connection, DHCP lease and channel congestion":"الاتصال وإيجار DHCP وازدحام القنوات","Wi-Fi Analyzer":"محلل Wi-Fi","Run a scan to build the channel map":"شغّل فحصًا لبناء خريطة القنوات","Device":"الجهاز","Wi-Fi":"Wi-Fi","unavailable":"غير متاح","hidden":"مخفي","no":"لا","Hz":"هرتز","Android":"Android","Scan requested, refreshing channel map…":"تم طلب الفحص، جارٍ تحديث خريطة القنوات…","Android returned the latest cached scan":"أعاد Android أحدث فحص مخزن","APs":"نقاط وصول","P2P":"P2P","No P2P":"لا يوجد P2P","Read":"قراءة","kbps":"كيلوبت/ث","max":"بحد أقصى"},"ru":{"Not connected":"Не подключено","Start":"Запустить","Run":"Запустить","Up":"Вверх","No":"Нет","Supported":"Поддерживается","Enabled":"Включено","Scan networks":"Сканировать сети","Reading the current connection":"Чтение текущего подключения","Open":"Открытые","No BSSID":"Нет BSSID","networks":"сетей","Wi-Fi is disabled":"Wi-Fi отключён","2.4 GHz":"2.4 GHz","5 GHz":"5 GHz","2.4 GHz only":"Только 2.4 GHz","Band":"Диапазон","Channel":"Канал","Connection and DHCP":"Подключение и DHCP","IPv4 address":"Адрес IPv4","Gateway":"Шлюз","Netmask":"Маска подсети","DNS 1":"DNS 1","DNS 2":"DNS 2","DHCP server":"DHCP-сервер","Lease":"Аренда","Interface MAC":"MAC-адрес интерфейса","Downstream":"Входящий трафик","Upstream":"Исходящий трафик","Channel congestion":"Загруженность каналов","Connection, DHCP lease and channel congestion":"Подключение, аренда DHCP и загруженность каналов","Wi-Fi Analyzer":"Анализатор Wi-Fi","Run a scan to build the channel map":"Запустите сканирование для построения карты каналов","Device":"Устройство","Wi-Fi":"Wi-Fi","unavailable":"недоступно","hidden":"скрыто","no":"нет","Hz":"Гц","Android":"Android","Scan requested, refreshing channel map…":"Сканирование запрошено, обновление карты каналов…","Android returned the latest cached scan":"Android вернул последние кэшированные результаты","APs":"точек доступа","P2P":"P2P","No P2P":"P2P недоступен","Read":"Чтение","kbps":"Кбит/с","max":"макс."}}
+
+
+
+
 
 
 class WifiAnalyzer(BasePlugin):

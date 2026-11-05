@@ -1,11 +1,123 @@
 import inspect
 import json
+import re
 import traceback
+
+
+def _device_language():
+    """Resolve the app locale to one of the three supported UI languages."""
+    try:
+        from java import jclass
+
+        code = str(jclass("java.util.Locale").getDefault().getLanguage()).lower()
+        if code.startswith("ar"):
+            return "ar"
+        if code.startswith("ru"):
+            return "ru"
+        return "en"
+    except Exception:
+        return "en"
 
 
 class UiFactory:
     def __init__(self, session):
         self.session = session
+        self.i18n = {}
+        self.language = _device_language()
+        self._translations = {}
+        self._translation_language = None
+        self._phrase_pattern = None
+        self._phrase_values = {}
+
+    def set_i18n(self, i18n):
+        """Attach a plugin dictionary shaped as {"ar": {...}, "ru": {...}}."""
+        self.i18n = i18n if isinstance(i18n, dict) else {}
+        self._translation_language = None
+        self._translations = {}
+        self._phrase_pattern = None
+        self._phrase_values = {}
+
+    def _table(self):
+        language = _device_language()
+        if language == "en" or language not in self.i18n:
+            self._translation_language = language
+            self._translations = {}
+            return {}
+        if language != self._translation_language:
+            raw = self.i18n.get(language)
+            table = {}
+            if isinstance(raw, dict):
+                for key, value in raw.items():
+                    if isinstance(key, str) and isinstance(value, str) and value:
+                        table[key] = value
+            self._translation_language = language
+            self._translations = table
+            self._phrase_pattern = None
+            self._phrase_values = {}
+        return self._translations
+
+    def _phrases(self, table):
+        if self._phrase_pattern is not None:
+            return self._phrase_pattern, self._phrase_values
+        pairs = [(key, value) for key, value in table.items() if len(key) >= 2]
+        pairs.sort(key=lambda item: len(item[0]), reverse=True)
+        parts = []
+        values = {}
+        for key, value in pairs:
+            prefix = r"(?<![A-Za-z0-9_])" if key[:1].isalnum() else ""
+            suffix = r"(?![A-Za-z0-9_])" if key[-1:].isalnum() else ""
+            parts.append(prefix + re.escape(key) + suffix)
+            values[key] = value
+        self._phrase_values = values
+        self._phrase_pattern = re.compile("|".join(parts)) if parts else re.compile(r"(?!)")
+        return self._phrase_pattern, self._phrase_values
+
+    def translate_exact(self, value):
+        if not isinstance(value, str) or not value:
+            return value
+        return self._table().get(value, value)
+
+    def translate(self, value):
+        if not isinstance(value, str) or not value:
+            return value
+        table = self._table()
+        if not table:
+            return value
+        exact = table.get(value)
+        if exact is not None:
+            return exact
+        pattern, values = self._phrases(table)
+        if pattern is None:
+            return value
+        return pattern.sub(lambda match: values.get(match.group(0), match.group(0)), value)
+
+    def localize(self, node):
+        """Translate visible strings in a UI tree without touching raw values."""
+        if isinstance(node, dict):
+            node_type = node.get("type")
+            for key, value in list(node.items()):
+                if key in ("text", "primaryText", "title", "subtitle", "description", "label", "message", "confirmText", "dismissText", "contentDescription"):
+                    if isinstance(value, str):
+                        # Log panels mostly carry raw command or packet output.
+                        # Translate only exact built-in placeholders, never phrases.
+                        node[key] = self.translate_exact(value) if node_type == "logPanel" and key == "text" else self.translate(value)
+                elif key == "tabs" and isinstance(value, list):
+                    node[key] = [self.translate(item) if isinstance(item, str) else item for item in value]
+                elif key == "options" and isinstance(value, list):
+                    options = []
+                    for item in value:
+                        if isinstance(item, list) and len(item) > 1:
+                            options.append([item[0], self.translate(item[1]) if isinstance(item[1], str) else item[1]])
+                        else:
+                            options.append(item)
+                    node[key] = options
+                elif isinstance(value, (dict, list)):
+                    self.localize(value)
+            return node
+        if isinstance(node, list):
+            for item in node:
+                self.localize(item)
+        return node
 
     def _callback(self, value):
         if value is None:
@@ -152,8 +264,14 @@ class BasePlugin:
         self.api = None
         self.ui = None
 
+    def _tr(self, text):
+        try:
+            return self.ui.translate(str(text))
+        except Exception:
+            return str(text)
+
     def add_module(self, title, description="", icon="extension", screen="main", section="PLUGINS", order=0):
-        return self.api.registerModule(section, title, description, icon, screen, order)
+        return self.api.registerModule(section, self._tr(title), self._tr(description), icon, screen, order)
 
     def navigate(self, screen):
         return self.api.navigate(str(screen))
@@ -172,7 +290,7 @@ class BasePlugin:
         return self.api.setSettingJson(str(key), json.dumps(value))
 
     def toast(self, text):
-        return self.api.toast(str(text))
+        return self.api.toast(self._tr(text))
 
     def hook_screen(self, route, screen="main", mode="overlay", priority=0):
         return self.api.registerScreenHook(str(route), str(screen), str(mode), int(priority))
@@ -187,7 +305,7 @@ class BasePlugin:
         return self.api.registerActionHook(str(action), int(priority))
 
     def register_ble_mode(self, mode_id, title, description="", icon="bluetooth_searching", order=0):
-        return self.api.registerBleMode(str(mode_id), str(title), str(description), str(icon), int(order))
+        return self.api.registerBleMode(str(mode_id), self._tr(title), self._tr(description), str(icon), int(order))
 
     def asset_path(self, path):
         return self.api.assetPath(str(path))
@@ -277,6 +395,9 @@ class PluginRuntimeSession:
         if self.plugin is not None:
             self.plugin.api = bridge
             self.plugin.ui = self.ui
+        i18n = self.namespace.get("__i18n__")
+        if isinstance(i18n, dict):
+            self.ui.set_i18n(i18n)
 
     def _create_plugin(self):
         candidates = []
@@ -337,7 +458,8 @@ class PluginRuntimeSession:
         if function is None:
             return json.dumps({"type": "column", "padding": 16, "children": [{"type": "text", "text": "Экран не найден", "style": "headlineSmall"}, {"type": "text", "text": "screen_" + screen_id, "style": "bodyMedium"}]})
         result = self._call(function, self.ui, self.bridge, state)
-        return json.dumps(result if result is not None else {"type": "empty"}, ensure_ascii=False)
+        result = self.ui.localize(result if result is not None else {"type": "empty"})
+        return json.dumps(result, ensure_ascii=False)
 
     def invoke(self, callback_id, value_json):
         callback = self.callbacks.get(callback_id)

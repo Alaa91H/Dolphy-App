@@ -2,11 +2,18 @@ import json
 
 __id__ = "sensor_monitor"
 __name__ = "Sensor Monitor"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Browse every sensor and stream live values from the selected one"
 __icon__ = "rounded:sensors"
 __permissions__ = []
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Idle":"خامل","Stopped":"متوقف","Start":"بدء","Stop":"إيقاف","No":"لا","Reload list":"إعادة تحميل القائمة","No sensors reported":"لم يتم الإبلاغ عن مستشعرات","No sensor selected":"لم يتم اختيار مستشعر","No samples yet":"لا توجد عينات بعد","None":"لا شيء","All":"الكل","live":"نشط","Sensor Monitor":"مراقب المستشعرات","Live values from any sensor on the device":"قيم مباشرة من أي مستشعر في الجهاز","Select a sensor":"اختر مستشعرًا","sensors available":"مستشعرات متاحة","Selected":"محدد","Streaming":"جارٍ البث","This sensor cannot be started":"لا يمكن بدء هذا المستشعر","samples":"عينات","Value":"القيمة","accuracy":"الدقة","resolution":"الدقة","All sensors":"كل المستشعرات","Live values":"قيم مباشرة","unknown":"غير معروف","no":"لا","Android":"Android","type":"النوع","max":"بحد أقصى"},"ru":{"Idle":"Ожидание","Stopped":"Остановлено","Start":"Запустить","Stop":"Остановить","No":"Нет","Reload list":"Перезагрузить список","No sensors reported":"Датчики не обнаружены","No sensor selected":"Датчик не выбран","No samples yet":"Отсчётов пока нет","None":"Нет","All":"Все","live":"активных","Sensor Monitor":"Монитор датчиков","Live values from any sensor on the device":"Живые значения с любого датчика","Select a sensor":"Выберите датчик","sensors available":"датчиков доступно","Selected":"Выбрано","Streaming":"Поток данных","This sensor cannot be started":"Этот датчик нельзя запустить","samples":"отсчётов","Value":"Значение","accuracy":"точность","resolution":"разрешение","All sensors":"Все датчики","Live values":"Живые значения","unknown":"неизвестно","no":"нет","Android":"Android","type":"тип","max":"макс."}}
+
+
+
+
 
 
 class SensorMonitor(BasePlugin):

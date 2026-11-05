@@ -2,11 +2,18 @@ import json
 
 __id__ = "shizuku_console"
 __name__ = "Shizuku Console"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Run privileged shell commands through Shizuku without root"
 __icon__ = "rounded:security"
 __permissions__ = ["shizuku"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Idle":"خامل","Ready":"جاهز","Clear":"مسح","Run":"تشغيل","Refresh":"تحديث","Output":"الإخراج","Presets":"الإعدادات الجاهزة","Command":"الأمر","No":"لا","Available":"متاح","Request permission":"طلب الإذن","Refresh state":"تحديث الحالة","Clear output":"مسح الإخراج","No output yet":"لا يوجد إخراج بعد","None":"لا شيء","Device":"الجهاز","Wi-Fi":"Wi-Fi","Exit code":"رمز الخروج","Shizuku Console":"وحدة تحكم Shizuku","Privileged shell through Shizuku":"صدفة بصلاحيات عبر Shizuku","Shizuku is not running":"Shizuku لا يعمل","Shizuku permission is required":"إذن Shizuku مطلوب","Permission request sent":"تم إرسال طلب الإذن","Could not request permission":"تعذّر طلب الإذن","Shizuku shell":"صدفة Shizuku","Privileged commands without root":"أوامر بصلاحيات دون روت","Shizuku running":"Shizuku يعمل","Shizuku stopped":"Shizuku متوقف","No permission":"لا يوجد إذن","Permission granted":"الإذن ممنوح","Device model":"طراز الجهاز","Android version":"إصدار Android","Packages":"الحزم","Battery":"البطارية","Wi-Fi status":"حالة Wi-Fi","Identity":"الهوية","no":"لا","Preset":"إعداد مسبق","Enter a command":"أدخل أمرًا","Cleared":"تم المسح","Android":"Android","Read":"قراءة","max":"بحد أقصى"},"ru":{"Idle":"Ожидание","Ready":"Готово","Clear":"Очистить","Run":"Запустить","Refresh":"Обновить","Output":"Вывод","Presets":"Шаблоны","Command":"Команда","No":"Нет","Available":"Доступно","Request permission":"Запросить разрешение","Refresh state":"Обновить состояние","Clear output":"Очистить вывод","No output yet":"Вывода пока нет","None":"Нет","Device":"Устройство","Wi-Fi":"Wi-Fi","Exit code":"Код выхода","Shizuku Console":"Консоль Shizuku","Privileged shell through Shizuku":"Привилегированная оболочка через Shizuku","Shizuku is not running":"Shizuku не запущен","Shizuku permission is required":"Требуется разрешение Shizuku","Permission request sent":"Запрос разрешения отправлен","Could not request permission":"Не удалось запросить разрешение","Shizuku shell":"Оболочка Shizuku","Privileged commands without root":"Привилегированные команды без root","Shizuku running":"Shizuku работает","Shizuku stopped":"Shizuku остановлен","No permission":"Нет разрешения","Permission granted":"Разрешение предоставлено","Device model":"Модель устройства","Android version":"Версия Android","Packages":"Пакеты","Battery":"Батарея","Wi-Fi status":"Состояние Wi-Fi","Identity":"Идентификация","no":"нет","Preset":"Шаблон","Enter a command":"Введите команду","Cleared":"Очищено","Android":"Android","Read":"Чтение","max":"макс."}}
+
+
+
+
 
 PRESETS = [
     ["identity", "Identity", "id"],

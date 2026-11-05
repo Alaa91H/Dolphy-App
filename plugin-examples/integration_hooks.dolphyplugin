@@ -1,10 +1,17 @@
 __id__ = "integration_hooks"
 __name__ = "Integration Hooks"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Screen and action hook example"
 __icon__ = "rounded:extension"
 __permissions__ = ["hooks"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Open IR Storm":"فتح IR Storm","Open":"مفتوح","Integration Hooks":"خطافات التكامل","Existing screen and logic extension":"امتداد للشاشة والمنطق الحاليين","Active integrations":"التكاملات النشطة","FAB is injected into existing IR screens":"يُضاف زر FAB إلى شاشات الأشعة تحت الحمراء الحالية","IR transmissions:":"إرسالات الأشعة تحت الحمراء:","transmissions":"إرسالات","max":"بحد أقصى"},"ru":{"Open IR Storm":"Открыть IR Storm","Open":"Открытые","Integration Hooks":"Хуки интеграции","Existing screen and logic extension":"Расширение экрана и логики","Active integrations":"Активные интеграции","FAB is injected into existing IR screens":"FAB добавляется на существующие ИК-экраны","IR transmissions:":"ИК-передач:","transmissions":"передач","max":"макс."}}
+
+
+
+
 
 
 class IntegrationHooks(BasePlugin):

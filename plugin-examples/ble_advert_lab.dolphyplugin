@@ -2,11 +2,18 @@ import json
 
 __id__ = "ble_advert_lab"
 __name__ = "BLE Advert Lab"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Compose custom BLE advertising packets and broadcast them"
 __icon__ = "rounded:radar"
 __permissions__ = ["ble_spam", "bluetooth"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Idle":"خامل","Start":"بدء","Stop":"إيقاف","No":"لا","Bluetooth on":"البلوتوث مفعّل","Bluetooth off":"البلوتوث معطّل","Advertiser":"المعلن","No advertiser":"لا يوجد معلن","Broadcasting":"جارٍ البث","Start advertising":"بدء البث","Stop advertising":"إيقاف البث","None":"لا شيء","Custom advertising":"إعلان مخصص","Manufacturer data broadcast":"بث بيانات المُصنّع","Packet":"الحزمة","Packet preview":"معاينة الحزمة","Manufacturer id must be 0-65535":"يجب أن يكون معرّف المُصنّع بين 0 و65535","Payload must be even-length hexadecimal (max 27 bytes)":"يجب أن تكون الحمولة سداسية عشرية بطول زوجي (بحد أقصى 27 بايت)","Advertiser unavailable or rejected the packet":"المعلن غير متاح أو رفض الحزمة","Advertising stopped":"تم إيقاف البث","Manufacturer data":"بيانات المُصنّع","Manufacturer":"المُصنّع","Connectable":"قابل للاتصال","Payload":"الحمولة","All":"الكل","Build":"البناء","Device":"الجهاز","Bluetooth name":"اسم البلوتوث","unavailable":"غير متاح","no":"لا","Android":"Android","BLE Advert Lab":"مختبر إعلانات BLE","Build manufacturer data and broadcast a custom BLE advertisement":"أنشئ بيانات المُصنّع وابث إعلان BLE مخصصًا","Include device name":"تضمين اسم الجهاز","Adds the Bluetooth name to the advertisement":"يضيف اسم البلوتوث إلى الإعلان","Allows a central device to connect":"يسمح لجهاز مركزي بالاتصال","bytes":"بايت","max":"بحد أقصى","flags: LE general discoverable":"الأعلام: LE عام قابل للاكتشاف","manufacturer id: 0x":"معرّف المُصنّع: 0x","manufacturer data:":"بيانات المُصنّع:","invalid":"غير صالح"},"ru":{"Idle":"Ожидание","Start":"Запустить","Stop":"Остановить","No":"Нет","Bluetooth on":"Bluetooth включён","Bluetooth off":"Bluetooth выключен","Advertiser":"Рекламодатель","No advertiser":"Нет рекламодателя","Broadcasting":"Идёт вещание","Start advertising":"Начать вещание","Stop advertising":"Остановить вещание","None":"Нет","Custom advertising":"Пользовательская реклама","Manufacturer data broadcast":"Вещание данных производителя","Packet":"Пакет","Packet preview":"Предпросмотр пакета","Manufacturer id must be 0-65535":"ID производителя должен быть от 0 до 65535","Payload must be even-length hexadecimal (max 27 bytes)":"Данные должны быть шестнадцатеричными чётной длины (до 27 байт)","Advertiser unavailable or rejected the packet":"Рекламодатель недоступен или отклонил пакет","Advertising stopped":"Вещание остановлено","Manufacturer data":"Данные производителя","Manufacturer":"Производитель","Connectable":"С возможностью подключения","Payload":"Полезная нагрузка","All":"Все","Build":"Сборка","Device":"Устройство","Bluetooth name":"Имя Bluetooth","unavailable":"недоступно","no":"нет","Android":"Android","BLE Advert Lab":"Лаборатория BLE-рекламы","Build manufacturer data and broadcast a custom BLE advertisement":"Создавайте данные производителя и транслируйте BLE-объявление","Include device name":"Включить имя устройства","Adds the Bluetooth name to the advertisement":"Добавляет имя Bluetooth в объявление","Allows a central device to connect":"Позволяет центральному устройству подключиться","bytes":"байт","max":"макс.","flags: LE general discoverable":"Флаги: LE general discoverable","manufacturer id: 0x":"ID производителя: 0x","manufacturer data:":"Данные производителя:","invalid":"недопустимо"}}
+
+
+
+
 
 SAMPLE_PAYLOAD = "444F4C504859"
 
@@ -172,11 +179,14 @@ class BleAdvertLab(BasePlugin):
                         [
                             ui.text("Packet preview", "titleMedium"),
                             ui.log_panel(
-                                "flags: LE general discoverable\n"
-                                + "manufacturer id: 0x"
+                                self._tr("flags: LE general discoverable")
+                                + "\n"
+                                + self._tr("manufacturer id: 0x")
                                 + format(self.parsed_manufacturer(), "04X")
-                                + "\nmanufacturer data: "
-                                + (self.normalized_payload() or "invalid"),
+                                + "\n"
+                                + self._tr("manufacturer data:")
+                                + " "
+                                + (self.normalized_payload() or self._tr("invalid")),
                                 160,
                             ),
                         ]

@@ -2,11 +2,18 @@ import json
 
 __id__ = "usb_inspector"
 __name__ = "USB Inspector"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "List connected USB devices with vendor, product and interface details"
 __icon__ = "rounded:usb"
 __permissions__ = ["usb"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Connected":"متصل","Refresh":"تحديث","No":"لا","Unknown":"غير معروف","No USB devices":"لا توجد أجهزة USB","None":"لا شيء","Reading USB devices":"قراءة أجهزة USB","devices":"أجهزة","Device":"الجهاز","Product":"المنتج","supported":"مدعوم","USB Inspector":"فاحص USB","Connected USB devices and interface classes":"أجهزة USB المتصلة وفئات الواجهات","USB devices attached":"أجهزة USB متصلة","Connect a USB device through an OTG adapter and refresh.":"وصّل جهاز USB عبر محول OTG ثم حدّث.","USB host":"مضيف USB","Descriptors and interface classes":"الواصفات وفئات الواجهات","Host supported":"المضيف مدعوم","No USB host":"لا يوجد مضيف USB","Vendor id":"معرّف البائع","Product id":"معرّف المنتج","Class":"الفئة","Subclass":"الفئة الفرعية","Protocol":"البروتوكول","Interfaces":"الواجهات","USB device":"جهاز USB","no":"لا","Android":"Android","Read":"قراءة","Per interface":"حسب الواجهة","max":"بحد أقصى"},"ru":{"Connected":"Подключено","Refresh":"Обновить","No":"Нет","Unknown":"Неизвестно","No USB devices":"USB-устройств нет","None":"Нет","Reading USB devices":"Чтение USB-устройств","devices":"устройств","Device":"Устройство","Product":"Продукт","supported":"поддерживается","USB Inspector":"Инспектор USB","Connected USB devices and interface classes":"Подключённые USB-устройства и классы интерфейсов","USB devices attached":"USB-устройств подключено","Connect a USB device through an OTG adapter and refresh.":"Подключите USB-устройство через OTG-адаптер и обновите.","USB host":"USB-хост","Descriptors and interface classes":"Дескрипторы и классы интерфейсов","Host supported":"Хост поддерживается","No USB host":"USB-хост недоступен","Vendor id":"ID производителя","Product id":"ID продукта","Class":"Класс","Subclass":"Подкласс","Protocol":"Протокол","Interfaces":"Интерфейсы","USB device":"USB-устройство","no":"нет","Android":"Android","Read":"Чтение","Per interface":"По интерфейсу","max":"макс."}}
+
+
+
+
 
 DEVICE_CLASSES = {
     0: "Per interface",

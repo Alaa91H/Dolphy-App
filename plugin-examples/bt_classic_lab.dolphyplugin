@@ -2,11 +2,18 @@ import json
 
 __id__ = "bt_classic_lab"
 __name__ = "Classic Bluetooth Lab"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Dolphy"
 __description__ = "Bonded devices, discovery and classic Bluetooth device details"
 __icon__ = "rounded:bluetooth"
 __permissions__ = ["bluetooth"]
+
+# User-interface translations (Arabic, English and Russian).
+__i18n__ = {"ar":{"Idle":"خامل","Start":"بدء","Stop":"إيقاف","Refresh":"تحديث","No":"لا","Unknown":"غير معروف","Enabled":"مفعّل","Disabled":"معطّل","Start discovery":"بدء الاكتشاف","Stop discovery":"إيقاف الاكتشاف","Refresh bonds":"تحديث الاقترانات","Bond":"اقتران","Remove bond":"إزالة الاقتران","Open Bluetooth settings":"فتح إعدادات البلوتوث","No bonded devices":"لا توجد أجهزة مقترنة","Nothing discovered yet":"لم يتم اكتشاف شيء بعد","No service UUIDs cached":"لا توجد UUIDs خدمة مخزنة","None":"لا شيء","Unknown device":"جهاز غير معروف","Cached services":"خدمات مخزنة","Service UUID":"UUID الخدمة","Open":"مفتوح","devices":"أجهزة","Device":"الجهاز","Class":"الفئة","Classic Bluetooth Lab":"مختبر البلوتوث الكلاسيكي","Bonded devices, discovery and device details":"الأجهزة المقترنة والاكتشاف وتفاصيل الجهاز","Classic Bluetooth":"البلوتوث الكلاسيكي","Adapter state, discovery and bonds":"حالة المحول والاكتشاف والاقترانات","Bonded devices":"الأجهزة المقترنة","Discovered devices":"الأجهزة المكتشفة","Bluetooth device":"جهاز بلوتوث","Bond state:":"حالة الاقتران:","Bond request sent":"تم إرسال طلب الاقتران","Bond request rejected":"تم رفض طلب الاقتران","Bond removed":"تمت إزالة الاقتران","Could not remove the bond":"تعذّرت إزالة الاقتران","Device class":"فئة الجهاز","Major class":"الفئة الرئيسية","Type":"النوع","RSSI":"RSSI","Name:":"الاسم:","unknown":"غير معروف","unavailable":"غير متاح","no":"لا","Bonded":"مقترن","Bonding":"جارٍ الاقتران","Android":"Android","type":"النوع","Service":"خدمة","services":"خدمات","Discovering classic devices…":"جارٍ اكتشاف أجهزة البلوتوث الكلاسيكي…","Discovery unavailable":"الاكتشاف غير متاح","max":"بحد أقصى"},"ru":{"Idle":"Ожидание","Start":"Запустить","Stop":"Остановить","Refresh":"Обновить","No":"Нет","Unknown":"Неизвестно","Enabled":"Включено","Disabled":"Отключено","Start discovery":"Начать обнаружение","Stop discovery":"Остановить обнаружение","Refresh bonds":"Обновить сопряжения","Bond":"Сопряжение","Remove bond":"Удалить сопряжение","Open Bluetooth settings":"Открыть настройки Bluetooth","No bonded devices":"Нет сопряжённых устройств","Nothing discovered yet":"Пока ничего не обнаружено","No service UUIDs cached":"UUID служб не кэшированы","None":"Нет","Unknown device":"Неизвестное устройство","Cached services":"Кэшированные службы","Service UUID":"UUID службы","Open":"Открытые","devices":"устройств","Device":"Устройство","Class":"Класс","Classic Bluetooth Lab":"Лаборатория классического Bluetooth","Bonded devices, discovery and device details":"Сопряжённые устройства, обнаружение и сведения","Classic Bluetooth":"Классический Bluetooth","Adapter state, discovery and bonds":"Состояние адаптера, обнаружение и сопряжения","Bonded devices":"Сопряжённые устройства","Discovered devices":"Обнаруженные устройства","Bluetooth device":"Bluetooth-устройство","Bond state:":"Состояние сопряжения:","Bond request sent":"Запрос сопряжения отправлен","Bond request rejected":"Запрос сопряжения отклонён","Bond removed":"Сопряжение удалено","Could not remove the bond":"Не удалось удалить сопряжение","Device class":"Класс устройства","Major class":"Основной класс","Type":"Тип","RSSI":"RSSI","Name:":"Имя:","unknown":"неизвестно","unavailable":"недоступно","no":"нет","Bonded":"Сопряжено","Bonding":"Сопряжение","Android":"Android","type":"тип","Service":"Служба","services":"служб","Discovering classic devices…":"Обнаружение классических устройств…","Discovery unavailable":"Обнаружение недоступно","max":"макс."}}
+
+
+
+
 
 
 class BtClassicLab(BasePlugin):
