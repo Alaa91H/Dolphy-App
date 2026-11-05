@@ -1,0 +1,1040 @@
+import html
+import json
+import random
+import re
+import time
+
+__id__ = "network_identity_guard"
+__name__ = "Network Identity Guard"
+__version__ = "1.0.0"
+__author__ = "Dolphy"
+__description__ = "Audit the network identity apps can see and rotate the Wi-Fi MAC with verified results"
+__icon__ = "rounded:security"
+__permissions__ = ["wifi", "bluetooth", "root", "files"]
+
+STORE_PATHS = (
+    "/data/misc/apexdata/com.android.wifi/WifiConfigStore.xml",
+    "/data/misc/wifi/WifiConfigStore.xml",
+    "/data/misc/apexdata/com.android.wifi/misc/WifiConfigStore.xml",
+)
+STORE_COMMAND = "for f in " + " ".join(STORE_PATHS) + "; do [ -f \"$f\" ] && cat \"$f\" && break; done"
+REPORT_PATH = "reports/network_identity_audit.txt"
+EXPORT_KEY = "dolphy.net.identity.audit"
+SERVICE_ID = "net.identity"
+
+MAC_RE = re.compile(r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
+IFACE_RE = re.compile(r"^[A-Za-z0-9_.-]{1,32}$")
+NETWORK_RE = re.compile(r"<(?:Network|network)\b[^>]*>(.*?)</(?:Network|network)>", re.S)
+
+STRINGS = {
+    "ar": {
+        "title": "حارس هوية الشبكة",
+        "subtitle": "تدقيق الهوية التي تراها التطبيقات وتدوير MAC الواي فاي",
+        "tab_audit": "التدقيق",
+        "tab_mac": "عنوان MAC",
+        "tab_report": "التقرير",
+        "root_yes": "Root متاح",
+        "root_no": "بدون Root",
+        "changed_badge": "MAC مُغيَّر",
+        "audit_card": "ملخص الهوية",
+        "device": "الجهاز",
+        "android": "أندرويد",
+        "patch": "تحديث الأمان",
+        "selinux": "SELinux",
+        "wifi_mac": "MAC الواي فاي الحالي",
+        "bt_name": "اسم البلوتوث",
+        "bt_mac": "عنوان البلوتوث",
+        "wifi_iface": "واجهة الشبكة",
+        "networks": "الشبكات المحفوظة",
+        "net_count": "{} شبكة محفوظة",
+        "net_rand_persistent": "MAC عشوائي دائم",
+        "net_rand_non_persistent": "MAC عشوائي غير دائم",
+        "net_rand_off": "MAC العتاد الثابت",
+        "net_rand_unknown": "حالة العشوائية غير معروفة",
+        "net_rand_address": "العنوان العشوائي",
+        "run_audit": "تشغيل التدقيق",
+        "open_wifi": "إعدادات الواي فاي",
+        "protected_title": "هوية محمية لا تُعدَّل",
+        "protected_body": "IMEI والرقم التسلسلي (SN) غير متاحين للتطبيقات العادية ولا يعدّلهما هذا الملحق إطلاقًا. الأداة تختبر فقط طبقة الشبكة (MAC) وتوثّق ما تستطيع التطبيقات قراءته.",
+        "verdict": "الحكم",
+        "verdict_line": "{} من {} شبكة محفوظة تستخدم MAC عشوائيًا.",
+        "verdict_none": "لا توجد شبكات محفوظة لتقييمها بعد.",
+        "audit_done": "اكتمل التدقيق",
+        "no_root_body": "قراءة وتغيير MAC تحتاج Root. يمكنك تنفيذ التدقيق الأساسي بدونه، لكن حالة العشوائية لكل شبكة تبقى غير معروفة.",
+        "mac_tool": "عنوان MAC للواي فاي",
+        "mac_body": "تغيير مؤقت لطبقة الشبكة، مع تحقق فعلي واستعادة. أندرويد 11+ وكثير من التعريفات ترفض التغيير، والنتيجة تُعرض بصدق.",
+        "interface": "الواجهة",
+        "current_mac": "العنوان الحالي",
+        "stored_mac": "العنوان الأصلي المحفوظ",
+        "candidate_mac": "العنوان المقترح",
+        "no_original": "لا يوجد عنوان أصلي محفوظ",
+        "no_iface": "لم يتم العثور على واجهة شبكة",
+        "generate": "توليد عنوان",
+        "apply": "تطبيق التغيير",
+        "restore": "استعادة الأصل",
+        "refresh": "تحديث",
+        "wifi_off_first": "إيقاف الواي فاي قبل التغيير",
+        "auto_restore": "استعادة الأصل عند إغلاق الملحق",
+        "apply_confirm_title": "تأكيد تغيير MAC",
+        "apply_confirm_body": "سيتم إيقاف الواي فاي ثم تغيير MAC الواجهة {} إلى {}، وقد يرفضه التعريف. هل تريد المتابعة؟",
+        "cancel": "إلغاء",
+        "confirm": "متابعة",
+        "applied_ok": "تم تغيير MAC والتحقق منه",
+        "applied_fail": "رفض التعريف تغيير MAC",
+        "restored_ok": "تمت استعادة MAC الأصلي",
+        "restored_fail": "تعذّرت استعادة MAC الأصلي",
+        "no_root": "هذه العملية تحتاج Root",
+        "invalid_mac": "عنوان MAC غير صالح",
+        "changed_warning": "الواجهة الآن بعنوان مؤقت؛ أعد تشغيل الواي فاي بعد الانتهاء، واستعد الأصل إن لزم.",
+        "log": "سجل العملية",
+        "copy": "نسخ التقرير",
+        "share": "مشاركة",
+        "export": "حفظ التقرير",
+        "copied": "تم نسخ التقرير",
+        "shared": "تم فتح مشاركة التقرير",
+        "exported": "تم حفظ التقرير في مساحة الملحق",
+        "export_failed": "تعذّر حفظ التقرير",
+        "report_title": "تقرير التدقيق",
+        "report_empty": "شغّل التدقيق أولًا لإنشاء تقرير.",
+        "generated": "تاريخ التقرير",
+        "protected_short": "الهوية المحمية: غير قابلة للقراءة أو التعديل",
+        "language": "اللغة",
+        "language_auto": "تلقائي (لغة الجهاز)",
+        "service_done": "خدمة تدقيق الهوية جاهزة",
+    },
+    "en": {
+        "title": "Network Identity Guard",
+        "subtitle": "Audit the identity apps can see and rotate the Wi-Fi MAC",
+        "tab_audit": "Audit",
+        "tab_mac": "MAC address",
+        "tab_report": "Report",
+        "root_yes": "Root available",
+        "root_no": "No root",
+        "changed_badge": "MAC changed",
+        "audit_card": "Identity summary",
+        "device": "Device",
+        "android": "Android",
+        "patch": "Security patch",
+        "selinux": "SELinux",
+        "wifi_mac": "Current Wi-Fi MAC",
+        "bt_name": "Bluetooth name",
+        "bt_mac": "Bluetooth address",
+        "wifi_iface": "Network interface",
+        "networks": "Saved networks",
+        "net_count": "{} saved networks",
+        "net_rand_persistent": "Persistent random MAC",
+        "net_rand_non_persistent": "Non-persistent random MAC",
+        "net_rand_off": "Hardware MAC",
+        "net_rand_unknown": "Randomization unknown",
+        "net_rand_address": "Random address",
+        "run_audit": "Run audit",
+        "open_wifi": "Wi-Fi settings",
+        "protected_title": "Protected identity, never modified",
+        "protected_body": "IMEI and the serial number (SN) are not available to ordinary apps and this plugin never modifies them. It only exercises the network layer (MAC) and records what apps can read.",
+        "verdict": "Verdict",
+        "verdict_line": "{} of {} saved networks use a randomized MAC.",
+        "verdict_none": "No saved networks to assess yet.",
+        "audit_done": "Audit complete",
+        "no_root_body": "Reading and changing the MAC needs root. The basic audit still runs without it, but per-network randomization stays unknown.",
+        "mac_tool": "Wi-Fi MAC address",
+        "mac_body": "A temporary network-layer change with real verification and restore. Android 11+ and many drivers reject it; the result is reported honestly.",
+        "interface": "Interface",
+        "current_mac": "Current address",
+        "stored_mac": "Stored original",
+        "candidate_mac": "Proposed address",
+        "no_original": "No stored original address",
+        "no_iface": "No network interface found",
+        "generate": "Generate address",
+        "apply": "Apply change",
+        "restore": "Restore original",
+        "refresh": "Refresh",
+        "wifi_off_first": "Turn Wi-Fi off before the change",
+        "auto_restore": "Restore the original when the plugin unloads",
+        "apply_confirm_title": "Confirm MAC change",
+        "apply_confirm_body": "Wi-Fi will be turned off, then the MAC of {} changes to {}. The driver may reject it. Continue?",
+        "cancel": "Cancel",
+        "confirm": "Continue",
+        "applied_ok": "MAC changed and verified",
+        "applied_fail": "The driver rejected the MAC change",
+        "restored_ok": "Original MAC restored",
+        "restored_fail": "Could not restore the original MAC",
+        "no_root": "This action needs root",
+        "invalid_mac": "Invalid MAC address",
+        "changed_warning": "The interface now uses a temporary address; re-enable Wi-Fi when done and restore the original if needed.",
+        "log": "Operation log",
+        "copy": "Copy report",
+        "share": "Share",
+        "export": "Save report",
+        "copied": "Report copied",
+        "shared": "Share sheet opened",
+        "exported": "Report saved in the plugin sandbox",
+        "export_failed": "Could not save the report",
+        "report_title": "Audit report",
+        "report_empty": "Run the audit first to build a report.",
+        "generated": "Generated",
+        "protected_short": "Protected identity: not readable or modifiable",
+        "language": "Language",
+        "language_auto": "Automatic (device language)",
+        "service_done": "Identity audit service ready",
+    },
+    "ru": {
+        "title": "Защита сетевой идентичности",
+        "subtitle": "Аудит идентичности, видимой приложениям, и смена MAC Wi-Fi",
+        "tab_audit": "Аудит",
+        "tab_mac": "MAC-адрес",
+        "tab_report": "Отчёт",
+        "root_yes": "Root доступен",
+        "root_no": "Без root",
+        "changed_badge": "MAC изменён",
+        "audit_card": "Сводка идентичности",
+        "device": "Устройство",
+        "android": "Android",
+        "patch": "Патч безопасности",
+        "selinux": "SELinux",
+        "wifi_mac": "Текущий MAC Wi-Fi",
+        "bt_name": "Имя Bluetooth",
+        "bt_mac": "Адрес Bluetooth",
+        "wifi_iface": "Сетевой интерфейс",
+        "networks": "Сохранённые сети",
+        "net_count": "Сетей сохранено: {}",
+        "net_rand_persistent": "Постоянный случайный MAC",
+        "net_rand_non_persistent": "Непостоянный случайный MAC",
+        "net_rand_off": "Аппаратный MAC",
+        "net_rand_unknown": "Рандомизация неизвестна",
+        "net_rand_address": "Случайный адрес",
+        "run_audit": "Запустить аудит",
+        "open_wifi": "Настройки Wi-Fi",
+        "protected_title": "Защищённая идентичность, без изменений",
+        "protected_body": "IMEI и серийный номер (SN) недоступны обычным приложениям, и плагин их никогда не изменяет. Он работает только с сетевым уровнем (MAC) и фиксирует то, что видят приложения.",
+        "verdict": "Вывод",
+        "verdict_line": "Случайный MAC используют {} из {} сохранённых сетей.",
+        "verdict_none": "Пока нет сохранённых сетей для оценки.",
+        "audit_done": "Аудит завершён",
+        "no_root_body": "Для чтения и смены MAC нужен root. Базовый аудит работает и без него, но статус рандомизации сетей останется неизвестным.",
+        "mac_tool": "MAC-адрес Wi-Fi",
+        "mac_body": "Временное изменение сетевого уровня с реальной проверкой и восстановлением. Android 11+ и многие драйверы его отклоняют; результат показывается честно.",
+        "interface": "Интерфейс",
+        "current_mac": "Текущий адрес",
+        "stored_mac": "Сохранённый исходный",
+        "candidate_mac": "Предлагаемый адрес",
+        "no_original": "Исходный адрес не сохранён",
+        "no_iface": "Сетевой интерфейс не найден",
+        "generate": "Сгенерировать адрес",
+        "apply": "Применить",
+        "restore": "Вернуть исходный",
+        "refresh": "Обновить",
+        "wifi_off_first": "Выключать Wi-Fi перед сменой",
+        "auto_restore": "Восстанавливать исходный при выгрузке",
+        "apply_confirm_title": "Подтвердить смену MAC",
+        "apply_confirm_body": "Wi-Fi будет выключен, затем MAC интерфейса {} изменится на {}. Драйвер может отклонить запрос. Продолжить?",
+        "cancel": "Отмена",
+        "confirm": "Продолжить",
+        "applied_ok": "MAC изменён и проверен",
+        "applied_fail": "Драйвер отклонил смену MAC",
+        "restored_ok": "Исходный MAC восстановлен",
+        "restored_fail": "Не удалось восстановить исходный MAC",
+        "no_root": "Для действия нужен root",
+        "invalid_mac": "Некорректный MAC-адрес",
+        "changed_warning": "Интерфейс использует временный адрес; включите Wi-Fi после проверки и при необходимости верните исходный.",
+        "log": "Журнал операции",
+        "copy": "Копировать отчёт",
+        "share": "Поделиться",
+        "export": "Сохранить отчёт",
+        "copied": "Отчёт скопирован",
+        "shared": "Открыто окно отправки",
+        "exported": "Отчёт сохранён в песочнице плагина",
+        "export_failed": "Не удалось сохранить отчёт",
+        "report_title": "Отчёт аудита",
+        "report_empty": "Сначала запустите аудит.",
+        "generated": "Создан",
+        "protected_short": "Защищённая идентичность: не читается и не меняется",
+        "language": "Язык",
+        "language_auto": "Авто (язык устройства)",
+        "service_done": "Сервис аудита готов",
+    },
+}
+
+
+def normalize_mac(value):
+    text = str(value or "").strip().upper().replace("-", ":")
+    if not MAC_RE.match(text):
+        return ""
+    return text
+
+
+def is_local_mac(value):
+    mac = normalize_mac(value)
+    if not mac:
+        return False
+    first = int(mac.split(":")[0], 16)
+    return bool(first & 0x02) and not bool(first & 0x01)
+
+
+def random_local_mac(rng=None):
+    source = rng or random.SystemRandom()
+    octets = [source.randint(0, 255) for _ in range(6)]
+    octets[0] = (octets[0] & 0xFC) | 0x02
+    if octets[0] == 0x02 and all(value == 0 for value in octets[1:]):
+        octets[1] = 0x11
+    return ":".join("%02X" % value for value in octets)
+
+
+def xml_string(block, name):
+    match = re.search(r'<string name="%s"[^>]*>(.*?)</string>' % re.escape(name), block, re.S)
+    if not match:
+        return ""
+    value = html.unescape(match.group(1)).strip()
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+        value = value[1:-1]
+    return value
+
+
+def xml_int(block, name):
+    match = re.search(r'<int name="%s"\s+value="(-?\d+)"' % re.escape(name), block)
+    return int(match.group(1)) if match else None
+
+
+def parse_config_store(xml):
+    networks = []
+    for match in NETWORK_RE.finditer(str(xml or "")):
+        block = match.group(1)
+        ssid = xml_string(block, "SSID")
+        if not ssid:
+            continue
+        address = normalize_mac(xml_string(block, "RandomizedMacAddress"))
+        if address == "00:00:00:00:00:00":
+            address = ""
+        networks.append(
+            {
+                "ssid": ssid,
+                "setting": xml_int(block, "MacRandomizationSetting"),
+                "randomizedMacAddress": address,
+            }
+        )
+    return networks
+
+
+def merge_networks(configured, stored):
+    merged = []
+    seen = set()
+    for item in stored:
+        ssid = str(item.get("ssid", "")).strip()
+        if not ssid or ssid in seen:
+            continue
+        seen.add(ssid)
+        merged.append(item)
+    for item in configured:
+        ssid = str(item.get("ssid", "")).strip()
+        if not ssid or ssid in seen:
+            continue
+        seen.add(ssid)
+        merged.append({"ssid": ssid, "setting": None, "randomizedMacAddress": ""})
+    return merged
+
+
+def randomization_key(setting, address):
+    if address:
+        return "net_rand_persistent" if setting != 2 else "net_rand_non_persistent"
+    if setting == 0:
+        return "net_rand_off"
+    return "net_rand_unknown"
+
+
+def shell_quote(value):
+    return "'" + str(value).replace("'", "'\\''") + "'"
+
+
+def device_language():
+    """Best-effort locale detection; the Java bridge exists only inside Dolphy."""
+    try:
+        from java import jclass
+
+        code = str(jclass("java.util.Locale").getDefault().getLanguage()).lower()
+        if code.startswith("ar"):
+            return "ar"
+        if code.startswith("ru"):
+            return "ru"
+        return "en"
+    except Exception:
+        return "ar"
+
+
+class NetworkIdentityGuard(BasePlugin):
+    def __init__(self):
+        super(NetworkIdentityGuard, self).__init__()
+        self._root_ok = False
+        self._selinux = ""
+        self._wifi_mac = ""
+        self._bt_name = ""
+        self._bt_mac = ""
+        self._device_line = ""
+        self._android_line = ""
+        self._patch = ""
+        self._ifaces = []
+        self._iface = "wlan0"
+        self._current_mac = ""
+        self._candidate = ""
+        self._original_mac = ""
+        self._changed = False
+        self._networks = []
+        self._net_source = ""
+        self._report = ""
+        self._status = ""
+        self._log = ""
+        self._confirm = False
+        self._busy = False
+        self._auto_restore = True
+        self._disable_wifi = True
+        self._loaded = False
+
+    # ------------------------------------------------------------------ setup
+
+    def on_plugin_load(self):
+        self._auto_restore = bool(self.get_setting("auto_restore", True))
+        self._disable_wifi = bool(self.get_setting("disable_wifi_first", True))
+        chosen = str(self.get_setting("interface", "") or "")
+        stored_original = str(self.get_setting("original_mac", "") or "")
+        self._original_mac = normalize_mac(stored_original)
+        try:
+            self._root_ok = bool(self.api.getDevice().rootAvailable())
+        except Exception:
+            self._root_ok = False
+        self._loaded = True
+        self.add_module(
+            self._t("title"),
+            self._t("subtitle"),
+            "security",
+            "main",
+            "PLUGINS",
+            45,
+        )
+        self.provide_service(SERVICE_ID)
+        self._refresh_interfaces(chosen)
+        self._status = self._t("no_root_body") if not self._root_ok else ""
+        self._audit()
+
+    def on_plugin_unload(self):
+        if self._changed and self._auto_restore:
+            self._restore(silent=True)
+
+    # -------------------------------------------------------------- utilities
+
+    def _lang(self):
+        raw = str(self.get_setting("language", "") or "").strip().lower()
+        if raw in STRINGS:
+            return raw
+        return device_language()
+
+    def _t(self, key, *args):
+        table = STRINGS.get(self._lang(), STRINGS["en"])
+        text = table.get(key) or STRINGS["en"].get(key) or STRINGS["ru"].get(key) or key
+        if args:
+            try:
+                return text.format(*args)
+            except Exception:
+                return text
+        return text
+
+    def _json(self, raw):
+        try:
+            value = json.loads(str(raw))
+            return value if isinstance(value, dict) else {}
+        except Exception:
+            return {}
+
+    def _json_list(self, raw):
+        try:
+            value = json.loads(str(raw))
+            return value if isinstance(value, list) else []
+        except Exception:
+            return []
+
+    def _root(self, command):
+        try:
+            result = self.root(command)
+        except Exception as error:
+            return {"ok": False, "code": -1, "out": "", "err": str(error)}
+        if not isinstance(result, dict):
+            return {"ok": False, "code": -1, "out": str(result), "err": ""}
+        return result
+
+    def _out(self, result):
+        text = str(result.get("out", "") or "").strip()
+        err = str(result.get("err", "") or "").strip()
+        stamp = int(result.get("code", -1))
+        parts = ["exit=" + str(stamp)]
+        if text:
+            parts.append(text)
+        if err:
+            parts.append("err: " + err)
+        return " · ".join(parts)
+
+    def _read_mac(self, iface):
+        if not IFACE_RE.match(iface or ""):
+            return ""
+        result = self._root("cat /sys/class/net/" + shell_quote(iface) + "/address")
+        if result.get("ok"):
+            return normalize_mac(str(result.get("out", "")).splitlines()[0] if str(result.get("out", "")).strip() else "")
+        return ""
+
+    def _refresh_interfaces(self, preferred=""):
+        names = []
+        if self._root_ok:
+            result = self._root("ls /sys/class/net")
+            if result.get("ok"):
+                names = [line.strip() for line in str(result.get("out", "")).splitlines() if line.strip()]
+        names = [name for name in names if IFACE_RE.match(name) and name != "lo"]
+        if not names:
+            names = ["wlan0"]
+        self._ifaces = names
+        self._macs = {}
+        for name in names:
+            self._macs[name] = self._read_mac(name)
+        pick = preferred if preferred in names else ""
+        if not pick:
+            pick = next((name for name in names if name.startswith("wlan")), "")
+        if not pick:
+            pick = next((name for name in names if name.startswith("eth")), names[0])
+        self._iface = pick
+        self._current_mac = self._read_mac(pick)
+        if self._current_mac:
+            self._macs[pick] = self._current_mac
+        if not self._current_mac and pick.startswith("wlan"):
+            try:
+                self._current_mac = normalize_mac(self.api.getAndroid().wifiMacAddress())
+            except Exception:
+                self._current_mac = ""
+        if not self._wifi_mac:
+            self._wifi_mac = self._current_mac
+        self.set_setting("interface", self._iface)
+
+    # ------------------------------------------------------------------ audit
+
+    def _audit(self):
+        android = self.api.getAndroid()
+        try:
+            info = self._json(android.deviceInfoExtendedJson())
+        except Exception:
+            info = {}
+        self._device_line = (str(info.get("manufacturer", "")) + " " + str(info.get("model", ""))).strip()
+        self._android_line = "Android " + str(info.get("release", "?")) + " · SDK " + str(info.get("sdk", "?"))
+        self._patch = str(info.get("securityPatch", "") or "")
+        self._bt_name = str(info.get("btName", "") or "")
+        self._bt_mac = normalize_mac(info.get("btAddress", ""))
+        try:
+            self._wifi_mac = normalize_mac(android.wifiMacAddress()) or self._wifi_mac
+        except Exception:
+            pass
+        self._selinux = ""
+        if self._root_ok:
+            result = self._root("getenforce")
+            if result.get("ok"):
+                self._selinux = str(result.get("out", "")).strip()
+        configured = self._json_list(self.api.getDevice().wifiConfiguredNetworksJson())
+        stored = []
+        self._net_source = ""
+        if self._root_ok:
+            result = self._root(STORE_COMMAND)
+            if result.get("ok") and str(result.get("out", "")).strip():
+                self._net_source = "WifiConfigStore"
+                stored = parse_config_store(result.get("out", ""))
+        self._networks = merge_networks(configured, stored)
+        self._build_report()
+        self.export_java_object(
+            EXPORT_KEY,
+            json.dumps(
+                {
+                    "root": self._root_ok,
+                    "wifiMac": self._wifi_mac,
+                    "btMac": self._bt_mac,
+                    "interface": self._iface,
+                    "networks": self._networks,
+                    "changed": self._changed,
+                    "generatedAt": int(time.time()),
+                },
+                ensure_ascii=False,
+            ),
+        )
+        self._status = self._t("audit_done")
+
+    def _verdict(self):
+        if not self._networks:
+            return self._t("verdict_none")
+        randomized = 0
+        for network in self._networks:
+            key = randomization_key(network.get("setting"), network.get("randomizedMacAddress"))
+            if key in ("net_rand_persistent", "net_rand_non_persistent"):
+                randomized += 1
+        return self._t("verdict_line", randomized, len(self._networks))
+
+    def _build_report(self):
+        lines = [
+            self._t("title") + " — " + self._t("report_title"),
+            self._t("generated") + ": " + time.strftime("%Y-%m-%d %H:%M"),
+            "",
+            self._t("device") + ": " + (self._device_line or "?"),
+            self._t("android") + ": " + self._android_line,
+            self._t("patch") + ": " + (self._patch or "?"),
+            self._t("selinux") + ": " + (self._selinux or "?"),
+            "Root: " + ("yes" if self._root_ok else "no"),
+            "",
+            self._t("wifi_mac") + ": " + (self._wifi_mac or "?"),
+            self._t("bt_name") + ": " + (self._bt_name or "?"),
+            self._t("bt_mac") + ": " + (self._bt_mac or "?"),
+            self._t("wifi_iface") + ": " + self._iface + " (" + (self._current_mac or "?") + ")",
+            "",
+            self._t("networks") + " (" + str(len(self._networks)) + "):",
+        ]
+        for network in self._networks:
+            key = randomization_key(network.get("setting"), network.get("randomizedMacAddress"))
+            detail = self._t(key)
+            address = network.get("randomizedMacAddress") or ""
+            if address:
+                detail += " · " + address
+            lines.append(" - " + str(network.get("ssid", "?")) + ": " + detail)
+        lines.extend(
+            [
+                "",
+                self._t("verdict") + ": " + self._verdict(),
+                "",
+                self._t("protected_title") + ": " + self._t("protected_short"),
+                self._t("protected_body"),
+            ]
+        )
+        self._report = "\n".join(lines)
+
+    # -------------------------------------------------------------- mac layer
+
+    def _set_language(self, value):
+        raw = str(value or "").strip().lower()
+        if raw == "auto":
+            self.set_setting("language", "")
+        elif raw in STRINGS:
+            self.set_setting("language", raw)
+        self._build_report()
+        self.refresh()
+
+    def _pick_interface(self, name):
+        def callback(value=None):
+            if IFACE_RE.match(str(name)):
+                self.set_setting("interface", str(name))
+                self._refresh_interfaces(str(name))
+                self._changed = self._current_mac != self._original_mac if self._original_mac else False
+                self.refresh()
+
+        return callback
+
+    def _generate(self):
+        self._candidate = random_local_mac()
+        self._status = self._t("candidate_mac") + ": " + self._candidate
+        self.refresh()
+
+    def _request_apply(self):
+        if not self._root_ok:
+            self._status = self._t("no_root")
+            self.refresh()
+            return
+        mac = normalize_mac(self._candidate)
+        if not mac:
+            self._candidate = random_local_mac()
+            mac = self._candidate
+        self._candidate = mac
+        self._confirm = True
+        self.refresh()
+
+    def _cancel_apply(self):
+        self._confirm = False
+        self.refresh()
+
+    def _confirm_apply(self):
+        self._confirm = False
+        self._apply(self._candidate)
+
+    def _apply(self, mac):
+        mac = normalize_mac(mac)
+        if not mac:
+            self._status = self._t("invalid_mac")
+            self.refresh()
+            return False
+        if not self._root_ok:
+            self._status = self._t("no_root")
+            self.refresh()
+            return False
+        before = self._read_mac(self._iface)
+        if before and not self._original_mac:
+            self._original_mac = before
+            self.set_setting("original_mac", before)
+        steps = []
+        if self._disable_wifi:
+            steps.append(("svc wifi disable", self._root("svc wifi disable")))
+        steps.append(("down", self._root("ip link set dev " + shell_quote(self._iface) + " down")))
+        steps.append(("address", self._root("ip link set dev " + shell_quote(self._iface) + " address " + shell_quote(mac))))
+        steps.append(("up", self._root("ip link set dev " + shell_quote(self._iface) + " up")))
+        after = self._read_mac(self._iface)
+        verified = bool(after) and after.upper() == mac
+        self._current_mac = after or before
+        self._changed = verified
+        self._log = "\n".join(
+            ["[" + name + "] " + self._out(result) for name, result in steps] + ["after: " + (after or "?")]
+        )
+        if verified:
+            self._status = self._t("applied_ok") + " · " + mac
+            self.toast(self._t("applied_ok"))
+        else:
+            self._status = self._t("applied_fail")
+        self._build_report()
+        self.refresh()
+        return verified
+
+    def _restore(self, silent=False):
+        if not self._original_mac:
+            self._status = self._t("no_original")
+            if not silent:
+                self.refresh()
+            return False
+        target = self._original_mac
+        before = self._read_mac(self._iface)
+        steps = []
+        if self._disable_wifi:
+            steps.append(("svc wifi disable", self._root("svc wifi disable")))
+        steps.append(("down", self._root("ip link set dev " + shell_quote(self._iface) + " down")))
+        steps.append(("address", self._root("ip link set dev " + shell_quote(self._iface) + " address " + shell_quote(target))))
+        steps.append(("up", self._root("ip link set dev " + shell_quote(self._iface) + " up")))
+        after = self._read_mac(self._iface)
+        verified = bool(after) and after.upper() == target
+        self._current_mac = after or before
+        self._changed = not verified
+        self._log = "\n".join(
+            ["[" + name + "] " + self._out(result) for name, result in steps] + ["after: " + (after or "?")]
+        )
+        if verified:
+            self.set_setting("original_mac", "")
+            self._original_mac = ""
+            self._status = self._t("restored_ok")
+            self.toast(self._t("restored_ok"))
+        else:
+            self._status = self._t("restored_fail")
+        self._build_report()
+        if not silent:
+            self.refresh()
+        return verified
+
+    def _toggle(self, key, value):
+        value = bool(value)
+        if key == "auto_restore":
+            self._auto_restore = value
+            self.set_setting("auto_restore", value)
+        elif key == "disable_wifi_first":
+            self._disable_wifi = value
+            self.set_setting("disable_wifi_first", value)
+        self.refresh()
+
+    def _open_wifi_settings(self):
+        try:
+            self.api.getDevice().wifiOpenSettings()
+        except Exception as error:
+            self._status = str(error)
+
+    # ----------------------------------------------------------------- output
+
+    def _copy_report(self):
+        if not self._report:
+            self._build_report()
+        try:
+            self.api.getAndroid().clipboardSet(self._report)
+            self._status = self._t("copied")
+            self.toast(self._t("copied"))
+        except Exception as error:
+            self._status = str(error)
+        self.refresh()
+
+    def _share_report(self):
+        if not self._report:
+            self._build_report()
+        try:
+            self.api.getAndroid().filesShare(REPORT_PATH, "text/plain", self._t("report_title"))
+            self._status = self._t("shared")
+        except Exception as error:
+            self._status = str(error)
+        self.refresh()
+
+    def _export_report(self):
+        if not self._report:
+            self._build_report()
+        try:
+            ok = bool(self.api.getAndroid().filesWrite(REPORT_PATH, self._report))
+            self._status = self._t("exported") if ok else self._t("export_failed")
+            if ok:
+                self.toast(self._t("exported"))
+        except Exception as error:
+            self._status = self._t("export_failed") + ": " + str(error)
+        self.refresh()
+
+    def _go(self, screen):
+        def callback(value=None):
+            self.navigate(screen)
+
+        return callback
+
+    # ---------------------------------------------------------------- screens
+
+    def screen_main(self, ui, api, state):
+        network_rows = []
+        for network in self._networks[:16]:
+            key = randomization_key(network.get("setting"), network.get("randomizedMacAddress"))
+            detail = self._t(key)
+            address = network.get("randomizedMacAddress") or ""
+            if address:
+                detail += " · " + address
+            network_rows.append(ui.settings_row(str(network.get("ssid", "?")), detail, "wifi"))
+        if not network_rows:
+            network_rows = [ui.text(self._t("networks") + ": —", "bodySmall")]
+
+        summary = ui.card(
+            [
+                ui.row(
+                    [
+                        ui.icon("security", 40),
+                        ui.column(
+                            [
+                                ui.text(self._device_line or self._t("title"), "titleLarge"),
+                                ui.text(self._android_line, "bodySmall"),
+                            ],
+                            spacing=2,
+                        ),
+                    ],
+                    spacing=12,
+                ),
+                ui.row(
+                    [
+                        ui.chip(self._t("root_yes") if self._root_ok else self._t("root_no"), self._root_ok),
+                        ui.chip(self._changed_badge, self._changed) if self._changed else ui.chip(self._t("protected_short"), False),
+                    ],
+                    spacing=6,
+                ),
+            ]
+        )
+
+        identity = ui.segmented_list(
+            [
+                ui.settings_row(self._t("device"), self._device_line or "?", "phone_android"),
+                ui.settings_row(self._t("android"), self._android_line, "info"),
+                ui.settings_row(self._t("patch"), self._patch or "?", "security"),
+                ui.settings_row(self._t("selinux"), self._selinux or "?", "verified_user"),
+                ui.settings_row(self._t("wifi_mac"), self._wifi_mac or "?", "wifi"),
+                ui.settings_row(self._t("bt_mac"), self._bt_mac or "?", "bluetooth"),
+                ui.settings_row(self._t("wifi_iface"), self._iface + " · " + (self._current_mac or "?"), "lan"),
+            ]
+        )
+
+        body = [
+            summary,
+            ui.row(
+                [
+                    ui.button(self._t("run_audit"), lambda value=None: (self._audit(), self.refresh()), fill_max_width=True),
+                    ui.button(self._t("tab_mac"), self._go("mac"), style="tonal", fill_max_width=True),
+                ],
+                spacing=8,
+            ),
+            ui.text(self._t("audit_card"), "titleMedium"),
+            identity,
+            ui.text(self._t("networks") + " · " + self._t("net_count", len(self._networks)), "titleMedium"),
+            ui.segmented_list(network_rows),
+            ui.card(
+                [
+                    ui.row(
+                        [
+                            ui.icon("lock", 26),
+                            ui.text(self._t("protected_title"), "titleMedium"),
+                        ],
+                        spacing=8,
+                    ),
+                    ui.text(self._t("protected_body"), "bodySmall"),
+                ]
+            ),
+            ui.card([ui.text(self._t("verdict"), "titleMedium"), ui.text(self._verdict(), "bodyMedium")]),
+            ui.row(
+                [
+                    ui.button(self._t("open_wifi"), lambda value=None: self._open_wifi_settings(), style="tonal", fill_max_width=True),
+                    ui.button(self._t("tab_report"), self._go("report"), style="text", fill_max_width=True),
+                ],
+                spacing=8,
+            ),
+            ui.text(self._t("language"), "titleMedium"),
+            ui.button_group(
+                [
+                    ["auto", self._t("language_auto")],
+                    ["ar", "العربية"],
+                    ["en", "English"],
+                    ["ru", "Русский"],
+                ],
+                str(self.get_setting("language", "") or "auto"),
+                on_select=self._set_language,
+            ),
+        ]
+        if self._status:
+            body.append(ui.text(self._status, "bodySmall"))
+        if not self._root_ok:
+            body.append(ui.card([ui.text(self._t("no_root_body"), "bodySmall")]))
+
+        content = ui.lazy_column(body, padding=16, spacing=12, fill_max_size=True)
+        return ui.scaffold(
+            title=self._t("title"),
+            content=ui.box(
+                [content, ui.alert_dialog(False, self._t("run_audit"), "", self._t("confirm"), self._t("cancel"))],
+                fill_max_size=True,
+            ),
+        )
+
+    def screen_mac(self, ui, api, state):
+        iface_rows = [
+            ui.settings_row(
+                name,
+                ("* " if name == self._iface else "") + (self._read_mac(name) or "?"),
+                "lan",
+                on_click=self._pick_interface(name),
+            )
+            for name in self._ifaces
+        ]
+        controls = ui.card(
+            [
+                ui.row(
+                    [
+                        ui.icon("security", 34),
+                        ui.column(
+                            [
+                                ui.text(self._t("mac_tool"), "titleLarge"),
+                                ui.text(self._t("mac_body"), "bodySmall"),
+                            ],
+                            spacing=2,
+                        ),
+                    ],
+                    spacing=10,
+                ),
+                ui.segmented_list(
+                    [
+                        ui.settings_row(self._t("current_mac"), self._current_mac or "?", "wifi"),
+                        ui.settings_row(
+                            self._t("stored_mac"),
+                            self._original_mac or self._t("no_original"),
+                            "history",
+                        ),
+                        ui.settings_row(self._t("candidate_mac"), self._candidate or "—", "casino"),
+                    ]
+                ),
+                ui.switch(self._disable_wifi, lambda value: self._toggle("disable_wifi_first", value), self._t("wifi_off_first")),
+                ui.switch(self._auto_restore, lambda value: self._toggle("auto_restore", value), self._t("auto_restore")),
+                ui.row(
+                    [
+                        ui.button(self._t("generate"), lambda value=None: self._generate(), style="tonal", fill_max_width=True),
+                        ui.button(
+                            self._t("apply"),
+                            lambda value=None: self._request_apply(),
+                            enabled=self._root_ok,
+                            fill_max_width=True,
+                        ),
+                    ],
+                    spacing=8,
+                ),
+                ui.row(
+                    [
+                        ui.button(
+                            self._t("restore"),
+                            lambda value=None: self._restore(),
+                            style="outlined",
+                            enabled=self._root_ok and bool(self._original_mac),
+                            fill_max_width=True,
+                        ),
+                        ui.button(
+                            self._t("refresh"),
+                            lambda value=None: (self._refresh_interfaces(self._iface), self.refresh()),
+                            style="text",
+                            fill_max_width=True,
+                        ),
+                    ],
+                    spacing=8,
+                ),
+            ]
+        )
+        dialog = ui.alert_dialog(
+            self._confirm,
+            self._t("apply_confirm_title"),
+            self._t("apply_confirm_body", self._iface, self._candidate or "?"),
+            self._t("confirm"),
+            self._t("cancel"),
+            on_confirm=lambda value=None: self._confirm_apply(),
+            on_dismiss=lambda value=None: self._cancel_apply(),
+        )
+        body = [
+            controls,
+            ui.text(self._t("interface") + ": " + self._iface, "titleMedium"),
+            ui.segmented_list(iface_rows),
+            ui.text(self._t("changed_warning") if self._changed else self._t("mac_body"), "bodySmall"),
+            ui.card([ui.text(self._t("log"), "titleMedium"), ui.log_panel(self._log or "—", 240)]),
+        ]
+        if self._status:
+            body.append(ui.text(self._status, "bodySmall"))
+        if not self._root_ok:
+            body.append(ui.card([ui.text(self._t("no_root_body"), "bodySmall")]))
+        return ui.scaffold(
+            title=self._t("tab_mac"),
+            content=ui.box(
+                [ui.lazy_column(body, padding=16, spacing=12, fill_max_size=True), dialog],
+                fill_max_size=True,
+            ),
+        )
+
+    def screen_report(self, ui, api, state):
+        if not self._report:
+            self._build_report()
+        return ui.scaffold(
+            title=self._t("report_title"),
+            content=ui.lazy_column(
+                [
+                    ui.log_panel(self._report or self._t("report_empty"), 520),
+                    ui.row(
+                        [
+                            ui.button(self._t("copy"), lambda value=None: self._copy_report(), fill_max_width=True),
+                            ui.button(self._t("share"), lambda value=None: self._share_report(), style="tonal", fill_max_width=True),
+                        ],
+                        spacing=8,
+                    ),
+                    ui.row(
+                        [
+                            ui.button(self._t("export"), lambda value=None: self._export_report(), style="outlined", fill_max_width=True),
+                            ui.button(
+                                self._t("run_audit"),
+                                lambda value=None: (self._audit(), self.refresh()),
+                                style="text",
+                                fill_max_width=True,
+                            ),
+                        ],
+                        spacing=8,
+                    ),
+                    ui.text(self._status or "", "bodySmall"),
+                ],
+                padding=16,
+                spacing=12,
+                fill_max_size=True,
+            ),
+        )
+
+    # --------------------------------------------------------------- services
+
+    def service_net_identity_audit(self, payload):
+        self._audit()
+        randomized = 0
+        for network in self._networks:
+            key = randomization_key(network.get("setting"), network.get("randomizedMacAddress"))
+            if key in ("net_rand_persistent", "net_rand_non_persistent"):
+                randomized += 1
+        return {
+            "ok": True,
+            "root": self._root_ok,
+            "wifiMac": self._wifi_mac,
+            "interface": self._iface,
+            "networks": len(self._networks),
+            "randomized": randomized,
+            "changed": self._changed,
+            "message": self._t("service_done"),
+        }

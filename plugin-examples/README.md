@@ -32,6 +32,36 @@ Plugins are executable user-provided code with broad access to application and d
 | [Shell Console](shell_console.dolphyplugin) | Other | `shell` | Unprivileged shell commands running as the Dolphy app. |
 | [USB Inspector](usb_inspector.dolphyplugin) | Other | `usb` | Attached USB devices with vendor, product and interface classes. |
 | [BadUSB Studio](badusb.dolphyplugin) | Other | `usb` | DuckyScript 3.0 payload library, validated editor and runner over Bluetooth HID or a rooted USB gadget. |
+| [Wi-Fi Wordlist Lab](wifi_wordlist_lab.dolphyplugin) | Plugins | `files`, `wifi` | SSID-aware WPA wordlist studio with one-tap generation, saved-network passwords (root/Shizuku) and cross-plugin sharing. |
+| [Network Identity Guard](network_identity_guard.dolphyplugin) | Plugins | `wifi`, `bluetooth`, `root`, `files` | Network identity audit plus verified Wi-Fi MAC rotation with per-network randomization status; IMEI/SN are intentionally out of scope. |
+| [Captive Portal Auditor](captive_portal_auditor.dolphyplugin) | Plugins | `network`, `wifi`, `files` | Consent-gated captive portal audit with network picker and Wi-Fi security scan (open/WEP/legacy WPA/WPS/evil twin), TLS versions, exposed files, CORS, HTTP methods, JavaScript, caching, login forms and a remediation report. |
+
+## Cross-plugin wordlist integration
+
+Wi-Fi Wordlist Lab publishes its result so other plugins do not have to guess the same list twice. The
+contract works in both directions and needs no extra permission beyond `wifi` and `files`:
+
+| Kind | Name | Payload |
+|---|---|---|
+| Exported object | `dolphy.wifi.wordlist.ssid` | `ssid`, `vendor`, `bssid`, `count`, `updatedAt` |
+| Exported object | `dolphy.wifi.wordlist.list` | `ssid`, `count`, `words` (up to 20 000) |
+| Exported object | `dolphy.wifi.passwords` | `ok`, `source`, `networks[] {ssid, password, security}` |
+| Service | `wifi.wordlist` → `get` | the same wordlist, resolved at call time |
+| Action | `wifi.wordlist.generate` | `{ssid?, bssid?}` regenerates and returns `{handled, ok}` |
+
+A consumer plugin reads the shared list with plain object imports:
+
+```python
+raw = self.import_java_object("dolphy.wifi.wordlist.list")
+if raw:
+    wordlist = json.loads(raw)
+    print(wordlist["ssid"], wordlist["count"], wordlist["words"][:5])
+```
+
+Any plugin that reads saved Wi-Fi passwords on its own can publish them under the same
+`dolphy.wifi.passwords` name; Wi-Fi Wordlist Lab imports that object on start when its own read is empty.
+The plugin still requires root or Shizuku for the device read itself, and the bridge returns
+`no_root` / `permission_denied` instead of failing.
 
 ## Scanner examples
 

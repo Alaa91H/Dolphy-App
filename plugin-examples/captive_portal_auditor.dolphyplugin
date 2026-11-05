@@ -1,0 +1,1785 @@
+import html
+import json
+import random
+import re
+import threading
+import time
+import urllib.parse
+
+__id__ = "captive_portal_auditor"
+__name__ = "Captive Portal Auditor"
+__version__ = "1.1.0"
+__author__ = "Dolphy"
+__description__ = "Professional captive portal audit with network selection, Wi-Fi security scan, TLS and web hardening checks"
+__icon__ = "rounded:wifi"
+__permissions__ = ["network", "wifi", "files"]
+
+EXPORT_KEY = "dolphy.net.captive.audit"
+SERVICE_ID = "net.captive"
+REPORT_PATH = "reports/captive_portal_audit.txt"
+UA = "Dolphy-CaptivePortalAuditor/1.1"
+MAX_BODY = 300000
+
+PROBES = (
+    ("http://connectivitycheck.gstatic.com/generate_204", 204, "check_probe_google"),
+    ("http://captive.apple.com/hotspot-detect.html", 200, "check_probe_apple"),
+    ("http://detectportal.firefox.com/success.txt", 200, "check_probe_firefox"),
+)
+GARDEN = (
+    ("https://www.google.com/generate_204", "garden_google"),
+    ("https://captive.apple.com/hotspot-detect.html", "garden_apple"),
+    ("https://example.com/", "garden_example"),
+)
+REDIRECT_PARAMS = ("redirect", "url", "next", "continue", "return", "dest", "target")
+CSRF_HINTS = re.compile(r"csrf|xsrf|token|nonce|authenticity", re.I)
+
+FINDINGS = {
+    "portal": ("info", ""),
+    "http_portal": ("high", "fix_tls"),
+    "login_http": ("critical", "fix_form"),
+    "password_get": ("critical", "fix_post"),
+    "csrf_missing": ("medium", "fix_csrf"),
+    "open_redirect": ("high", "fix_redirect"),
+    "reflection": ("high", "fix_output"),
+    "cookie_flags": ("medium", "fix_cookies"),
+    "hsts_missing": ("medium", "fix_hsts"),
+    "headers_missing": ("low", "fix_headers"),
+    "mixed_content": ("medium", "fix_mixed"),
+    "cert_issue": ("high", "fix_cert"),
+    "dns_rewrite": ("info", ""),
+    "garden_open": ("info", ""),
+    "banner": ("low", "fix_banner"),
+    "open_network": ("high", "fix_wifi_security"),
+    "wep_network": ("critical", "fix_wifi_security"),
+    "wpa_legacy": ("medium", "fix_wifi_security"),
+    "evil_twin": ("high", "fix_evil_twin"),
+    "wps_enabled": ("medium", "fix_wps"),
+    "tls_legacy": ("medium", "fix_tls_legacy"),
+    "weak_cipher": ("high", "fix_cipher"),
+    "exposed_file": ("high", "fix_exposure"),
+    "cors_misconfig": ("high", "fix_cors"),
+    "trace_enabled": ("low", "fix_methods"),
+    "js_risky": ("medium", "fix_js"),
+    "cache_missing": ("low", "fix_cache"),
+}
+SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+
+STRINGS = {
+    "ar": {
+        "title": "مدقق بوابة الالتقاط",
+        "subtitle": "تدقيق احترافي لبوابة شبكتك: الثقة، النماذج، الرؤوس، وإصلاحات الثغرات",
+        "scope_note": "يعمل هذا الفحص على الشبكة المتصلة حاليًا فقط. استخدمه على شبكة تملكها أو لديك تفويض كتابي باختبارها. لا يعترض حركة الآخرين، ولا يخمّن كلمات السر، ولا يرسل بيانات دخول.",
+        "consent": "أملك هذه الشبكة أو لديّ تفويض باختبارها",
+        "consent_sub": "الفحص النشط يرسل طلبات فحص غير مؤذية إلى البوابة ويحتاج هذا التأكيد.",
+        "consent_required": "أكّد التفويض أولًا لتشغيل الفحص النشط.",
+        "ssid": "الشبكة",
+        "gateway": "البوابة",
+        "portal": "عنوان البوابة",
+        "portal_hint": "اتركه فارغًا للاكتشاف التلقائي",
+        "detect": "اكتشاف البوابة",
+        "run": "فحص شامل",
+        "busy": "جارٍ الفحص…",
+        "refresh": "تحديث",
+        "report_btn": "التقرير",
+        "no_portal": "لم يُعثر على بوابة بعد",
+        "portal_found": "تم اكتشاف بوابة",
+        "findings": "النتائج",
+        "no_findings": "لا توجد ملاحظات في هذا الفحص.",
+        "sev_critical": "حرجة",
+        "sev_high": "عالية",
+        "sev_medium": "متوسطة",
+        "sev_low": "منخفضة",
+        "sev_info": "معلومة",
+        "found_summary": "{} ملاحظة · {} حرجة · {} عالية",
+        "fix": "الإصلاح",
+        "copy": "نسخ التقرير",
+        "share": "مشاركة",
+        "export": "حفظ",
+        "copied": "تم نسخ التقرير",
+        "shared": "تم فتح المشاركة",
+        "exported": "تم حفظ التقرير",
+        "export_failed": "تعذّر حفظ التقرير",
+        "report_title": "تقرير تدقيق البوابة",
+        "generated": "التاريخ",
+        "empty_report": "شغّل فحصًا أولًا.",
+        "checks": "الفحوصات المنفذة",
+        "limitations": "حدود الفحص",
+        "limitations_body": "فحص غير مؤذٍ: لا اعتراض ARP، لا deauth، لا كسر كلمات سر، ولا إرسال نماذج الدخول. النتائج مؤشرات قابلة للتحقق وليست حكمًا نهائيًا؛ تحقق منها على بيئة اختبار قبل الإنتاج.",
+        "language": "اللغة",
+        "language_auto": "تلقائي (لغة الجهاز)",
+        "tls": "TLS والشهادة",
+        "cert_issuer": "جهة الإصدار",
+        "cert_expires": "تنتهي",
+        "cipher": "حزمة التشفير",
+        "https_ok": "HTTPS متاح",
+        "https_fail": "HTTPS غير متاح",
+        "forms": "نماذج الدخول",
+        "headers_card": "الرؤوس والكوكيز",
+        "open_wifi": "إعدادات الواي فاي",
+        "check_probe_google": "فحص 204 من Google",
+        "check_probe_apple": "فحص Apple",
+        "check_probe_firefox": "فحص Firefox",
+        "check_dns": "كشف اعتراض DNS",
+        "check_portal": "جلب صفحة البوابة",
+        "check_https": "فحص HTTPS",
+        "check_forms": "تحليل النماذج",
+        "check_cookies": "تحليل الكوكيز",
+        "check_headers": "تحليل الرؤوس",
+        "check_redirect": "إعادة التوجيه المفتوح",
+        "check_reflection": "انعكاس المدخلات",
+        "check_garden": "الحديقة المفتوحة",
+        "garden_google": "Google",
+        "garden_apple": "Apple",
+        "garden_example": "Example",
+        "service_ready": "خدمة تدقيق البوابة جاهزة",
+        "manual_portal": "أدخل عنوان البوابة يدويًا للبدء.",
+        "portal_http": "البوابة تعمل عبر HTTP",
+        "portal_https": "البوابة تعمل عبر HTTPS",
+        "scan_done": "اكتمل الفحص",
+        "fix_none": "لا إجراء مطلوب.",
+        "find_portal": "بوابة التقاط مكتشفة",
+        "find_http_portal": "البوابة لا تدعم HTTPS",
+        "find_login_http": "نموذج الدخول يُرسل عبر HTTP",
+        "find_password_get": "كلمة السر تُرسل في رابط GET",
+        "find_csrf_missing": "لا يوجد رمز CSRF في نموذج الدخول",
+        "find_open_redirect": "إعادة توجيه مفتوحة محتملة",
+        "find_reflection": "انعكاس مدخلات دون ترميز",
+        "find_cookie_flags": "كوكيز دون Secure/HttpOnly",
+        "find_hsts_missing": "HSTS غير مفعّل",
+        "find_headers_missing": "رؤوس حماية ناقصة",
+        "find_mixed_content": "محتوى مختلط على صفحة HTTPS",
+        "find_cert_issue": "مشكلة في شهادة TLS",
+        "find_dns_rewrite": "اعتراض DNS من البوابة",
+        "find_garden_open": "الحديقة المفتوحة تسمح بوصول قبل المصادقة",
+        "find_banner": "كشف إصدار الخادم",
+        "fix_tls": "انشر البوابة عبر HTTPS فقط، وأعد توجيه HTTP إلى HTTPS، وفعّل HSTS بعد التأكد من كل النطاقات الفرعية.",
+        "fix_form": "اجعل action النموذج https:// على نفس النطاق، وارفض إرسال بيانات الدخول عبر HTTP.",
+        "fix_post": "استخدم POST مع جسم الطلب بدل GET، ولا تضع كلمة السر أو الرمز في الرابط أو السجلات.",
+        "fix_csrf": "أضف رمز CSRF عشوائيًا لكل جلسة، وتحقق منه على الخادم وأبطل الرمز بعد الاستخدام.",
+        "fix_redirect": "استبدل إعادة التوجيه الحر بقائمة وجهات مسموحة، وتحقق من البادئة الكاملة للنطاق.",
+        "fix_output": "رمّز كل مدخلات المستخدم عند العرض (HTML entity encoding)، واستخدم قوالب آمنة.",
+        "fix_cookies": "اضبط Secure وHttpOnly وSameSite=Lax أو Strict لكوكيز الجلسة، وقصّر عمرها.",
+        "fix_hsts": "أضف Strict-Transport-Security: max-age=31536000; includeSubDomains بعد اختبار HTTPS بالكامل.",
+        "fix_headers": "أضف Content-Security-Policy وX-Frame-Options أو frame-ancestors وReferrer-Policy وX-Content-Type-Options.",
+        "fix_mixed": "حمّل كل الموارد عبر HTTPS، أو استخدم مسارات نسبية، وفعّل CSP لرفض الموارد غير المشفرة.",
+        "fix_cert": "استخدم شهادة صالحة من جهة موثوقة، جدّدها قبل الانتهاء، وطابق اسم النطاق والشهادة الوسيطة.",
+        "fix_banner": "أخفِ Server وX-Powered-By وأي تفاصيل إصدار من الاستجابات.",
+        "find_detail": "الدليل",
+    },
+    "en": {
+        "title": "Captive Portal Auditor",
+        "subtitle": "Professional audit of your network's portal: trust, forms, headers and remediation",
+        "scope_note": "This audit runs only against the currently connected network. Use it on a network you own or are authorized in writing to test. It never intercepts other users' traffic, cracks passwords or submits login data.",
+        "consent": "I own this network or have authorization to test it",
+        "consent_sub": "Active checks send harmless probe requests to the portal and require this confirmation.",
+        "consent_required": "Confirm authorization before running active checks.",
+        "ssid": "Network",
+        "gateway": "Gateway",
+        "portal": "Portal URL",
+        "portal_hint": "Leave empty for automatic discovery",
+        "detect": "Discover portal",
+        "run": "Full audit",
+        "busy": "Auditing…",
+        "refresh": "Refresh",
+        "report_btn": "Report",
+        "no_portal": "No portal discovered yet",
+        "portal_found": "Portal discovered",
+        "findings": "Findings",
+        "no_findings": "No findings in this run.",
+        "sev_critical": "Critical",
+        "sev_high": "High",
+        "sev_medium": "Medium",
+        "sev_low": "Low",
+        "sev_info": "Info",
+        "found_summary": "{} findings · {} critical · {} high",
+        "fix": "Fix",
+        "copy": "Copy report",
+        "share": "Share",
+        "export": "Save",
+        "copied": "Report copied",
+        "shared": "Share sheet opened",
+        "exported": "Report saved",
+        "export_failed": "Could not save the report",
+        "report_title": "Portal audit report",
+        "generated": "Generated",
+        "empty_report": "Run an audit first.",
+        "checks": "Checks performed",
+        "limitations": "Scope limits",
+        "limitations_body": "Non-destructive checks only: no ARP interception, no deauth, no password cracking and no form submission. Results are verifiable indicators, not a final verdict; confirm them in a staging environment before production.",
+        "language": "Language",
+        "language_auto": "Automatic (device language)",
+        "tls": "TLS and certificate",
+        "cert_issuer": "Issuer",
+        "cert_expires": "Expires",
+        "cipher": "Cipher suite",
+        "https_ok": "HTTPS available",
+        "https_fail": "HTTPS unavailable",
+        "forms": "Login forms",
+        "headers_card": "Headers and cookies",
+        "open_wifi": "Wi-Fi settings",
+        "check_probe_google": "Google 204 probe",
+        "check_probe_apple": "Apple probe",
+        "check_probe_firefox": "Firefox probe",
+        "check_dns": "DNS interception",
+        "check_portal": "Fetch portal page",
+        "check_https": "HTTPS check",
+        "check_forms": "Form analysis",
+        "check_cookies": "Cookie analysis",
+        "check_headers": "Header analysis",
+        "check_redirect": "Open redirect",
+        "check_reflection": "Input reflection",
+        "check_garden": "Walled garden",
+        "garden_google": "Google",
+        "garden_apple": "Apple",
+        "garden_example": "Example",
+        "service_ready": "Portal audit service ready",
+        "manual_portal": "Enter the portal URL manually to start.",
+        "portal_http": "Portal served over HTTP",
+        "portal_https": "Portal served over HTTPS",
+        "scan_done": "Audit complete",
+        "fix_none": "No action required.",
+        "find_portal": "Captive portal discovered",
+        "find_http_portal": "Portal does not support HTTPS",
+        "find_login_http": "Login form submits over HTTP",
+        "find_password_get": "Password sent in a GET URL",
+        "find_csrf_missing": "Login form has no CSRF token",
+        "find_open_redirect": "Possible open redirect",
+        "find_reflection": "Unencoded input reflection",
+        "find_cookie_flags": "Cookies missing Secure/HttpOnly",
+        "find_hsts_missing": "HSTS not enabled",
+        "find_headers_missing": "Missing security headers",
+        "find_mixed_content": "Mixed content on an HTTPS page",
+        "find_cert_issue": "TLS certificate problem",
+        "find_dns_rewrite": "Portal rewrites DNS",
+        "find_garden_open": "Walled garden allows pre-auth access",
+        "find_banner": "Server version disclosure",
+        "fix_tls": "Serve the portal over HTTPS only, redirect HTTP to HTTPS, and enable HSTS after verifying every subdomain.",
+        "fix_form": "Post the form to https:// on the same origin and reject credentials sent over HTTP.",
+        "fix_post": "Use POST with a request body, and keep passwords and tokens out of URLs and logs.",
+        "fix_csrf": "Add a random per-session CSRF token, validate it server-side and invalidate it after use.",
+        "fix_redirect": "Replace free-form redirects with an allowlist and validate the complete destination origin.",
+        "fix_output": "HTML-encode every user-controlled value at render time and use safe templates.",
+        "fix_cookies": "Set Secure, HttpOnly and SameSite=Lax or Strict on session cookies and keep lifetimes short.",
+        "fix_hsts": "Add Strict-Transport-Security: max-age=31536000; includeSubDomains after HTTPS is fully tested.",
+        "fix_headers": "Add Content-Security-Policy, X-Frame-Options or frame-ancestors, Referrer-Policy and X-Content-Type-Options.",
+        "fix_mixed": "Load every resource over HTTPS, use relative URLs, and enforce CSP to block insecure resources.",
+        "fix_cert": "Use a valid certificate from a trusted CA, renew before expiry, and match hostnames and intermediates.",
+        "fix_banner": "Remove Server, X-Powered-By and version details from responses.",
+        "find_detail": "Evidence",
+    },
+    "ru": {
+        "title": "Аудитор captive-портала",
+        "subtitle": "Профессиональный аудит портала вашей сети: доверие, формы, заголовки и исправления",
+        "scope_note": "Аудит работает только с текущей подключённой сетью. Используйте его на своей сети или при наличии письменного разрешения. Он не перехватывает чужой трафик, не подбирает пароли и не отправляет данные входа.",
+        "consent": "Сеть принадлежит мне или есть разрешение на тест",
+        "consent_sub": "Активные проверки отправляют безвредные запросы к порталу и требуют этого подтверждения.",
+        "consent_required": "Подтвердите разрешение перед активными проверками.",
+        "ssid": "Сеть",
+        "gateway": "Шлюз",
+        "portal": "Адрес портала",
+        "portal_hint": "Оставьте пустым для автообнаружения",
+        "detect": "Найти портал",
+        "run": "Полный аудит",
+        "busy": "Проверка…",
+        "refresh": "Обновить",
+        "report_btn": "Отчёт",
+        "no_portal": "Портал пока не найден",
+        "portal_found": "Портал найден",
+        "findings": "Находки",
+        "no_findings": "В этом запуске находок нет.",
+        "sev_critical": "Критично",
+        "sev_high": "Высоко",
+        "sev_medium": "Средне",
+        "sev_low": "Низко",
+        "sev_info": "Инфо",
+        "found_summary": "Находок: {} · критичных: {} · высоких: {}",
+        "fix": "Исправление",
+        "copy": "Копировать отчёт",
+        "share": "Поделиться",
+        "export": "Сохранить",
+        "copied": "Отчёт скопирован",
+        "shared": "Окно отправки открыто",
+        "exported": "Отчёт сохранён",
+        "export_failed": "Не удалось сохранить отчёт",
+        "report_title": "Отчёт аудита портала",
+        "generated": "Создан",
+        "empty_report": "Сначала запустите аудит.",
+        "checks": "Выполненные проверки",
+        "limitations": "Границы проверки",
+        "limitations_body": "Только неразрушающие проверки: без ARP-перехвата, deauth, подбора паролей и отправки форм. Результаты — проверяемые индикаторы, а не окончательный вердикт; подтвердите их в тестовой среде.",
+        "language": "Язык",
+        "language_auto": "Авто (язык устройства)",
+        "tls": "TLS и сертификат",
+        "cert_issuer": "Издатель",
+        "cert_expires": "Истекает",
+        "cipher": "Шифр",
+        "https_ok": "HTTPS доступен",
+        "https_fail": "HTTPS недоступен",
+        "forms": "Формы входа",
+        "headers_card": "Заголовки и cookie",
+        "open_wifi": "Настройки Wi-Fi",
+        "check_probe_google": "Проверка Google 204",
+        "check_probe_apple": "Проверка Apple",
+        "check_probe_firefox": "Проверка Firefox",
+        "check_dns": "Перехват DNS",
+        "check_portal": "Загрузка страницы портала",
+        "check_https": "Проверка HTTPS",
+        "check_forms": "Анализ форм",
+        "check_cookies": "Анализ cookie",
+        "check_headers": "Анализ заголовков",
+        "check_redirect": "Открытый редирект",
+        "check_reflection": "Отражение ввода",
+        "check_garden": "Открытый сад",
+        "garden_google": "Google",
+        "garden_apple": "Apple",
+        "garden_example": "Example",
+        "service_ready": "Сервис аудита портала готов",
+        "manual_portal": "Введите адрес портала вручную.",
+        "portal_http": "Портал работает по HTTP",
+        "portal_https": "Портал работает по HTTPS",
+        "scan_done": "Аудит завершён",
+        "fix_none": "Действий не требуется.",
+        "find_portal": "Обнаружен captive-портал",
+        "find_http_portal": "Портал не поддерживает HTTPS",
+        "find_login_http": "Форма входа отправляется по HTTP",
+        "find_password_get": "Пароль передаётся в GET-URL",
+        "find_csrf_missing": "В форме входа нет CSRF-токена",
+        "find_open_redirect": "Возможен открытый редирект",
+        "find_reflection": "Ввод отражается без кодирования",
+        "find_cookie_flags": "Cookie без Secure/HttpOnly",
+        "find_hsts_missing": "HSTS не включён",
+        "find_headers_missing": "Не хватает защитных заголовков",
+        "find_mixed_content": "Смешанный контент на HTTPS-странице",
+        "find_cert_issue": "Проблема с TLS-сертификатом",
+        "find_dns_rewrite": "Портал перехватывает DNS",
+        "find_garden_open": "Открытый сад пускает до авторизации",
+        "find_banner": "Раскрытие версии сервера",
+        "fix_tls": "Публикуйте портал только по HTTPS, перенаправляйте HTTP на HTTPS и включите HSTS после проверки всех поддоменов.",
+        "fix_form": "Отправляйте форму на https:// того же origin и отклоняйте учётные данные по HTTP.",
+        "fix_post": "Используйте POST с телом запроса и не помещайте пароли и токены в URL и логи.",
+        "fix_csrf": "Добавьте случайный CSRF-токен на сессию, проверяйте его на сервере и инвалидируйте после использования.",
+        "fix_redirect": "Замените свободный редирект списком разрешённых адресов и проверяйте полный origin.",
+        "fix_output": "HTML-экранируйте все пользовательские значения при выводе и используйте безопасные шаблоны.",
+        "fix_cookies": "Установите Secure, HttpOnly и SameSite=Lax или Strict для сессионных cookie и сократите их срок.",
+        "fix_hsts": "Добавьте Strict-Transport-Security: max-age=31536000; includeSubDomains после полной проверки HTTPS.",
+        "fix_headers": "Добавьте Content-Security-Policy, X-Frame-Options или frame-ancestors, Referrer-Policy и X-Content-Type-Options.",
+        "fix_mixed": "Загружайте все ресурсы по HTTPS, используйте относительные пути и включите CSP.",
+        "fix_cert": "Используйте действительный сертификат доверенного CA, продлевайте его заранее и проверяйте имена и цепочку.",
+        "fix_banner": "Уберите Server, X-Powered-By и детали версий из ответов.",
+        "find_detail": "Доказательство",
+    },
+}
+
+for _lang, _extra in {
+    "ar": {
+        "networks_title": "اختيار الشبكة",
+        "choose_network": "اختيار الشبكة",
+        "target": "الشبكة المستهدفة",
+        "current_network": "الشبكة المتصلة",
+        "saved_networks": "شبكات محفوظة",
+        "nearby_networks": "شبكات قريبة",
+        "scan_now": "مسح الشبكات",
+        "scanning": "جارٍ مسح الشبكات…",
+        "scan_empty": "لم يُعثر على شبكات؛ شغّل المسح أو افتح إعدادات الواي فاي.",
+        "security": "أمان الشبكة",
+        "security_open": "مفتوحة (بدون تشفير)",
+        "security_wep": "WEP (ضعيف)",
+        "security_wpa": "WPA (قديم)",
+        "security_wpa2": "WPA2",
+        "security_wpa3": "WPA3",
+        "security_enterprise": "WPA-Enterprise",
+        "security_owe": "OWE",
+        "security_unknown": "غير معروف",
+        "select_network": "اختيار",
+        "target_mismatch": "أنت متصل بـ {} لكن الهدف {}. انتقل إلى الشبكة المستهدفة ثم أعد الفحص.",
+        "switch_hint": "للاتصال بشبكة أخرى: افتح إعدادات الواي فاي واخترها، ثم عد وأعد الفحص. لا يتصل الملحق بالشبكات نيابة عنك.",
+        "target_set": "تم تحديد الشبكة المستهدفة",
+        "current_connected": "متصل",
+        "signal": "الإشارة",
+        "checks_card": "الفحوصات",
+        "tls_protocols": "بروتوكولات TLS",
+        "exposed_card": "ملفات مكشوفة",
+        "networks_count": "{} شبكة في المسح",
+        "check_networks": "مسح أمان الشبكات",
+        "check_tls_versions": "إصدارات TLS",
+        "check_exposure": "ملفات حساسة مكشوفة",
+        "check_cors": "سياسة CORS",
+        "check_methods": "طرق HTTP",
+        "check_js": "أمان JavaScript",
+        "check_cache": "تخزين صفحة الدخول",
+        "find_open_network": "شبكة مفتوحة بدون تشفير",
+        "find_wep_network": "شبكة تستخدم WEP",
+        "find_wpa_legacy": "شبكة تستخدم WPA القديم",
+        "find_evil_twin": "احتمال شبكة توأم شريرة (نفس الاسم بأمان مختلف)",
+        "find_wps_enabled": "WPS مفعّل",
+        "find_tls_legacy": "TLS 1.0/1.1 مفعّل",
+        "find_weak_cipher": "حزمة تشفير ضعيفة",
+        "find_exposed_file": "ملف حساس مكشوف على البوابة",
+        "find_cors_misconfig": "إعداد CORS غير آمن",
+        "find_trace_enabled": "طريقة TRACE مفعّلة",
+        "find_js_risky": "أنماط JavaScript خطرة",
+        "find_cache_missing": "صفحة الدخول قابلة للتخزين",
+        "fix_wifi_security": "استخدم WPA2/WPA3 مع كلمة مرور قوية، وعطّل WEP/WPS، وافصل شبكات الضيوف.",
+        "fix_evil_twin": "تحقق من BSSID المتوقع، وفعّل WPA3/802.1X، وراقب نقاط الوصول المزيفة.",
+        "fix_wps": "عطّل WPS من إعدادات الراوتر؛ PIN WPS قابل للتخمين.",
+        "fix_tls_legacy": "عطّل TLS 1.0 و1.1، واسمح فقط بـ TLS 1.2/1.3.",
+        "fix_cipher": "اسمح فقط بحزم AEAD مثل AES-GCM/ChaCha20، وعطّل RC4/3DES والحزم الضعيفة.",
+        "fix_exposure": "احذف الملفات الحساسة من جذر البوابة، واضبط الخادم ليرفض .git و.env وphpinfo وserver-status.",
+        "fix_cors": "لا تستخدم Access-Control-Allow-Origin: * مع credentials؛ اسمح بنطاقات محددة فقط.",
+        "fix_methods": "عطّل TRACE وOPTIONS غير اللازمة على خادم البوابة.",
+        "fix_js": "تجنب eval/document.write/innerHTML مع مدخلات المستخدم، واستخدم CSP ونصوصًا موثوقة.",
+        "fix_cache": "أضف Cache-Control: no-store إلى صفحات الدخول والجلسات.",
+    },
+    "en": {
+        "networks_title": "Choose network",
+        "choose_network": "Choose network",
+        "target": "Target network",
+        "current_network": "Connected network",
+        "saved_networks": "Saved networks",
+        "nearby_networks": "Nearby networks",
+        "scan_now": "Scan networks",
+        "scanning": "Scanning networks…",
+        "scan_empty": "No networks found; scan again or open Wi-Fi settings.",
+        "security": "Network security",
+        "security_open": "Open (no encryption)",
+        "security_wep": "WEP (weak)",
+        "security_wpa": "WPA (legacy)",
+        "security_wpa2": "WPA2",
+        "security_wpa3": "WPA3",
+        "security_enterprise": "WPA-Enterprise",
+        "security_owe": "OWE",
+        "security_unknown": "Unknown",
+        "select_network": "Select",
+        "target_mismatch": "You are connected to {} but the target is {}. Switch to the target network, then run the audit again.",
+        "switch_hint": "To test another network: open Wi-Fi settings, connect to it, come back and audit. The plugin never connects on your behalf.",
+        "target_set": "Target network selected",
+        "current_connected": "connected",
+        "signal": "Signal",
+        "checks_card": "Checks",
+        "tls_protocols": "TLS protocols",
+        "exposed_card": "Exposed files",
+        "networks_count": "{} networks scanned",
+        "check_networks": "Wi-Fi security scan",
+        "check_tls_versions": "TLS versions",
+        "check_exposure": "Sensitive file exposure",
+        "check_cors": "CORS policy",
+        "check_methods": "HTTP methods",
+        "check_js": "JavaScript safety",
+        "check_cache": "Login page caching",
+        "find_open_network": "Open network without encryption",
+        "find_wep_network": "Network uses WEP",
+        "find_wpa_legacy": "Network uses legacy WPA",
+        "find_evil_twin": "Possible evil twin (same SSID, different security)",
+        "find_wps_enabled": "WPS enabled",
+        "find_tls_legacy": "TLS 1.0/1.1 enabled",
+        "find_weak_cipher": "Weak cipher suite",
+        "find_exposed_file": "Sensitive file exposed on the portal",
+        "find_cors_misconfig": "Insecure CORS configuration",
+        "find_trace_enabled": "TRACE method enabled",
+        "find_js_risky": "Risky JavaScript patterns",
+        "find_cache_missing": "Login page is cacheable",
+        "fix_wifi_security": "Use WPA2/WPA3 with a strong passphrase, disable WEP/WPS and isolate guest networks.",
+        "fix_evil_twin": "Verify the expected BSSID, enable WPA3/802.1X and monitor for rogue access points.",
+        "fix_wps": "Disable WPS in the router; the WPS PIN is brute-forceable.",
+        "fix_tls_legacy": "Disable TLS 1.0 and 1.1 and allow only TLS 1.2/1.3.",
+        "fix_cipher": "Allow only AEAD suites such as AES-GCM/ChaCha20 and disable RC4/3DES and weak CBC suites.",
+        "fix_exposure": "Remove sensitive files from the portal root and make the server reject .git, .env, phpinfo and server-status.",
+        "fix_cors": "Never combine Access-Control-Allow-Origin: * with credentials; allow specific origins only.",
+        "fix_methods": "Disable TRACE and unneeded OPTIONS on the portal server.",
+        "fix_js": "Avoid eval/document.write/innerHTML with user input, and use CSP plus trusted external scripts.",
+        "fix_cache": "Add Cache-Control: no-store to login pages and authenticated responses.",
+    },
+    "ru": {
+        "networks_title": "Выбор сети",
+        "choose_network": "Выбрать сеть",
+        "target": "Целевая сеть",
+        "current_network": "Текущая сеть",
+        "saved_networks": "Сохранённые сети",
+        "nearby_networks": "Сети рядом",
+        "scan_now": "Сканировать сети",
+        "scanning": "Сканирование сетей…",
+        "scan_empty": "Сети не найдены; запустите сканирование или откройте настройки Wi-Fi.",
+        "security": "Безопасность сети",
+        "security_open": "Открытая (без шифрования)",
+        "security_wep": "WEP (слабая)",
+        "security_wpa": "WPA (устаревшая)",
+        "security_wpa2": "WPA2",
+        "security_wpa3": "WPA3",
+        "security_enterprise": "WPA-Enterprise",
+        "security_owe": "OWE",
+        "security_unknown": "Неизвестно",
+        "select_network": "Выбрать",
+        "target_mismatch": "Вы подключены к {}, а цель — {}. Переключитесь на целевую сеть и повторите аудит.",
+        "switch_hint": "Чтобы проверить другую сеть: откройте настройки Wi-Fi, подключитесь, вернитесь и запустите аудит. Плагин не подключается сам.",
+        "target_set": "Целевая сеть выбрана",
+        "current_connected": "подключено",
+        "signal": "Сигнал",
+        "checks_card": "Проверки",
+        "tls_protocols": "Протоколы TLS",
+        "exposed_card": "Открытые файлы",
+        "networks_count": "Сетей в сканировании: {}",
+        "check_networks": "Сканирование безопасности Wi-Fi",
+        "check_tls_versions": "Версии TLS",
+        "check_exposure": "Открытые чувствительные файлы",
+        "check_cors": "Политика CORS",
+        "check_methods": "Методы HTTP",
+        "check_js": "Безопасность JavaScript",
+        "check_cache": "Кэширование страницы входа",
+        "find_open_network": "Открытая сеть без шифрования",
+        "find_wep_network": "Сеть использует WEP",
+        "find_wpa_legacy": "Сеть использует устаревший WPA",
+        "find_evil_twin": "Возможен evil twin (тот же SSID, другая защита)",
+        "find_wps_enabled": "WPS включён",
+        "find_tls_legacy": "Включён TLS 1.0/1.1",
+        "find_weak_cipher": "Слабый шифр",
+        "find_exposed_file": "Чувствительный файл открыт на портале",
+        "find_cors_misconfig": "Небезопасная настройка CORS",
+        "find_trace_enabled": "Метод TRACE включён",
+        "find_js_risky": "Опасные шаблоны JavaScript",
+        "find_cache_missing": "Страница входа кэшируется",
+        "fix_wifi_security": "Используйте WPA2/WPA3 с надёжным паролем, отключите WEP/WPS и изолируйте гостевые сети.",
+        "fix_evil_twin": "Проверяйте ожидаемый BSSID, включите WPA3/802.1X и следите за поддельными точками доступа.",
+        "fix_wps": "Отключите WPS в роутере; PIN WPS можно подобрать.",
+        "fix_tls_legacy": "Отключите TLS 1.0 и 1.1, разрешите только TLS 1.2/1.3.",
+        "fix_cipher": "Разрешите только AEAD-шифры (AES-GCM/ChaCha20), отключите RC4/3DES и слабые CBC.",
+        "fix_exposure": "Удалите чувствительные файлы из корня портала и запретите .git, .env, phpinfo и server-status.",
+        "fix_cors": "Не используйте Access-Control-Allow-Origin: * с credentials; разрешайте только конкретные источники.",
+        "fix_methods": "Отключите TRACE и ненужные OPTIONS на сервере портала.",
+        "fix_js": "Избегайте eval/document.write/innerHTML с пользовательским вводом, используйте CSP и доверенные скрипты.",
+        "fix_cache": "Добавьте Cache-Control: no-store для страниц входа и сессий.",
+    },
+}.items():
+    STRINGS[_lang].update(_extra)
+
+
+def device_language():
+    try:
+        from java import jclass
+
+        code = str(jclass("java.util.Locale").getDefault().getLanguage()).lower()
+        if code.startswith("ar"):
+            return "ar"
+        if code.startswith("ru"):
+            return "ru"
+        return "en"
+    except Exception:
+        return "ar"
+
+
+def parse_forms(body):
+    forms = []
+    for attrs, inner in re.findall(r"<form\b([^>]*)>(.*?)</form>", body or "", re.S | re.I):
+        form = {"action": "", "method": "get", "password": False, "csrf": False, "autocomplete": ""}
+        for name, value in re.findall(r"([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*[\"']([^\"']*)[\"']", attrs):
+            key = name.lower()
+            if key == "action":
+                form["action"] = value.strip()
+            elif key == "method":
+                form["method"] = (value.strip() or "get").lower()
+            elif key == "autocomplete":
+                form["autocomplete"] = value.strip().lower()
+        for tag in re.findall(r"<input\b([^>]*)>", inner, re.S | re.I):
+            fields = {}
+            for name, value in re.findall(r"([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*[\"']([^\"']*)[\"']", tag):
+                fields[name.lower()] = value
+            if (fields.get("type", "text") or "text").lower() == "password":
+                form["password"] = True
+                if (fields.get("autocomplete", "") or "").lower() == "off":
+                    form["autocomplete"] = "off"
+            if CSRF_HINTS.search(fields.get("name", "") + " " + fields.get("id", "")):
+                form["csrf"] = True
+        forms.append(form)
+    return forms
+
+
+def parse_cookies(raw_headers):
+    cookies = []
+    for value in raw_headers.get("set-cookie", []) or []:
+        for part in str(value).split(", "):
+            head = part.split(";", 1)[0]
+            if "=" not in head:
+                continue
+            name = head.split("=", 1)[0].strip()
+            flags = [item.strip().lower() for item in part.split(";")[1:]]
+            cookies.append(
+                {
+                    "name": name,
+                    "secure": any(item == "secure" for item in flags),
+                    "httponly": any(item == "httponly" for item in flags),
+                    "samesite": any(item.startswith("samesite") for item in flags),
+                }
+            )
+    return cookies
+
+
+def severity_rank(name):
+    return SEVERITY_ORDER.get(str(name), 5)
+
+
+class CaptivePortalAuditor(BasePlugin):
+    def __init__(self):
+        super(CaptivePortalAuditor, self).__init__()
+        self._consent = False
+        self._busy = False
+        self._alive = True
+        self._ssid = ""
+        self._bssid = ""
+        self._gateway = ""
+        self._portal_input = ""
+        self._portal = ""
+        self._findings = []
+        self._checks = []
+        self._tls = {}
+        self._meta = {}
+        self._report = ""
+        self._status = ""
+        self._log = ""
+        self._target_ssid = ""
+        self._saved_networks = []
+        self._networks = []
+        self._security = ""
+        self._scan_at = ""
+        self._scanning = False
+        self._tls_protocols = []
+        self._exposures = []
+
+    # ------------------------------------------------------------------ setup
+
+    def on_plugin_load(self):
+        self.add_module(
+            self._t("title"),
+            self._t("subtitle"),
+            "wifi",
+            "main",
+            "PLUGINS",
+            46,
+        )
+        self.provide_service(SERVICE_ID)
+        self._read_network()
+        self._target_ssid = str(self.get_setting("target_ssid", "") or "") or self._ssid
+        self._scan_networks(False)
+        self._status = self._t("no_portal")
+
+    def on_plugin_unload(self):
+        self._alive = False
+
+    # -------------------------------------------------------------- utilities
+
+    def _lang(self):
+        raw = str(self.get_setting("language", "") or "").strip().lower()
+        if raw in STRINGS:
+            return raw
+        return device_language()
+
+    def _t(self, key, *args):
+        table = STRINGS.get(self._lang(), STRINGS["en"])
+        text = table.get(key) or STRINGS["en"].get(key) or STRINGS["ru"].get(key) or key
+        if args:
+            try:
+                return text.format(*args)
+            except Exception:
+                return text
+        return text
+
+    def _read_network(self):
+        try:
+            info = json.loads(str(self.api.getDevice().wifiConnectionInfoJson()))
+        except Exception:
+            info = {}
+        if not isinstance(info, dict):
+            info = {}
+        self._ssid = str(info.get("ssid", "") or "")
+        self._bssid = str(info.get("bssid", "") or "")
+        self._gateway = str(info.get("gateway", "") or "")
+        self._meta["ip"] = str(info.get("ip", "") or "")
+        self._meta["dns1"] = str(info.get("dns1", "") or "")
+
+    def _portal_url(self):
+        text = str(self._portal_input or "").strip()
+        if text:
+            if not text.lower().startswith(("http://", "https://")):
+                text = "http://" + text
+            return text
+        return self._portal
+
+    def _absolute(self, base, location):
+        try:
+            from java import jclass
+
+            return str(jclass("java.net.URL")(jclass("java.net.URL")(base), location))
+        except Exception:
+            return urllib.parse.urljoin(base, location)
+
+    def _http(self, url, method="GET", headers=None, limit=MAX_BODY):
+        result = {
+            "url": url,
+            "code": -1,
+            "headers": {},
+            "raw_headers": {},
+            "body": "",
+            "error": "",
+            "tls": None,
+        }
+        try:
+            from java import jclass
+
+            URL = jclass("java.net.URL")
+            conn = URL(str(url)).openConnection()
+            conn.setInstanceFollowRedirects(False)
+            conn.setConnectTimeout(8000)
+            conn.setReadTimeout(10000)
+            conn.setRequestProperty("User-Agent", UA)
+            conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,*/*")
+            for key, value in (headers or {}).items():
+                conn.setRequestProperty(str(key), str(value))
+            code = int(conn.getResponseCode())
+            result["code"] = code
+            fields = conn.getHeaderFields()
+            iterator = fields.entrySet().iterator()
+            raw = {}
+            while iterator.hasNext():
+                entry = iterator.next()
+                name = entry.getKey()
+                if name is None:
+                    continue
+                values = [str(item) for item in entry.getValue()]
+                key = str(name).lower()
+                result["headers"][key] = ", ".join(values)
+                raw[key] = values
+            result["raw_headers"] = raw
+            stream = conn.getInputStream() if 200 <= code < 400 else conn.getErrorStream()
+            if stream is not None:
+                reader = jclass("java.io.BufferedReader")(jclass("java.io.InputStreamReader")(stream, "UTF-8"))
+                lines = []
+                total = 0
+                while total < limit:
+                    line = reader.readLine()
+                    if line is None:
+                        break
+                    text = str(line)
+                    lines.append(text)
+                    total += len(text) + 1
+                result["body"] = "\n".join(lines)
+            try:
+                cipher = str(conn.getCipherSuite())
+            except Exception:
+                cipher = ""
+            if "https" in str(url).lower() or "Https" in conn.getClass().getName():
+                tls = {"cipher": cipher, "subject": "", "issuer": "", "expires": "", "expired": False}
+                try:
+                    certs = conn.getServerCertificates()
+                    if certs and len(certs) > 0:
+                        cert = certs[0]
+                        tls["subject"] = str(cert.getSubjectDN())
+                        tls["issuer"] = str(cert.getIssuerDN())
+                        try:
+                            expiry = cert.getNotAfter()
+                            tls["expires"] = str(expiry)
+                            tls["expired"] = bool(expiry.getTime() < int(time.time() * 1000))
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                result["tls"] = tls
+            try:
+                conn.disconnect()
+            except Exception:
+                pass
+        except Exception as error:
+            result["error"] = str(error)
+        return result
+
+    def _follow(self, url, hops=4):
+        chain = []
+        current = url
+        for _ in range(hops):
+            response = self._http(current)
+            chain.append(current)
+            location = str(response.get("headers", {}).get("location", "") or "")
+            if response.get("code") in (301, 302, 303, 307, 308) and location:
+                current = self._absolute(current, location)
+                if not current.lower().startswith(("http://", "https://")):
+                    break
+                continue
+            response["chain"] = chain
+            return response
+        last = self._http(current)
+        last["chain"] = chain + [current]
+        return last
+
+    def _add(self, finding_id, evidence=""):
+        if finding_id not in FINDINGS:
+            return
+        for item in self._findings:
+            if item["id"] == finding_id:
+                return
+        severity, fix_key = FINDINGS[finding_id]
+        self._findings.append(
+            {
+                "id": finding_id,
+                "severity": severity,
+                "fixKey": fix_key,
+                "evidence": str(evidence or "")[:300],
+            }
+        )
+
+    def _check(self, key, ok, note=""):
+        self._checks.append({"key": key, "ok": bool(ok), "note": str(note or "")[:160]})
+
+    # ------------------------------------------------------------- discovery
+
+    def _discover(self):
+        self._read_network()
+        self._findings = []
+        self._checks = []
+        self._tls = {}
+        self._meta["discovery"] = []
+        suspected = False
+        candidate = ""
+        for url, expected, key in PROBES:
+            response = self._http(url)
+            code = int(response.get("code", -1))
+            location = str(response.get("headers", {}).get("location", "") or "")
+            self._meta["discovery"].append({"url": url, "code": code, "location": location})
+            intercepted = code not in (-1, expected) or (code == 200 and expected == 204)
+            if intercepted:
+                suspected = True
+                if location and not candidate:
+                    candidate = self._absolute(url, location)
+            self._check(key, code == expected, "HTTP " + str(code))
+        self._check("check_dns", True)
+        addressed = self._dns_interception()
+        if addressed:
+            self._add("dns_rewrite", addressed)
+        if suspected:
+            if not candidate:
+                candidate = self._guess_portal()
+            self._portal = candidate
+            self._add("portal", candidate)
+            self._status = self._t("portal_found")
+        else:
+            self._portal = ""
+            self._status = self._t("no_portal")
+        self._build_report()
+        self.refresh()
+
+    def _dns_interception(self):
+        host = "dolphy-probe-" + ("%08x" % random.getrandbits(32)) + ".invalid"
+        try:
+            from java import jclass
+
+            address = jclass("java.net.InetAddress").getByName(host)
+            resolved = str(address.getHostAddress())
+            if resolved:
+                self._check("check_dns", False, host + " → " + resolved)
+                return host + " → " + resolved
+        except Exception as error:
+            self._check("check_dns", True, str(error)[:100])
+            return ""
+        self._check("check_dns", False, host)
+        return ""
+
+    def _guess_portal(self):
+        if self._gateway:
+            return "http://" + self._gateway + "/"
+        return ""
+
+    def _security_of(self, capabilities):
+        caps = str(capabilities or "").upper()
+        if not caps:
+            return "unknown"
+        if "SAE" in caps:
+            return "wpa3"
+        if "EAP" in caps:
+            return "enterprise"
+        if "WEP" in caps:
+            return "wep"
+        if "WPA2" in caps:
+            return "wpa2"
+        if "WPA" in caps:
+            return "wpa"
+        if "OWE" in caps:
+            return "owe"
+        return "open"
+
+    def _scan_networks(self, force=False):
+        device = self.api.getDevice()
+        if force:
+            try:
+                device.wifiStartScan(True)
+            except Exception:
+                pass
+        rows = []
+        try:
+            rows = json.loads(str(device.wifiScanResultsJson(200, -95)))
+        except Exception:
+            rows = []
+        if not isinstance(rows, list):
+            rows = []
+        networks = []
+        seen = set()
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            ssid = str(row.get("ssid", "") or "").strip()
+            if not ssid:
+                continue
+            bssid = str(row.get("bssid", "") or "")
+            identity = ssid + "|" + bssid
+            if identity in seen:
+                continue
+            seen.add(identity)
+            frequency = int(row.get("frequency", 0) or 0)
+            networks.append(
+                {
+                    "ssid": ssid,
+                    "bssid": bssid,
+                    "rssi": int(row.get("rssi", -100) or -100),
+                    "frequency": frequency,
+                    "capabilities": str(row.get("capabilities", "") or ""),
+                    "security": self._security_of(row.get("capabilities", "")),
+                    "band": "2.4" if 2400 <= frequency <= 2500 else ("5" if 5000 <= frequency < 5900 else ("6" if frequency >= 5900 else "")),
+                    "current": bool(bssid) and bssid == self._bssid,
+                    "saved": False,
+                }
+            )
+        saved = []
+        try:
+            saved = json.loads(str(device.wifiConfiguredNetworksJson()))
+        except Exception:
+            saved = []
+        if isinstance(saved, list):
+            self._saved_networks = [item for item in saved if isinstance(item, dict)]
+            for item in self._saved_networks:
+                ssid = str(item.get("ssid", "") or "").strip()
+                if ssid and not any(net["ssid"] == ssid for net in networks):
+                    networks.append(
+                        {
+                            "ssid": ssid,
+                            "bssid": str(item.get("bssid", "") or ""),
+                            "rssi": -100,
+                            "frequency": 0,
+                            "capabilities": "",
+                            "security": "unknown",
+                            "band": "",
+                            "current": ssid == self._ssid,
+                            "saved": True,
+                        }
+                    )
+        networks.sort(key=lambda net: net["rssi"], reverse=True)
+        self._networks = networks
+        self._scan_at = time.strftime("%H:%M:%S")
+        self._security = ""
+        for net in networks:
+            if net.get("bssid") and net.get("bssid") == self._bssid:
+                self._security = net.get("security", "")
+                break
+        if not self._security:
+            for net in networks:
+                if net.get("ssid") == self._ssid:
+                    self._security = net.get("security", "")
+                    break
+
+    def _analyze_networks(self):
+        current = None
+        for net in self._networks:
+            if net.get("bssid") and net.get("bssid") == self._bssid:
+                current = net
+                break
+        if current is None:
+            current = next((net for net in self._networks if net.get("ssid") == self._ssid), None)
+        if current:
+            self._security = current.get("security", "unknown")
+        for net in self._networks:
+            if "WPS" in str(net.get("capabilities", "")).upper():
+                self._add("wps_enabled", net["ssid"])
+                break
+        by_ssid = {}
+        for net in self._networks:
+            by_ssid.setdefault(net["ssid"], []).append(net)
+        for ssid, group in by_ssid.items():
+            kinds = {net["security"] for net in group}
+            if "open" in kinds and kinds & {"wpa", "wpa2", "wpa3", "enterprise"}:
+                self._add("evil_twin", ssid)
+        for net in self._networks:
+            if net["security"] == "wep":
+                self._add("wep_network", net["ssid"])
+                break
+        for net in self._networks:
+            if net["security"] == "wpa":
+                self._add("wpa_legacy", net["ssid"])
+                break
+        if self._security == "open":
+            self._add("open_network", self._ssid)
+        self._check("check_networks", bool(self._networks), "%d network(s) · %s" % (len(self._networks), self._scan_at))
+
+    def _origin(self, portal):
+        parts = urllib.parse.urlsplit(str(portal))
+        host = parts.hostname or ""
+        port = ":" + str(parts.port) if parts.port else ""
+        return (parts.scheme or "http") + "://" + host + port
+
+    def _analyze_tls(self, portal):
+        if not str(portal).lower().startswith("https://"):
+            self._check("check_tls_versions", False, "HTTP only")
+            return
+        host = urllib.parse.urlsplit(str(portal)).hostname or ""
+        supported = []
+        try:
+            from java import jclass
+
+            context = jclass("javax.net.ssl.SSLContext").getInstance("TLS")
+            context.init(None, None, None)
+            factory = context.getSocketFactory()
+            for protocol in ("TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"):
+                try:
+                    socket = factory.createSocket(host, 443)
+                    socket.setSoTimeout(4000)
+                    params = socket.getSSLParameters()
+                    params.setProtocols([protocol])
+                    socket.setSSLParameters(params)
+                    socket.startHandshake()
+                    supported.append(protocol)
+                    socket.close()
+                except Exception:
+                    pass
+        except Exception as error:
+            self._check("check_tls_versions", False, str(error)[:100])
+            return
+        self._tls_protocols = supported
+        self._check("check_tls_versions", bool(supported), ", ".join(supported) or "none")
+        if "TLSv1" in supported or "TLSv1.1" in supported:
+            self._add("tls_legacy", ", ".join(supported))
+        cipher = str((self._tls or {}).get("cipher", "")).upper()
+        if cipher and any(token in cipher for token in ("RC4", "3DES", "DES_", "NULL", "MD5")):
+            self._add("weak_cipher", cipher)
+
+    def _check_exposures(self, portal):
+        origin = self._origin(portal)
+        exposed = []
+        for path, signature in (
+            ("/.git/HEAD", "ref:"),
+            ("/.env", "app_"),
+            ("/server-status", "server status"),
+            ("/phpinfo.php", "phpinfo"),
+        ):
+            try:
+                response = self._http(origin + path)
+                body = str(response.get("body", "") or "").lower()
+                if response.get("code") == 200 and signature in body:
+                    exposed.append(path)
+            except Exception:
+                pass
+        self._exposures = exposed
+        self._check("check_exposure", not exposed, ", ".join(exposed) or "none")
+        if exposed:
+            self._add("exposed_file", ", ".join(exposed))
+
+    def _check_cors(self, portal):
+        response = self._http(portal, headers={"Origin": "https://audit.example"})
+        headers = response.get("headers", {}) or {}
+        allow = str(headers.get("access-control-allow-origin", "") or "")
+        credentials = str(headers.get("access-control-allow-credentials", "") or "").lower()
+        bad = allow == "*" or (allow == "https://audit.example" and credentials == "true")
+        self._check("check_cors", not bad, (allow + " · credentials=" + credentials) if allow else "no ACAO")
+        if bad:
+            self._add("cors_misconfig", "ACAO " + allow + " · " + credentials)
+
+    def _check_methods(self, portal):
+        options = self._http(self._origin(portal), method="OPTIONS")
+        allow = str((options.get("headers", {}) or {}).get("allow", "") or "")
+        trace = self._http(self._origin(portal), method="TRACE")
+        trace_ok = trace.get("code") == 200 and "TRACE" in str(trace.get("body", "")).upper()
+        self._check("check_methods", not trace_ok, ("Allow: " + allow) if allow else "no Allow header")
+        if trace_ok:
+            self._add("trace_enabled", "TRACE returned 200")
+
+    def _check_js(self, body, page_url):
+        scripts = "\n".join(re.findall(r"<script[^>]*>(.*?)</script>", body or "", re.S | re.I))
+        risky = []
+        if re.search(r"\beval\s*\(", scripts):
+            risky.append("eval")
+        if re.search(r"document\.write\s*\(", scripts):
+            risky.append("document.write")
+        if re.search(r"\.innerHTML\s*=", scripts):
+            risky.append("innerHTML")
+        if re.search(r"<script[^>]+src=[\"']http://", body or "", re.I):
+            risky.append("script over HTTP")
+        self._check("check_js", not risky, ", ".join(risky) or "clean")
+        if risky:
+            self._add("js_risky", ", ".join(risky))
+
+    def _check_cache(self, headers, has_login):
+        cache = str(headers.get("cache-control", "") or "").lower()
+        pragma = str(headers.get("pragma", "") or "").lower()
+        safe = "no-store" in cache or "no-cache" in cache or "no-cache" in pragma
+        self._check("check_cache", safe or not has_login, cache or "missing")
+        if has_login and not safe:
+            self._add("cache_missing", cache or "no Cache-Control")
+
+    def _pick_target(self, ssid):
+        def callback(value=None):
+            self.set_setting("target_ssid", str(ssid))
+            self._target_ssid = str(ssid)
+            self._status = self._t("target_set")
+            self.refresh()
+            self.navigate("main")
+
+        return callback
+
+    def _refresh_scan(self):
+        if self._scanning:
+            return
+        self._scanning = True
+        self.refresh()
+        worker = threading.Thread(target=self._scan_worker, name="captive-portal-scan")
+        worker.daemon = True
+        worker.start()
+
+    def _scan_worker(self):
+        try:
+            self._scan_networks(True)
+            self._analyze_networks()
+            self._build_report()
+        finally:
+            self._scanning = False
+            if self._alive:
+                try:
+                    self.refresh()
+                except Exception:
+                    pass
+
+    def _detect(self):
+        self._busy = True
+        self.refresh()
+        try:
+            self._discover()
+        finally:
+            self._busy = False
+            self.refresh()
+
+    # ----------------------------------------------------------------- audit
+
+    def _start(self):
+        if self._busy:
+            return
+        if not self._consent:
+            self._status = self._t("consent_required")
+            self.refresh()
+            return
+        self._busy = True
+        self._status = self._t("busy")
+        self.refresh()
+        worker = threading.Thread(target=self._worker, name="captive-portal-audit")
+        worker.daemon = True
+        worker.start()
+
+    def _worker(self):
+        try:
+            self._run_checks()
+        except Exception as error:
+            self._status = str(error)
+        finally:
+            self._busy = False
+            if self._alive:
+                try:
+                    self.refresh()
+                except Exception:
+                    pass
+
+    def _run_checks(self):
+        self._read_network()
+        target = self._target_ssid or self._ssid
+        if target and self._ssid and target != self._ssid:
+            self._findings = []
+            self._checks = []
+            self._status = self._t("target_mismatch", target, self._ssid)
+            self.refresh()
+            return
+        if not self._portal:
+            self._discover()
+        self._findings = []
+        self._checks = []
+        self._tls = {}
+        self._tls_protocols = []
+        self._exposures = []
+        self._scan_networks()
+        self._analyze_networks()
+        portal = self._portal_url()
+        if not portal:
+            self._status = self._t("manual_portal")
+            self.refresh()
+            return
+        self._portal = portal
+        self._add("portal", portal)
+
+        page = self._follow(portal)
+        page_url = str(page.get("url", portal))
+        body = str(page.get("body", "") or "")
+        headers = dict(page.get("headers", {}) or {})
+        self._check("check_portal", page.get("code", -1) not in (-1,), "HTTP " + str(page.get("code", -1)))
+        self._meta["portal_final"] = page_url
+        self._meta["portal_code"] = page.get("code", -1)
+        self._meta["portal_title"] = self._title(body)
+
+        is_https = page_url.lower().startswith("https://")
+        https_response = None
+        if is_https:
+            self._check("check_https", True)
+            self._tls = page.get("tls") or {}
+        else:
+            https_url = "https://" + portal.split("://", 1)[-1]
+            https_response = self._http(https_url)
+            supported = https_response.get("code", -1) not in (-1,) and not https_response.get("error")
+            self._check("check_https", supported, "HTTP " + str(https_response.get("code", -1)))
+            self._tls = https_response.get("tls") or {}
+            if not supported:
+                self._add("http_portal", portal)
+            else:
+                self._meta["https_url"] = https_url
+                location = str(https_response.get("headers", {}).get("location", "") or "")
+                if location.lower().startswith("http://"):
+                    self._add("http_portal", location)
+
+        if not self._tls.get("cipher") and https_response is None:
+            self._tls = page.get("tls") or {}
+        cert = self._tls or {}
+        if cert.get("expired"):
+            self._add("cert_issue", "expired: " + str(cert.get("expires", "")))
+        elif cert.get("issuer"):
+            self._check("check_https", True, str(cert.get("issuer", ""))[:80])
+
+        forms = parse_forms(body)
+        self._check("check_forms", True, "%d form(s)" % len(forms))
+        password_forms = [form for form in forms if form.get("password")]
+        for form in password_forms:
+            action = form.get("action", "") or page_url
+            absolute = self._absolute(page_url, action)
+            scheme = absolute.split("://", 1)[0].lower() if "://" in absolute else "http"
+            if scheme == "http":
+                self._add("login_http", absolute)
+            if form.get("method", "get") == "get":
+                self._add("password_get", absolute)
+            if not form.get("csrf"):
+                self._add("csrf_missing", absolute)
+            if form.get("autocomplete") == "off":
+                self._check("check_forms", True, "autocomplete=off")
+        if body and page_url.lower().startswith("https://"):
+            if re.search(r"(?:src|href)\s*=\s*[\"']http://", body, re.I):
+                mixed = re.findall(r"(?:src|href)\s*=\s*[\"'](http://[^\"']+)", body, re.I)[:3]
+                self._add("mixed_content", "; ".join(mixed))
+
+        self._analyze_headers(headers, page_url, is_https)
+        self._analyze_cookies(page.get("raw_headers", {}) or {}, is_https)
+        self._analyze_redirects(page_url)
+        self._analyze_reflection(page_url)
+        self._analyze_garden()
+        self._analyze_tls(portal)
+        self._check_exposures(page_url)
+        self._check_cors(page_url)
+        self._check_methods(page_url)
+        self._check_js(body, page_url)
+        self._check_cache(headers, bool(password_forms))
+
+        self._findings.sort(key=lambda item: severity_rank(item.get("severity")))
+        self._status = self._t("scan_done")
+        self._build_report()
+        self._publish()
+        self.refresh()
+
+    def _title(self, body):
+        match = re.search(r"<title[^>]*>(.*?)</title>", body or "", re.S | re.I)
+        return html.unescape(match.group(1)).strip()[:120] if match else ""
+
+    def _analyze_headers(self, headers, page_url, is_https):
+        server = str(headers.get("server", "") or "")
+        powered = str(headers.get("x-powered-by", "") or "")
+        if server or powered:
+            self._add("banner", (server + " " + powered).strip())
+        if is_https and not headers.get("strict-transport-security"):
+            self._add("hsts_missing", page_url)
+        missing = []
+        if not headers.get("content-security-policy"):
+            missing.append("Content-Security-Policy")
+        if not headers.get("x-frame-options") and "frame-ancestors" not in str(headers.get("content-security-policy", "")):
+            missing.append("X-Frame-Options")
+        if not headers.get("referrer-policy"):
+            missing.append("Referrer-Policy")
+        if not headers.get("x-content-type-options"):
+            missing.append("X-Content-Type-Options")
+        self._check("check_headers", not missing, ", ".join(missing))
+        if missing:
+            self._add("headers_missing", ", ".join(missing))
+
+    def _analyze_cookies(self, raw_headers, is_https):
+        cookies = parse_cookies(raw_headers)
+        self._check("check_cookies", bool(cookies), "%d cookie(s)" % len(cookies))
+        weak = []
+        for cookie in cookies:
+            missing = []
+            if is_https and not cookie["secure"]:
+                missing.append("Secure")
+            if not cookie["httponly"]:
+                missing.append("HttpOnly")
+            if not cookie["samesite"]:
+                missing.append("SameSite")
+            if missing:
+                weak.append(cookie["name"] + " (" + ", ".join(missing) + ")")
+        if weak:
+            self._add("cookie_flags", "; ".join(weak[:4]))
+
+    def _query(self, url, key, value):
+        separator = "&" if "?" in url else "?"
+        return url + separator + urllib.parse.quote(str(key), safe="") + "=" + urllib.parse.quote(str(value), safe="")
+
+    def _analyze_redirects(self, portal):
+        found = []
+        for param in REDIRECT_PARAMS:
+            target = self._query(portal, param, "https://example.com/")
+            response = self._http(target)
+            location = str(response.get("headers", {}).get("location", "") or "")
+            if response.get("code") in (301, 302, 303, 307, 308) and "example.com" in location.lower():
+                found.append(param + " → " + location)
+        self._check("check_redirect", not found, "; ".join(found)[:160])
+        if found:
+            self._add("open_redirect", "; ".join(found[:3]))
+
+    def _analyze_reflection(self, portal):
+        marker = "dolphyprobe" + ("%06x" % random.getrandbits(24))
+        payload = "<" + marker + ">"
+        response = self._http(self._query(portal, "dolphy_probe", payload))
+        body = str(response.get("body", "") or "")
+        reflected = payload in body
+        escaped = ("&lt;" + marker + "&gt;") in body
+        self._check("check_reflection", not reflected, "raw" if reflected else ("encoded" if escaped else "not reflected"))
+        if reflected:
+            self._add("reflection", "parameter dolphy_probe reflected verbatim")
+
+    def _analyze_garden(self):
+        results = []
+        blocked = 0
+        for url, key in GARDEN:
+            response = self._http(url)
+            code = int(response.get("code", -1))
+            reachable = code not in (-1,)
+            if not reachable:
+                blocked += 1
+            results.append(self._t(key) + ": " + ("HTTP " + str(code) if reachable else "blocked"))
+        self._check("check_garden", blocked > 0, "; ".join(results)[:160])
+        self._meta["garden"] = results
+        if blocked == 0:
+            self._add("garden_open", "; ".join(results))
+
+    # ---------------------------------------------------------------- output
+
+    def _counts(self):
+        counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+        for item in self._findings:
+            key = item.get("severity", "info")
+            counts[key] = counts.get(key, 0) + 1
+        return counts
+
+    def _build_report(self):
+        counts = self._counts()
+        lines = [
+            self._t("title") + " — " + self._t("report_title"),
+            self._t("generated") + ": " + time.strftime("%Y-%m-%d %H:%M"),
+            "",
+            self._t("ssid") + ": " + (self._ssid or "?"),
+            "BSSID: " + (self._bssid or "?"),
+            self._t("gateway") + ": " + (self._gateway or "?"),
+            self._t("portal") + ": " + (self._portal or "?"),
+            self._t("target") + ": " + (self._target_ssid or "?"),
+            self._t("security") + ": " + self._t("security_" + (self._security or "unknown")),
+            self._t("networks_count", len(self._networks)),
+            "",
+            self._t("findings") + ": " + self._t("found_summary", len(self._findings), counts["critical"], counts["high"]),
+        ]
+        for item in self._findings:
+            lines.append("")
+            lines.append("[" + self._t("sev_" + item["severity"]).upper() + "] " + self._t("find_" + item["id"]))
+            if item.get("evidence"):
+                lines.append("  " + self._t("find_detail") + ": " + item["evidence"])
+            if item.get("fixKey"):
+                lines.append("  " + self._t("fix") + ": " + self._t(item["fixKey"]))
+        lines.extend(["", self._t("checks") + ":"])
+        for check in self._checks:
+            mark = "OK" if check.get("ok") else "WARN"
+            lines.append(" [" + mark + "] " + self._t(check["key"]) + (": " + check["note"] if check.get("note") else ""))
+        if self._meta.get("garden"):
+            lines.append("")
+            lines.append(self._t("check_garden") + ": " + "; ".join(self._meta["garden"]))
+        tls = self._tls or {}
+        if tls:
+            lines.extend(
+                [
+                    "",
+                    self._t("tls") + ":",
+                    " " + self._t("cert_issuer") + ": " + str(tls.get("issuer", "?")),
+                    " " + self._t("cert_expires") + ": " + str(tls.get("expires", "?")),
+                    " " + self._t("cipher") + ": " + str(tls.get("cipher", "?")),
+                ]
+            )
+        if self._tls_protocols:
+            lines.append(self._t("tls_protocols") + ": " + ", ".join(self._tls_protocols))
+        if self._exposures:
+            lines.append(self._t("exposed_card") + ": " + ", ".join(self._exposures))
+        lines.extend(["", self._t("limitations") + ": " + self._t("limitations_body")])
+        self._report = "\n".join(lines)
+
+    def _publish(self):
+        counts = self._counts()
+        try:
+            self.export_java_object(
+                EXPORT_KEY,
+                json.dumps(
+                    {
+                        "portal": self._portal,
+                        "ssid": self._ssid,
+                        "target": self._target_ssid,
+                        "security": self._security,
+                        "scanned": len(self._networks),
+                        "findings": [{"id": item["id"], "severity": item["severity"]} for item in self._findings],
+                        "counts": counts,
+                        "generatedAt": int(time.time()),
+                    },
+                    ensure_ascii=False,
+                ),
+            )
+        except Exception:
+            pass
+
+    def _copy_report(self):
+        if not self._report:
+            self._build_report()
+        try:
+            self.api.getAndroid().clipboardSet(self._report)
+            self._status = self._t("copied")
+            self.toast(self._t("copied"))
+        except Exception as error:
+            self._status = str(error)
+        self.refresh()
+
+    def _share_report(self):
+        if not self._report:
+            self._build_report()
+        try:
+            self.api.getAndroid().filesShare(REPORT_PATH, "text/plain", self._t("report_title"))
+            self._status = self._t("shared")
+        except Exception as error:
+            self._status = str(error)
+        self.refresh()
+
+    def _export_report(self):
+        if not self._report:
+            self._build_report()
+        try:
+            ok = bool(self.api.getAndroid().filesWrite(REPORT_PATH, self._report))
+            self._status = self._t("exported") if ok else self._t("export_failed")
+            if ok:
+                self.toast(self._t("exported"))
+        except Exception as error:
+            self._status = self._t("export_failed") + ": " + str(error)
+        self.refresh()
+
+    def _go(self, screen):
+        def callback(value=None):
+            self.navigate(screen)
+
+        return callback
+
+    def _set_consent(self, value):
+        self._consent = bool(value)
+        self.refresh()
+
+    def _set_portal(self, value):
+        self._portal_input = str(value or "")
+        self.refresh()
+
+    def _set_language(self, value):
+        raw = str(value or "").strip().lower()
+        if raw == "auto":
+            self.set_setting("language", "")
+        elif raw in STRINGS:
+            self.set_setting("language", raw)
+        self._build_report()
+        self.refresh()
+
+    def _open_wifi(self):
+        try:
+            self.api.getDevice().wifiOpenSettings()
+        except Exception:
+            pass
+
+    # ---------------------------------------------------------------- screens
+
+    def screen_networks(self, ui, api, state):
+        rows = []
+        for net in self._networks:
+            detail = self._t("security_" + net.get("security", "unknown")) + " · " + str(net.get("rssi", -100)) + " dBm"
+            if net.get("band"):
+                detail += " · " + net["band"] + " GHz"
+            if net.get("current"):
+                detail += " · " + self._t("current_connected")
+            rows.append(ui.settings_row(net["ssid"], detail, "wifi", on_click=self._pick_target(net["ssid"])))
+        if not rows:
+            rows = [ui.text(self._t("scan_empty"), "bodySmall")]
+        saved_rows = []
+        for item in self._saved_networks[:12]:
+            ssid = str(item.get("ssid", "") or "")
+            if ssid:
+                saved_rows.append(ui.settings_row(ssid, self._t("saved_networks"), "lock", on_click=self._pick_target(ssid)))
+        body = [
+            ui.card(
+                [
+                    ui.row(
+                        [
+                            ui.icon("wifi", 34),
+                            ui.column(
+                                [
+                                    ui.text(self._t("current_network"), "titleMedium"),
+                                    ui.text((self._ssid or "?") + " · " + self._t("security_" + (self._security or "unknown")), "bodySmall"),
+                                ],
+                                spacing=2,
+                            ),
+                        ],
+                        spacing=10,
+                    ),
+                    ui.settings_row(self._t("target"), self._target_ssid or self._t("scan_empty"), "flag"),
+                    ui.text(self._t("switch_hint"), "bodySmall"),
+                ]
+            ),
+            ui.row(
+                [
+                    ui.button(
+                        self._t("scan_now"),
+                        lambda value=None: self._refresh_scan(),
+                        enabled=not self._scanning,
+                        fill_max_width=True,
+                    ),
+                    ui.button(self._t("open_wifi"), lambda value=None: self._open_wifi(), style="tonal", fill_max_width=True),
+                ],
+                spacing=8,
+            ),
+            ui.text(self._t("nearby_networks") + (" · " + self._scan_at if self._scan_at else ""), "titleMedium"),
+            ui.segmented_list(rows),
+        ]
+        if saved_rows:
+            body.append(ui.text(self._t("saved_networks"), "titleMedium"))
+            body.append(ui.segmented_list(saved_rows))
+        if self._scanning:
+            body.append(ui.linear_progress(None))
+            body.append(ui.text(self._t("scanning"), "bodySmall"))
+        return ui.scaffold(
+            title=self._t("networks_title"),
+            content=ui.lazy_column(body, padding=16, spacing=12, fill_max_size=True),
+        )
+
+    def screen_main(self, ui, api, state):
+        counts = self._counts()
+        findings_rows = []
+        for item in self._findings[:8]:
+            findings_rows.append(
+                ui.settings_row(
+                    self._t("find_" + item["id"]),
+                    self._t("sev_" + item["severity"]) + (" · " + item["evidence"][:90] if item.get("evidence") else ""),
+                    "security",
+                )
+            )
+        if not findings_rows:
+            findings_rows = [ui.text(self._t("no_findings"), "bodySmall")]
+
+        portal_value = self._portal_input or self._portal
+        header = ui.card(
+            [
+                ui.row(
+                    [
+                        ui.icon("wifi", 40),
+                        ui.column(
+                            [
+                                ui.text(self._t("title"), "titleLarge"),
+                                ui.text(self._t("subtitle"), "bodySmall"),
+                            ],
+                            spacing=2,
+                        ),
+                    ],
+                    spacing=12,
+                ),
+                ui.segmented_list(
+                    [
+                        ui.settings_row(self._t("ssid"), self._ssid or "?", "wifi"),
+                        ui.settings_row(self._t("target"), self._target_ssid or "?", "flag"),
+                        ui.settings_row(self._t("security"), self._t("security_" + (self._security or "unknown")), "lock"),
+                        ui.settings_row(self._t("gateway"), self._gateway or "?", "lan"),
+                        ui.settings_row(self._t("portal"), self._portal or self._t("no_portal"), "link"),
+                        ui.settings_row(self._t("networks_count", len(self._networks)), str(len(self._networks)), "radar"),
+                    ]
+                ),
+                ui.row(
+                    [
+                        ui.chip(self._t("portal_found") if self._portal else self._t("no_portal"), bool(self._portal)),
+                        ui.chip(self._t("sev_critical") + " " + str(counts["critical"]), counts["critical"] > 0),
+                        ui.chip(self._t("sev_high") + " " + str(counts["high"]), counts["high"] > 0),
+                    ],
+                    spacing=6,
+                ),
+            ]
+        )
+
+        scope = ui.card([ui.text(self._t("scope_note"), "bodySmall")])
+
+        consent = ui.card(
+            [
+                ui.checkbox(self._consent, self._set_consent, self._t("consent"), self._t("consent_sub")),
+                ui.text_field(portal_value, self._set_portal, self._t("portal_hint"), single_line=True),
+            ]
+        )
+
+        network_controls = ui.row(
+            [
+                ui.button(self._t("choose_network"), self._go("networks"), style="outlined", fill_max_width=True),
+                ui.button(
+                    self._t("scan_now"),
+                    lambda value=None: self._refresh_scan(),
+                    style="text",
+                    enabled=not self._scanning,
+                    fill_max_width=True,
+                ),
+            ],
+            spacing=8,
+        )
+
+        controls = ui.row(
+            [
+                ui.button(
+                    self._t("detect"),
+                    lambda value=None: self._detect(),
+                    style="tonal",
+                    enabled=not self._busy,
+                    fill_max_width=True,
+                ),
+                ui.button(
+                    self._t("run"),
+                    lambda value=None: self._start(),
+                    enabled=self._consent and not self._busy,
+                    fill_max_width=True,
+                ),
+            ],
+            spacing=8,
+        )
+
+        body = [header, scope, consent]
+        if self._target_ssid and self._ssid and self._target_ssid != self._ssid:
+            body.append(ui.card([ui.text(self._t("target_mismatch", self._target_ssid, self._ssid), "bodySmall")]))
+        body.extend([network_controls, controls])
+        if self._busy:
+            body.append(ui.linear_progress(None))
+            body.append(ui.text(self._t("busy"), "bodySmall"))
+        body.extend(
+            [
+                ui.text(self._t("findings") + " · " + self._t("found_summary", len(self._findings), counts["critical"], counts["high"]), "titleMedium"),
+                ui.segmented_list(findings_rows),
+            ]
+        )
+        if self._checks:
+            check_rows = []
+            for check in self._checks[:14]:
+                check_rows.append(
+                    ui.settings_row(
+                        self._t(check["key"]),
+                        "OK" if check.get("ok") else (check.get("note") or "WARN"),
+                        "check" if check.get("ok") else "warning",
+                    )
+                )
+            body.append(ui.card([ui.text(self._t("checks_card"), "titleMedium"), ui.segmented_list(check_rows)]))
+        if self._tls:
+            body.append(
+                ui.card(
+                    [
+                        ui.text(self._t("tls"), "titleMedium"),
+                        ui.segmented_list(
+                            [
+                                ui.settings_row(self._t("cert_issuer"), str(self._tls.get("issuer", "?")), "verified_user"),
+                                ui.settings_row(self._t("cert_expires"), str(self._tls.get("expires", "?")), "schedule"),
+                                ui.settings_row(self._t("cipher"), str(self._tls.get("cipher", "?")), "lock"),
+                            ]
+                        ),
+                    ]
+                )
+            )
+        if self._report:
+            body.append(ui.text(self._report[:1200], "bodySmall"))
+        body.append(
+            ui.row(
+                [
+                    ui.button(self._t("report_btn"), self._go("report"), style="tonal", fill_max_width=True),
+                    ui.button(self._t("open_wifi"), lambda value=None: self._open_wifi(), style="text", fill_max_width=True),
+                ],
+                spacing=8,
+            )
+        )
+        if self._status:
+            body.append(ui.text(self._status, "bodySmall"))
+        body.append(
+            ui.button_group(
+                [
+                    ["auto", self._t("language_auto")],
+                    ["ar", "العربية"],
+                    ["en", "English"],
+                    ["ru", "Русский"],
+                ],
+                str(self.get_setting("language", "") or "auto"),
+                on_select=self._set_language,
+            )
+        )
+        return ui.scaffold(
+            title=self._t("title"),
+            content=ui.lazy_column(body, padding=16, spacing=12, fill_max_size=True),
+        )
+
+    def screen_report(self, ui, api, state):
+        if not self._report:
+            self._build_report()
+        return ui.scaffold(
+            title=self._t("report_title"),
+            content=ui.lazy_column(
+                [
+                    ui.log_panel(self._report or self._t("empty_report"), 520),
+                    ui.row(
+                        [
+                            ui.button(self._t("copy"), lambda value=None: self._copy_report(), fill_max_width=True),
+                            ui.button(self._t("share"), lambda value=None: self._share_report(), style="tonal", fill_max_width=True),
+                        ],
+                        spacing=8,
+                    ),
+                    ui.row(
+                        [
+                            ui.button(self._t("export"), lambda value=None: self._export_report(), style="outlined", fill_max_width=True),
+                            ui.button(self._t("refresh"), lambda value=None: (self._build_report(), self.refresh()), style="text", fill_max_width=True),
+                        ],
+                        spacing=8,
+                    ),
+                    ui.text(self._status or "", "bodySmall"),
+                ],
+                padding=16,
+                spacing=12,
+                fill_max_size=True,
+            ),
+        )
+
+    # --------------------------------------------------------------- services
+
+    def service_net_captive_audit(self, payload):
+        counts = self._counts()
+        return {
+            "ok": True,
+            "ran": bool(self._report),
+            "portal": self._portal,
+            "ssid": self._ssid,
+            "target": self._target_ssid,
+            "security": self._security,
+            "scanned": len(self._networks),
+            "findings": len(self._findings),
+            "counts": counts,
+            "message": self._t("service_ready"),
+        }
