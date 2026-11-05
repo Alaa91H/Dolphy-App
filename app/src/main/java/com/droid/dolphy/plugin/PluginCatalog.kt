@@ -318,6 +318,7 @@ val PLUGIN_CATALOG: List<CatalogPlugin> = listOf(
         icon = "rounded:terminal",
         permissions = emptyList(),
         descriptionRes = R.string.plugin_catalog_desc_kali_index,
+        url = "https://raw.githubusercontent.com/Alaa91H/Dolphy-App/0cf6c2b3289ee198df7c5e80533cda382216d6a6/plugin-examples/kali_arsenal_index.dolphyplugin",
     ),
 )
 
