@@ -312,13 +312,13 @@ val PLUGIN_CATALOG: List<CatalogPlugin> = listOf(
         id = "kali_arsenal_index",
         name = "Kali Arsenal Index",
         author = "Dolphy",
-        version = "1.3.0",
+        version = "1.4.0",
         fileName = "kali_arsenal_index.dolphyplugin",
-        sizeBytes = 2059890,
+        sizeBytes = 2089826,
         icon = "rounded:terminal",
         permissions = emptyList(),
         descriptionRes = R.string.plugin_catalog_desc_kali_index,
-        url = "https://raw.githubusercontent.com/Alaa91H/Dolphy-App/352e3410279820f1efd0a1df07b031727c6fe92a/plugin-examples/kali_arsenal_index.dolphyplugin",
+        url = "https://raw.githubusercontent.com/Alaa91H/Dolphy-App/68b55887d68cc6e6101dd9f20d981df0dba6b239/plugin-examples/kali_arsenal_index.dolphyplugin",
     ),
 )
 
