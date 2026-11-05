@@ -35,6 +35,7 @@ Plugins are executable user-provided code with broad access to application and d
 | [Wi-Fi Wordlist Lab](wifi_wordlist_lab.dolphyplugin) | Plugins | `files`, `wifi` | SSID-aware WPA wordlist studio with one-tap generation, saved-network passwords (root/Shizuku) and cross-plugin sharing. |
 | [Network Identity Guard](network_identity_guard.dolphyplugin) | Plugins | `wifi`, `bluetooth`, `root`, `files` | Network identity audit plus verified Wi-Fi MAC rotation with per-network randomization status; IMEI/SN are intentionally out of scope. |
 | [Captive Portal Auditor](captive_portal_auditor.dolphyplugin) | Plugins | `network`, `wifi`, `files` | Consent-gated defensive toolkit: Kismet-style Wi-Fi survey (channel/band/PMF/WPS/vendor), rogue AP detection, testssl-style TLS/certificate checks, WhatWeb/Nikto-style fingerprint/headers/paths, Nmap-style port and service scan, DNS recon, DHCP/DNS audit, hash/password-strength lab and a risk-scored remediation report. |
+| [Kali Arsenal Index](kali_arsenal_index.dolphyplugin) | Plugins | — | Searchable reference index of 501 Kali Linux tools across 16 categories with official docs and execution status. Offensive tools are documented but never executed. |
 
 ## Cross-plugin wordlist integration
 

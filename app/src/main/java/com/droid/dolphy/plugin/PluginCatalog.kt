@@ -308,6 +308,17 @@ val PLUGIN_CATALOG: List<CatalogPlugin> = listOf(
         permissions = listOf("network", "wifi", "files"),
         descriptionRes = R.string.plugin_catalog_desc_captive,
     ),
+    CatalogPlugin(
+        id = "kali_arsenal_index",
+        name = "Kali Arsenal Index",
+        author = "Dolphy",
+        version = "1.0.0",
+        fileName = "kali_arsenal_index.dolphyplugin",
+        sizeBytes = 122600,
+        icon = "rounded:terminal",
+        permissions = emptyList(),
+        descriptionRes = R.string.plugin_catalog_desc_kali_index,
+    ),
 )
 
 /** Compares dot separated versions; returns true when [remote] is newer than [installed]. */
