@@ -2,9 +2,9 @@ import json
 
 __id__ = "kali_arsenal_index"
 __name__ = "Kali Arsenal Index"
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 __author__ = "Dolphy"
-__description__ = "Official trilingual reference index of 501 Kali Linux tools with package metadata, official descriptions, documented features and execution status; offensive tools are documented but never executed"
+__description__ = "Official trilingual reference index of 501 Kali Linux tools with per-tool workspaces, package metadata, official descriptions, documented features and safe copy actions; offensive tools are documented but never executed"
 __icon__ = "rounded:terminal"
 __permissions__ = []
 
@@ -16,6 +16,215 @@ CATEGORY_NAMES = {
     for lang in ("ar", "en", "ru")
 }
 SHOW_LIMIT = 80
+
+SUB_NOTES = {
+    "Account Discovery": {
+        "ar": "تعداد الحسابات والخدمات التي قد تكشف أسماء المستخدمين.",
+        "en": "Enumerates accounts and services that may reveal usernames.",
+        "ru": "Перечисляет учётные записи и службы, которые могут раскрывать имена пользователей.",
+    },
+    "Active Directory": {
+        "ar": "تحليل بنية Active Directory والعلاقات والصلاحيات.",
+        "en": "Maps Active Directory structure, relationships and permissions.",
+        "ru": "Сопоставляет структуру Active Directory, связи и разрешения.",
+    },
+    "Application Layer Protocol": {
+        "ar": "التعامل مع بروتوكولات طبقة التطبيقات وخدماتها.",
+        "en": "Works with application-layer protocols and their services.",
+        "ru": "Работа с протоколами прикладного уровня и их службами.",
+    },
+    "Brute Force": {
+        "ar": "مرجع لاختبار مقاومة كلمات المرور؛ التنفيذ غير مفعّل.",
+        "en": "Reference for password-resistance testing; execution is disabled.",
+        "ru": "Справка для проверки стойкости паролей; запуск отключён.",
+    },
+    "Cisco Tools": {
+        "ar": "أدوات مرجعية لأجهزة Cisco وشبكاتها.",
+        "en": "Reference tools for Cisco devices and networks.",
+        "ru": "Справочные инструменты для устройств и сетей Cisco.",
+    },
+    "Digital Forensics": {
+        "ar": "فحص الأدلة الرقمية مع الحفاظ على سلامتها.",
+        "en": "Examines digital evidence while preserving its integrity.",
+        "ru": "Исследует цифровые доказательства, сохраняя их целостность.",
+    },
+    "Forensic Carving Tools": {
+        "ar": "استخراج الملفات المحذوفة أو المخفية من الصور والأقراص.",
+        "en": "Recovers deleted or hidden files from images and disks.",
+        "ru": "Восстанавливает удалённые или скрытые файлы из образов и дисков.",
+    },
+    "Forensic Imaging Tools": {
+        "ar": "إنشاء نسخ جنائية موثوقة من الأقراص والوسائط.",
+        "en": "Creates reliable forensic images of disks and media.",
+        "ru": "Создаёт надёжные криминалистические образы дисков и носителей.",
+    },
+    "General": {
+        "ar": "أدوات عامة وتطويرية؛ راجع الوثائق لتحديد الاستخدام المناسب.",
+        "en": "General and development tools; review the docs for the right use.",
+        "ru": "Общие инструменты и инструменты разработки; изучите документацию, чтобы выбрать правильное применение.",
+    },
+    "Hash Identification": {
+        "ar": "تحديد نوع التجزئة قبل اختيار أداة التحليل.",
+        "en": "Identifies hash types before choosing an analysis tool.",
+        "ru": "Определяет типы хешей перед выбором инструмента анализа.",
+    },
+    "Host Information": {
+        "ar": "جمع معلومات عامة عن المضيف من مصادر مفتوحة.",
+        "en": "Collects public host information from open sources.",
+        "ru": "Собирает открытые сведения об узле из публичных источников.",
+    },
+    "Identity Information": {
+        "ar": "جمع معلومات الهوية والبريد من مصادر مفتوحة.",
+        "en": "Collects identity and email information from open sources.",
+        "ru": "Собирает сведения об идентичности и почте из открытых источников.",
+    },
+    "Network Information": {
+        "ar": "رسم خريطة الشبكة والخدمات المتاحة.",
+        "en": "Maps the network and its available services.",
+        "ru": "Составляет карту сети и доступных служб.",
+    },
+    "Network Information: DNS": {
+        "ar": "استعلامات DNS وتحليل السجلات والنطاقات.",
+        "en": "DNS queries, record analysis and domain mapping.",
+        "ru": "DNS-запросы, анализ записей и картирование доменов.",
+    },
+    "Network Security Appliances": {
+        "ar": "فحص أجهزة الأمن الشبكي مثل WAF وVPN.",
+        "en": "Checks network security appliances such as WAFs and VPNs.",
+        "ru": "Проверяет сетевые средства защиты, например WAF и VPN.",
+    },
+    "Network Service Discovery": {
+        "ar": "اكتشاف الخدمات والمنافذ المفتوحة.",
+        "en": "Discovers open services and ports.",
+        "ru": "Обнаруживает открытые службы и порты.",
+    },
+    "Network Share Discovery": {
+        "ar": "تعداد مشاركات الشبكة والموارد المشتركة.",
+        "en": "Enumerates network shares and shared resources.",
+        "ru": "Перечисляет сетевые ресурсы и общие папки.",
+    },
+    "Network Sniffing": {
+        "ar": "تحليل حركة الشبكة المصرّح بها.",
+        "en": "Analyzes authorized network traffic.",
+        "ru": "Анализирует разрешённый сетевой трафик.",
+    },
+    "Non-Application Layer Protocol": {
+        "ar": "التعامل مع بروتوكولات الشبكة منخفضة المستوى.",
+        "en": "Works with low-level network protocols.",
+        "ru": "Работа с низкоуровневыми сетевыми протоколами.",
+    },
+    "OS Credential Dumping": {
+        "ar": "مرجع لتحليل بيانات الاعتماد؛ التنفيذ غير مفعّل.",
+        "en": "Reference for credential analysis; execution is disabled.",
+        "ru": "Справка по анализу учётных данных; запуск отключён.",
+    },
+    "PDF Forensics Tools": {
+        "ar": "فحص بنية ملفات PDF وكشف المحتوى الخفي.",
+        "en": "Inspects PDF structure and uncovers hidden content.",
+        "ru": "Исследует структуру PDF и скрытое содержимое.",
+    },
+    "Password Cracking": {
+        "ar": "مرجع لتدقيق كلمات المرور؛ التنفيذ غير مفعّل.",
+        "en": "Reference for password auditing; execution is disabled.",
+        "ru": "Справка по аудиту паролей; запуск отключён.",
+    },
+    "Password Profiling & Wordlists": {
+        "ar": "مرجع لبناء قوائم كلمات المرور؛ التنفيذ غير مفعّل.",
+        "en": "Reference for wordlist generation; execution is disabled.",
+        "ru": "Справка по созданию словарей; запуск отключён.",
+    },
+    "Process Discovery": {
+        "ar": "مراقبة العمليات والخدمات على النظام.",
+        "en": "Observes processes and services on a system.",
+        "ru": "Наблюдает за процессами и службами системы.",
+    },
+    "Protocol Tunneling": {
+        "ar": "مرجع لأنفاق البروتوكولات؛ التنفيذ غير مفعّل.",
+        "en": "Reference for protocol tunneling; execution is disabled.",
+        "ru": "Справка по туннелированию протоколов; запуск отключён.",
+    },
+    "Radio Frequency": {
+        "ar": "تحليل وإدارة إشارات الراديو والأجهزة اللاسلكية.",
+        "en": "Analyzes and manages radio signals and wireless devices.",
+        "ru": "Анализирует радиосигналы и управляет беспроводными устройствами.",
+    },
+    "Remote System Discovery": {
+        "ar": "اكتشاف الأنظمة والخدمات عن بُعد.",
+        "en": "Discovers remote systems and services.",
+        "ru": "Обнаруживает удалённые системы и службы.",
+    },
+    "Reporting Tools": {
+        "ar": "توثيق النتائج وبناء تقارير قابلة للمشاركة.",
+        "en": "Documents findings and builds shareable reports.",
+        "ru": "Документирует результаты и создаёт отчёты для обмена.",
+    },
+    "SSL / TLS": {
+        "ar": "فحص إعدادات TLS والشهادات والخوارزميات.",
+        "en": "Checks TLS configuration, certificates and ciphers.",
+        "ru": "Проверяет настройки TLS, сертификаты и шифры.",
+    },
+    "Sleuth Kit Suite": {
+        "ar": "تحليل الصور الجنائية واستخراج الأدلة.",
+        "en": "Analyzes forensic images and extracts evidence.",
+        "ru": "Анализирует криминалистические образы и извлекает доказательства.",
+    },
+    "System Network Configuration Discovery": {
+        "ar": "فحص إعدادات الشبكة المحلية.",
+        "en": "Inspects local network configuration.",
+        "ru": "Проверяет локальную сетевую конфигурацию.",
+    },
+    "System Services": {
+        "ar": "بدء وإيقاف خدمات التحليل والمنصات.",
+        "en": "Starts and stops analysis services and platforms.",
+        "ru": "Запускает и останавливает службы анализа и платформы.",
+    },
+    "Unsecured Credentials": {
+        "ar": "مرجع للكشف عن بيانات اعتماد مكشوفة؛ التنفيذ غير مفعّل.",
+        "en": "Reference for exposed-credential checks; execution is disabled.",
+        "ru": "Справка по поиску открытых учётных данных; запуск отключён.",
+    },
+    "VoIP Credential Access": {
+        "ar": "مرجع لأمن VoIP؛ التنفيذ غير مفعّل.",
+        "en": "Reference for VoIP security; execution is disabled.",
+        "ru": "Справка по безопасности VoIP; запуск отключён.",
+    },
+    "Vulnerability Scanning": {
+        "ar": "فحص الثغرات على أهداف مصرّح بها.",
+        "en": "Scans authorized targets for vulnerabilities.",
+        "ru": "Сканирует разрешённые цели на уязвимости.",
+    },
+    "Web Scanning": {
+        "ar": "اكتشاف المسارات والملفات والخدمات في تطبيقات الويب.",
+        "en": "Discovers paths, files and services in web applications.",
+        "ru": "Обнаруживает пути, файлы и службы веб-приложений.",
+    },
+    "Web Vulnerability Scanning": {
+        "ar": "فحص تطبيقات الويب بحثًا عن ثغرات معروفة.",
+        "en": "Checks web applications for known vulnerabilities.",
+        "ru": "Проверяет веб-приложения на известные уязвимости.",
+    },
+    "WiFi Credential Access": {
+        "ar": "مرجع لأمن Wi-Fi؛ التنفيذ غير مفعّل.",
+        "en": "Reference for Wi-Fi security; execution is disabled.",
+        "ru": "Справка по безопасности Wi-Fi; запуск отключён.",
+    },
+}
+
+RECON_EXAMPLES = {
+    "nmap": "nmap -sV --version-light <target>",
+    "masscan": "masscan -p80,443 <target> --rate 100",
+    "whatweb": "whatweb https://example.com",
+    "wafw00f": "wafw00f https://example.com",
+    "sslscan": "sslscan example.com:443",
+    "dnsrecon": "dnsrecon -d example.com",
+    "amass": "amass enum -d example.com",
+    "theHarvester": "theHarvester -d example.com -b all",
+    "gobuster": "gobuster dir -u https://example.com -w <wordlist>",
+    "nikto": "nikto -h https://example.com",
+    "dirb": "dirb https://example.com",
+    "enum4linux": "enum4linux -a <target>",
+    "enum4linux-ng": "enum4linux-ng -A <target>",
+}
 
 
 def device_language():
@@ -110,6 +319,51 @@ STRINGS = {
         "notice_copied_details": "تم نسخ بطاقة الأداة كاملة",
         "notice_copy_failed": "تعذر النسخ: {}",
         "notice_source": "تم فتح مصدر كالي الرسمي",
+        "workspace_title": "مساحة عمل الأداة",
+        "workspace_note": "إجراءات آمنة للنسخ والاستخدام على Kali Linux. Dolphy لا ينفّذ الأدوات الهجومية.",
+        "mode_safe_title": "أداة تحليل آمنة",
+        "mode_safe_body": "تعمل محليًا على ملفاتك أو صور الأقراص. راجع الوثائق قبل الاستخدام ووثّق النتائج.",
+        "mode_recon_title": "أداة استطلاع",
+        "mode_recon_body": "تتطلب تفويضًا صريحًا. لا تفحص هدفًا لا تملك إذنًا مكتوبًا بفحصه.",
+        "mode_offensive_title": "مرجع فقط — التنفيذ مقفل",
+        "mode_offensive_body": "لا يوفّر الفهرس تثبيتًا أو أوامر أو تشغيلًا لهذه الأداة. راجع الوصف والوثائق أو استخدم البديل الدفاعي.",
+        "mode_other_title": "أداة مساندة — مرجع",
+        "mode_other_body": "أداة عامة أو تطويرية أو عتاد. راجع الوثائق الرسمية لتحديد الاستخدام المناسب.",
+        "input_label": "المدخلات",
+        "output_label": "المخرجات",
+        "input_safe": "ملف أو صورة قرص محلية",
+        "output_safe": "نتائج تحليل قابلة للتوثيق",
+        "input_recon": "نطاق أو مضيف مصرّح به",
+        "output_recon": "مضيفون ومنافذ وخدمات وإشارات",
+        "input_offensive": "لا يوجد — مرجع فقط",
+        "output_offensive": "وصف وخصائص ووثائق",
+        "input_other": "حسب الأداة",
+        "output_other": "حسب الأداة",
+        "steps_title": "خطوات سريعة",
+        "steps_safe": "1. جهّز الملف أو صورة القرص. · 2. راجع الوثائق الرسمية. · 3. وثّق النتائج.",
+        "steps_recon": "1. حدّد النطاق المصرّح به. · 2. راجع الوثائق وابدأ بأقل تدخل. · 3. وثّق النتائج.",
+        "steps_offensive": "1. اقرأ الوصف والخصائص. · 2. راجع البديل الدفاعي إن وجد. · 3. لا تنفّذ الأداة.",
+        "steps_other": "1. راجع الوثائق الرسمية. · 2. تحقق من المتطلبات. · 3. استخدمها في بيئة معزولة.",
+        "actions_title": "إجراءات الأداة",
+        "install_command": "تثبيت على Kali",
+        "help_command": "أمر المساعدة",
+        "launch_command": "أمر التشغيل",
+        "example_command": "مثال استطلاع",
+        "install_note": "الأوامر للنسخ فقط؛ Dolphy لا يثبّت أو ينفّذ أي حزمة.",
+        "consent_title": "لدي تفويض صريح",
+        "consent_body": "أؤكد أن الهدف ضمن نطاق مصرّح به.",
+        "copy_install": "نسخ أمر التثبيت",
+        "copy_help": "نسخ أمر المساعدة",
+        "copy_launch": "نسخ أمر التشغيل",
+        "copy_example": "نسخ مثال الاستطلاع",
+        "notice_install": "تم نسخ أمر التثبيت",
+        "notice_help": "تم نسخ أمر المساعدة",
+        "notice_launch": "تم نسخ أمر التشغيل",
+        "notice_example": "تم نسخ مثال الاستطلاع",
+        "notice_consent_required": "فعّل تأكيد التفويض أولًا",
+        "sub_note_fallback": "راجع الوثائق الرسمية لطريقة الاستخدام.",
+        "locked_actions": "الأوامر والتثبيت غير متاحين لهذه الفئة.",
+        "command_note": "أمر للنسخ فقط؛ Dolphy لا ينفّذه.",
     },
     "en": {
         "title": "Kali Arsenal Index",
@@ -187,6 +441,51 @@ STRINGS = {
         "notice_copied_details": "Full tool card copied",
         "notice_copy_failed": "Could not copy: {}",
         "notice_source": "Official Kali source opened",
+        "workspace_title": "Tool workspace",
+        "workspace_note": "Safe copy actions for use on Kali Linux. Dolphy never executes offensive tools.",
+        "mode_safe_title": "Safe analysis tool",
+        "mode_safe_body": "Runs locally on your files or disk images. Review the documentation before use and record the results.",
+        "mode_recon_title": "Reconnaissance tool",
+        "mode_recon_body": "Requires explicit authorization. Do not test a target without written permission.",
+        "mode_offensive_title": "Reference only — execution locked",
+        "mode_offensive_body": "This index provides no installation, commands or execution for this tool. Use the description and docs, or the defensive alternative.",
+        "mode_other_title": "Support tool — reference",
+        "mode_other_body": "A general, development or hardware tool. Review the official documentation to choose the right use.",
+        "input_label": "Inputs",
+        "output_label": "Outputs",
+        "input_safe": "Local file or disk image",
+        "output_safe": "Documented analysis results",
+        "input_recon": "Authorized host or network",
+        "output_recon": "Hosts, ports, services and findings",
+        "input_offensive": "None — reference only",
+        "output_offensive": "Description, features and documentation",
+        "input_other": "Varies by tool",
+        "output_other": "Varies by tool",
+        "steps_title": "Quick steps",
+        "steps_safe": "1. Prepare the file or disk image. · 2. Review the official documentation. · 3. Record the findings.",
+        "steps_recon": "1. Define the authorized scope. · 2. Review the docs and start with the least intrusive check. · 3. Record the findings.",
+        "steps_offensive": "1. Read the description and features. · 2. Review the defensive alternative if available. · 3. Do not execute the tool.",
+        "steps_other": "1. Review the official documentation. · 2. Check the requirements. · 3. Use it in an isolated environment.",
+        "actions_title": "Tool actions",
+        "install_command": "Install on Kali",
+        "help_command": "Help command",
+        "launch_command": "Launch command",
+        "example_command": "Recon example",
+        "install_note": "Commands are for copying only; Dolphy does not install or execute any package.",
+        "consent_title": "I have explicit authorization",
+        "consent_body": "I confirm the target is within an authorized scope.",
+        "copy_install": "Copy install command",
+        "copy_help": "Copy help command",
+        "copy_launch": "Copy launch command",
+        "copy_example": "Copy recon example",
+        "notice_install": "Install command copied",
+        "notice_help": "Help command copied",
+        "notice_launch": "Launch command copied",
+        "notice_example": "Recon example copied",
+        "notice_consent_required": "Enable the authorization confirmation first",
+        "sub_note_fallback": "Review the official documentation for usage.",
+        "locked_actions": "Commands and installation are unavailable for this category.",
+        "command_note": "Copy-only command; Dolphy does not run it.",
     },
     "ru": {
         "title": "Kali Arsenal Index",
@@ -264,6 +563,51 @@ STRINGS = {
         "notice_copied_details": "Карточка инструмента скопирована",
         "notice_copy_failed": "Не удалось скопировать: {}",
         "notice_source": "Официальный источник Kali открыт",
+        "workspace_title": "Рабочая область инструмента",
+        "workspace_note": "Безопасные действия с копированием для Kali Linux. Dolphy никогда не запускает атакующие инструменты.",
+        "mode_safe_title": "Безопасный инструмент анализа",
+        "mode_safe_body": "Работает локально с вашими файлами или образами дисков. Изучите документацию и зафиксируйте результаты.",
+        "mode_recon_title": "Инструмент разведки",
+        "mode_recon_body": "Требует явного разрешения. Не проверяйте цель без письменного разрешения.",
+        "mode_offensive_title": "Только справка — запуск заблокирован",
+        "mode_offensive_body": "Справочник не предоставляет установку, команды или запуск. Используйте описание, документацию или защитную альтернативу.",
+        "mode_other_title": "Вспомогательный инструмент — справка",
+        "mode_other_body": "Общий инструмент, инструмент разработки или оборудование. Изучите официальную документацию, чтобы выбрать применение.",
+        "input_label": "Входы",
+        "output_label": "Выходы",
+        "input_safe": "Локальный файл или образ диска",
+        "output_safe": "Задокументированные результаты анализа",
+        "input_recon": "Разрешённый узел или сеть",
+        "output_recon": "Узлы, порты, службы и находки",
+        "input_offensive": "Нет — только справка",
+        "output_offensive": "Описание, возможности и документация",
+        "input_other": "Зависит от инструмента",
+        "output_other": "Зависит от инструмента",
+        "steps_title": "Быстрые шаги",
+        "steps_safe": "1. Подготовьте файл или образ. · 2. Изучите официальную документацию. · 3. Зафиксируйте результаты.",
+        "steps_recon": "1. Определите разрешённый периметр. · 2. Изучите документацию и начните с наименее навязчивой проверки. · 3. Зафиксируйте результаты.",
+        "steps_offensive": "1. Прочитайте описание и возможности. · 2. Изучите защитную альтернативу. · 3. Не запускайте инструмент.",
+        "steps_other": "1. Изучите официальную документацию. · 2. Проверьте требования. · 3. Используйте в изолированной среде.",
+        "actions_title": "Действия",
+        "install_command": "Установка в Kali",
+        "help_command": "Команда справки",
+        "launch_command": "Команда запуска",
+        "example_command": "Пример разведки",
+        "install_note": "Команды только для копирования; Dolphy не устанавливает и не запускает пакеты.",
+        "consent_title": "У меня есть явное разрешение",
+        "consent_body": "Подтверждаю, что цель входит в разрешённый периметр.",
+        "copy_install": "Копировать команду установки",
+        "copy_help": "Копировать команду справки",
+        "copy_launch": "Копировать команду запуска",
+        "copy_example": "Копировать пример разведки",
+        "notice_install": "Команда установки скопирована",
+        "notice_help": "Команда справки скопирована",
+        "notice_launch": "Команда запуска скопирована",
+        "notice_example": "Пример разведки скопирован",
+        "notice_consent_required": "Сначала подтвердите разрешение",
+        "sub_note_fallback": "Изучите официальную документацию.",
+        "locked_actions": "Команды и установка недоступны для этой категории.",
+        "command_note": "Команда только для копирования; Dolphy её не запускает.",
     },
 }
 
@@ -277,6 +621,7 @@ class KaliArsenalIndex(BasePlugin):
         self.limit = SHOW_LIMIT
         self.selected = ""
         self.notice = ""
+        self.authorized = False
 
     def on_plugin_load(self):
         self.add_module(
@@ -382,6 +727,10 @@ class KaliArsenalIndex(BasePlugin):
             return tool.get("sub", "")
         return tool.get("sub_" + lang) or tool.get("sub", "")
 
+    def _sub_note(self, tool):
+        notes = SUB_NOTES.get(str(tool.get("sub", "")), {})
+        return notes.get(self._lang()) or notes.get("en") or self._t("sub_note_fallback")
+
     def _summary(self, tool):
         lang = self._lang()
         if lang == "en":
@@ -473,6 +822,7 @@ class KaliArsenalIndex(BasePlugin):
     def _open_tool(self, name):
         self.selected = str(name)
         self.notice = ""
+        self.authorized = False
         self.navigate("detail")
         self.refresh()
 
@@ -543,6 +893,52 @@ class KaliArsenalIndex(BasePlugin):
             parts.append(self._t("open_homepage") + ": " + tool["homepage"])
         self._copy_text("\n".join(parts), self._t("notice_copied_details"))
 
+    def _package(self, tool):
+        return str(tool.get("slug") or tool.get("name") or "").strip()
+
+    def _install_command(self, tool):
+        return "sudo apt install " + self._package(tool)
+
+    def _help_command(self, tool):
+        return str(tool.get("name", "")) + " --help"
+
+    def _launch_command(self, tool):
+        return str(tool.get("name", ""))
+
+    def _example_command(self, tool):
+        return RECON_EXAMPLES.get(str(tool.get("name", "")), "")
+
+    def _toggle_authorized(self, value):
+        self.authorized = bool(value)
+        self.refresh()
+
+    def _copy_install(self):
+        tool = self._find(self.selected)
+        if tool and self._bucket(tool) in ("safe", "recon"):
+            self._copy_text(self._install_command(tool), self._t("notice_install"))
+
+    def _copy_help(self):
+        tool = self._find(self.selected)
+        if tool and self._bucket(tool) in ("safe", "recon"):
+            self._copy_text(self._help_command(tool), self._t("notice_help"))
+
+    def _copy_launch(self):
+        tool = self._find(self.selected)
+        if tool and self._bucket(tool) == "safe":
+            self._copy_text(self._launch_command(tool), self._t("notice_launch"))
+
+    def _copy_example(self):
+        tool = self._find(self.selected)
+        if not tool or self._bucket(tool) != "recon":
+            return
+        if not self.authorized:
+            self.notice = self._t("notice_consent_required")
+            self.refresh()
+            return
+        example = self._example_command(tool)
+        if example:
+            self._copy_text(example, self._t("notice_example"))
+
     def _open_source(self):
         self._open_url(_DATA["source"], self._t("notice_source"))
 
@@ -564,6 +960,107 @@ class KaliArsenalIndex(BasePlugin):
                 nodes.append(ui.text("• " + item, "bodySmall"))
         else:
             nodes.append(ui.text(self._t("no_features"), "bodySmall"))
+        return ui.card(nodes)
+
+    def _workspace_card(self, ui, tool):
+        bucket = self._bucket(tool)
+        color = "error" if bucket == "offensive" else ("primary" if bucket in ("safe", "recon") else None)
+        return ui.card(
+            [
+                ui.text(self._t("workspace_title"), "titleMedium"),
+                ui.text(self._t("workspace_note"), "bodySmall"),
+                ui.row(
+                    [
+                        ui.chip(self._t("mode_" + bucket + "_title"), True),
+                        ui.chip(self._sub(tool), False),
+                    ],
+                    spacing=6,
+                ),
+                ui.text(self._t("mode_" + bucket + "_body"), "bodySmall", color=color),
+                ui.text(self._sub_note(tool), "bodySmall"),
+                ui.settings_row(self._t("input_label"), self._t("input_" + bucket), "login"),
+                ui.settings_row(self._t("output_label"), self._t("output_" + bucket), "output"),
+            ]
+        )
+
+    def _steps_card(self, ui, tool):
+        bucket = self._bucket(tool)
+        return ui.card(
+            [
+                ui.text(self._t("steps_title"), "titleMedium"),
+                ui.text(self._t("steps_" + bucket), "bodySmall"),
+            ]
+        )
+
+    def _actions_card(self, ui, tool):
+        bucket = self._bucket(tool)
+        nodes = [ui.text(self._t("actions_title"), "titleMedium")]
+        if bucket == "safe":
+            nodes.extend(
+                [
+                    ui.function_row(
+                        self._t("install_command"),
+                        self._install_command(tool),
+                        "download",
+                        on_click=self._copy_install,
+                    ),
+                    ui.function_row(
+                        self._t("help_command"),
+                        self._help_command(tool),
+                        "help",
+                        on_click=self._copy_help,
+                    ),
+                    ui.function_row(
+                        self._t("launch_command"),
+                        self._launch_command(tool),
+                        "play_arrow",
+                        on_click=self._copy_launch,
+                    ),
+                    ui.text(self._t("command_note"), "bodySmall"),
+                    ui.text(self._t("install_note"), "bodySmall"),
+                ]
+            )
+        elif bucket == "recon":
+            nodes.append(
+                ui.checkbox(
+                    self.authorized,
+                    self._toggle_authorized,
+                    self._t("consent_title"),
+                    self._t("consent_body"),
+                )
+            )
+            nodes.extend(
+                [
+                    ui.function_row(
+                        self._t("install_command"),
+                        self._install_command(tool),
+                        "download",
+                        on_click=self._copy_install,
+                    ),
+                    ui.function_row(
+                        self._t("help_command"),
+                        self._help_command(tool),
+                        "help",
+                        on_click=self._copy_help,
+                    ),
+                ]
+            )
+            example = self._example_command(tool)
+            if example:
+                nodes.append(ui.text(self._t("example_command") + ": " + example, "bodySmall"))
+                nodes.append(
+                    ui.button(
+                        self._t("copy_example"),
+                        self._copy_example,
+                        enabled=self.authorized,
+                        style="tonal",
+                        fill_max_width=True,
+                    )
+                )
+            nodes.append(ui.text(self._t("command_note"), "bodySmall"))
+            nodes.append(ui.text(self._t("install_note"), "bodySmall"))
+        else:
+            nodes.append(ui.text(self._t("locked_actions"), "bodySmall"))
         return ui.card(nodes)
 
     def screen_main(self, ui, api, state):
@@ -697,6 +1194,9 @@ class KaliArsenalIndex(BasePlugin):
                 ]
             ),
             self._features_card(ui, tool),
+            self._workspace_card(ui, tool),
+            self._steps_card(ui, tool),
+            self._actions_card(ui, tool),
             ui.card(
                 [
                     ui.text(self._t("package_data"), "titleMedium"),
@@ -708,25 +1208,6 @@ class KaliArsenalIndex(BasePlugin):
                 ]
             ),
         ]
-        bucket = self._bucket(tool)
-        if bucket == "offensive":
-            nodes.append(
-                ui.card(
-                    [
-                        ui.text(self._t("offensive_title"), "titleMedium", color="error"),
-                        ui.text(self._t("offensive_body"), "bodySmall"),
-                    ]
-                )
-            )
-        elif bucket == "recon":
-            nodes.append(
-                ui.card(
-                    [
-                        ui.text(self._t("recon_title"), "titleMedium", color="primary"),
-                        ui.text(self._t("recon_body"), "bodySmall"),
-                    ]
-                )
-            )
         if self._equiv(tool):
             nodes.append(
                 ui.card(
