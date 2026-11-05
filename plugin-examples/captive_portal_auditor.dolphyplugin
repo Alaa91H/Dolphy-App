@@ -8,16 +8,16 @@ import urllib.parse
 
 __id__ = "captive_portal_auditor"
 __name__ = "Captive Portal Auditor"
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __author__ = "Dolphy"
-__description__ = "Professional captive portal audit with network selection, Wi-Fi security scan, TLS and web hardening checks"
+__description__ = "Professional captive portal and Wi-Fi audit toolkit: Kismet-style survey, rogue AP detection, testssl/WhatWeb-class checks and Nmap-style gateway ports"
 __icon__ = "rounded:wifi"
 __permissions__ = ["network", "wifi", "files"]
 
 EXPORT_KEY = "dolphy.net.captive.audit"
 SERVICE_ID = "net.captive"
 REPORT_PATH = "reports/captive_portal_audit.txt"
-UA = "Dolphy-CaptivePortalAuditor/1.1"
+UA = "Dolphy-CaptivePortalAuditor/1.2"
 MAX_BODY = 300000
 
 PROBES = (
@@ -32,6 +32,52 @@ GARDEN = (
 )
 REDIRECT_PARAMS = ("redirect", "url", "next", "continue", "return", "dest", "target")
 CSRF_HINTS = re.compile(r"csrf|xsrf|token|nonce|authenticity", re.I)
+
+OUI_VENDORS = {
+    "00:00:0C": "Cisco",
+    "00:1A:2B": "Cisco",
+    "00:0C:29": "VMware",
+    "00:50:56": "VMware",
+    "B8:27:EB": "Raspberry Pi",
+    "DC:A6:32": "Raspberry Pi",
+    "18:FE:34": "Espressif",
+    "24:0A:C4": "Espressif",
+    "84:0D:8E": "Espressif",
+    "50:C7:BF": "TP-Link",
+    "98:DA:C4": "TP-Link",
+    "B0:BE:76": "TP-Link",
+    "00:24:B2": "Netgear",
+    "20:4E:7F": "Netgear",
+    "A0:40:A0": "Netgear",
+    "00:1E:58": "D-Link",
+    "1C:7E:E5": "D-Link",
+    "48:46:FB": "Huawei",
+    "70:72:3C": "Huawei",
+    "00:E0:FC": "Huawei",
+    "8C:53:C3": "Xiaomi",
+    "64:09:80": "Xiaomi",
+    "78:11:DC": "Xiaomi",
+    "F0:18:98": "Apple",
+    "AC:BC:32": "Apple",
+    "3C:07:54": "Apple",
+    "00:1F:3B": "Intel",
+    "00:21:6A": "Intel",
+}
+
+GATEWAY_PORTS = (
+    (21, "ftp"),
+    (22, "ssh"),
+    (23, "telnet"),
+    (53, "dns"),
+    (80, "http"),
+    (443, "https"),
+    (445, "smb"),
+    (7547, "tr069"),
+    (8000, "http-alt"),
+    (8080, "http-alt"),
+    (8443, "https-alt"),
+    (8888, "http-alt"),
+)
 
 FINDINGS = {
     "portal": ("info", ""),
@@ -61,6 +107,17 @@ FINDINGS = {
     "trace_enabled": ("low", "fix_methods"),
     "js_risky": ("medium", "fix_js"),
     "cache_missing": ("low", "fix_cache"),
+    "rogue_bssid": ("high", "fix_rogue_ap"),
+    "ssid_downgrade": ("high", "fix_rogue_ap"),
+    "pmf_missing": ("medium", "fix_pmf"),
+    "wpa3_transition": ("info", "fix_wpa3"),
+    "cert_selfsigned": ("high", "fix_cert"),
+    "cert_expiring": ("medium", "fix_cert"),
+    "csp_weak": ("medium", "fix_csp"),
+    "hsts_weak": ("medium", "fix_hsts"),
+    "gateway_admin_exposed": ("high", "fix_gateway"),
+    "dhcp_mismatch": ("medium", "fix_dhcp"),
+    "dns_public": ("info", "fix_dns"),
 }
 SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 
@@ -551,6 +608,175 @@ for _lang, _extra in {
 }.items():
     STRINGS[_lang].update(_extra)
 
+for _lang, _extra in {
+    "ar": {
+        "tools_card": "أدوات احترافية",
+        "survey_card": "استطلاع Wi-Fi",
+        "survey_summary": "{} نقطة وصول · {} قناة · {} مفتوحة · {} WPS",
+        "gateway_card": "منافذ البوابة",
+        "no_open_ports": "لا منافذ مفتوحة في القائمة",
+        "risk_score": "درجة الخطورة",
+        "fingerprint_card": "بصمة الخادم",
+        "channel": "القناة",
+        "width": "العرض",
+        "vendor": "الشركة",
+        "pmf": "PMF/802.11w",
+        "pmf_on": "مفعّل",
+        "pmf_off": "غير مفعّل",
+        "wps": "WPS",
+        "rogue_count": "AP مشبوه",
+        "open_ports": "منافذ مفتوحة",
+        "waf": "WAF/CDN",
+        "framework": "التقنية",
+        "dhcp_card": "DHCP/DNS",
+        "dhcp_server": "خادم DHCP",
+        "dns_servers": "خوادم DNS",
+        "cert_days": "أيام صلاحية الشهادة",
+        "cert_subject": "موضوع الشهادة",
+        "gateway_scan_hint": "فحص اتصال فقط لأشهر منافذ البوابة، بلا استغلال.",
+        "tools_note": "أدوات استطلاع وتدقيق دفاعية على شبكتك المصرّح بها فقط.",
+        "find_rogue_bssid": "BSSID/شركة غير متوقعة لنفس SSID",
+        "find_ssid_downgrade": "هبوط أمان شبكة معروفة (نسخة مفتوحة)",
+        "find_pmf_missing": "حماية إطارات الإدارة (PMF) غير مفعّلة",
+        "find_wpa3_transition": "شبكة في وضع WPA3 الانتقالي",
+        "find_cert_selfsigned": "شهادة موقّعة ذاتيًا",
+        "find_cert_expiring": "شهادة تنتهي قريبًا",
+        "find_csp_weak": "سياسة CSP ضعيفة",
+        "find_hsts_weak": "HSTS ضعيف أو ناقص",
+        "find_gateway_admin_exposed": "خدمة إدارة حساسة مكشوفة على البوابة",
+        "find_dhcp_mismatch": "خادم DHCP لا يطابق البوابة",
+        "find_dns_public": "DNS خارجي عام (تحقق من الاعتراض)",
+        "fix_rogue_ap": "تحقق من BSSID المتوقع، استخدم WPA3/802.1X، وافحص نقاط الوصول غير المصرّح بها.",
+        "fix_pmf": "فعّل 802.11w/PMF (اختياري أو إلزامي) على الراوتر والأجهزة.",
+        "fix_wpa3": "أكمل الانتقال إلى WPA3-SAE وفعّل PMF؛ أبقِ WPA2 فقط للأجهزة القديمة.",
+        "fix_csp": "أزل unsafe-inline/unsafe-eval واستخدم nonce/hash وCSP صارمة.",
+        "fix_hsts": "اضبط HSTS على max-age=31536000; includeSubDomains; preload.",
+        "fix_gateway": "عطّل Telnet/FTP/SMB/TR-069 من الإنترنت، وحدّث الراوتر، وقيّد الإدارة بالشبكة المحلية.",
+        "fix_dhcp": "تحقق من خادم DHCP الرسمي وعطّل أي خادم DHCP غير مصرّح به.",
+        "fix_dns": "استخدم DNS موثوقًا (DoH/DoT) أو DNS الراوتر، وتحقق من عدم إعادة توجيه الاستعلامات.",
+        "check_survey": "استطلاع Wi-Fi",
+        "check_rogue_ap": "كشف AP مزيّف",
+        "check_pmf": "PMF/802.11w",
+        "check_cert": "صلاحية الشهادة",
+        "check_gateway_ports": "منافذ البوابة",
+        "check_dhcp": "DHCP/DNS",
+        "check_fingerprint": "بصمة الخادم",
+        "check_csp": "سياسة CSP",
+        "check_hsts": "HSTS",
+    },
+    "en": {
+        "tools_card": "Professional tools",
+        "survey_card": "Wi-Fi survey",
+        "survey_summary": "{} APs · {} channels · {} open · {} WPS",
+        "gateway_card": "Gateway ports",
+        "no_open_ports": "No open ports in the list",
+        "risk_score": "Risk score",
+        "fingerprint_card": "Server fingerprint",
+        "channel": "Channel",
+        "width": "Width",
+        "vendor": "Vendor",
+        "pmf": "PMF/802.11w",
+        "pmf_on": "on",
+        "pmf_off": "off",
+        "wps": "WPS",
+        "rogue_count": "Suspicious APs",
+        "open_ports": "Open ports",
+        "waf": "WAF/CDN",
+        "framework": "Framework",
+        "dhcp_card": "DHCP/DNS",
+        "dhcp_server": "DHCP server",
+        "dns_servers": "DNS servers",
+        "cert_days": "Certificate days left",
+        "cert_subject": "Certificate subject",
+        "gateway_scan_hint": "Connect-only probe of common gateway ports, no exploitation.",
+        "tools_note": "Defensive survey/audit tools for your authorized network only.",
+        "find_rogue_bssid": "Unexpected BSSID/vendor for the same SSID",
+        "find_ssid_downgrade": "Security downgrade of a known SSID (open clone)",
+        "find_pmf_missing": "Management Frame Protection (PMF) is off",
+        "find_wpa3_transition": "Network in WPA3 transition mode",
+        "find_cert_selfsigned": "Self-signed certificate",
+        "find_cert_expiring": "Certificate expiring soon",
+        "find_csp_weak": "Weak Content-Security-Policy",
+        "find_hsts_weak": "Weak or incomplete HSTS",
+        "find_gateway_admin_exposed": "Sensitive admin service exposed on the gateway",
+        "find_dhcp_mismatch": "DHCP server does not match the gateway",
+        "find_dns_public": "Public external DNS (verify interception)",
+        "fix_rogue_ap": "Verify the expected BSSID, use WPA3/802.1X and audit unauthorized access points.",
+        "fix_pmf": "Enable 802.11w/PMF (optional or required) on the router and clients.",
+        "fix_wpa3": "Finish the move to WPA3-SAE and enable PMF; keep WPA2 only for legacy devices.",
+        "fix_csp": "Remove unsafe-inline/unsafe-eval and use nonce/hash based strict CSP.",
+        "fix_hsts": "Set HSTS to max-age=31536000; includeSubDomains; preload.",
+        "fix_gateway": "Disable Telnet/FTP/SMB/TR-069 from the WAN, update the router and restrict admin access to LAN.",
+        "fix_dhcp": "Verify the legitimate DHCP server and block any unauthorized DHCP server.",
+        "fix_dns": "Use a trusted DNS (DoH/DoT) or the router resolver, and verify queries are not redirected.",
+        "check_survey": "Wi-Fi survey",
+        "check_rogue_ap": "Rogue AP detection",
+        "check_pmf": "PMF/802.11w",
+        "check_cert": "Certificate validity",
+        "check_gateway_ports": "Gateway ports",
+        "check_dhcp": "DHCP/DNS",
+        "check_fingerprint": "Server fingerprint",
+        "check_csp": "CSP policy",
+        "check_hsts": "HSTS",
+    },
+    "ru": {
+        "tools_card": "Профессиональные инструменты",
+        "survey_card": "Обзор Wi-Fi",
+        "survey_summary": "{} AP · {} каналов · {} открытых · {} WPS",
+        "gateway_card": "Порты шлюза",
+        "no_open_ports": "Открытых портов нет",
+        "risk_score": "Оценка риска",
+        "fingerprint_card": "Отпечаток сервера",
+        "channel": "Канал",
+        "width": "Ширина",
+        "vendor": "Производитель",
+        "pmf": "PMF/802.11w",
+        "pmf_on": "вкл",
+        "pmf_off": "выкл",
+        "wps": "WPS",
+        "rogue_count": "Подозрительные AP",
+        "open_ports": "Открытые порты",
+        "waf": "WAF/CDN",
+        "framework": "Технология",
+        "dhcp_card": "DHCP/DNS",
+        "dhcp_server": "DHCP-сервер",
+        "dns_servers": "DNS-серверы",
+        "cert_days": "Дней до истечения сертификата",
+        "cert_subject": "Субъект сертификата",
+        "gateway_scan_hint": "Только проверка подключения к типовым портам шлюза, без эксплуатации.",
+        "tools_note": "Защитные инструменты только для вашей разрешённой сети.",
+        "find_rogue_bssid": "Неожиданный BSSID/производитель для того же SSID",
+        "find_ssid_downgrade": "Понижение защиты известного SSID (открытый клон)",
+        "find_pmf_missing": "Защита управляющих кадров (PMF) отключена",
+        "find_wpa3_transition": "Сеть в переходном режиме WPA3",
+        "find_cert_selfsigned": "Самоподписанный сертификат",
+        "find_cert_expiring": "Сертификат скоро истекает",
+        "find_csp_weak": "Слабая Content-Security-Policy",
+        "find_hsts_weak": "Слабый или неполный HSTS",
+        "find_gateway_admin_exposed": "Чувствительная служба администрирования открыта на шлюзе",
+        "find_dhcp_mismatch": "DHCP-сервер не совпадает со шлюзом",
+        "find_dns_public": "Публичный внешний DNS (проверьте перехват)",
+        "fix_rogue_ap": "Проверяйте ожидаемый BSSID, используйте WPA3/802.1X и аудит неавторизованных точек доступа.",
+        "fix_pmf": "Включите 802.11w/PMF (опционально или обязательно) на роутере и клиентах.",
+        "fix_wpa3": "Завершите переход на WPA3-SAE и включите PMF; WPA2 оставьте только для старых устройств.",
+        "fix_csp": "Уберите unsafe-inline/unsafe-eval и используйте strict CSP с nonce/hash.",
+        "fix_hsts": "Задайте HSTS: max-age=31536000; includeSubDomains; preload.",
+        "fix_gateway": "Отключите Telnet/FTP/SMB/TR-069 из WAN, обновите роутер и ограничьте администрирование LAN.",
+        "fix_dhcp": "Проверьте легитимный DHCP-сервер и заблокируйте неавторизованные DHCP-серверы.",
+        "fix_dns": "Используйте доверенный DNS (DoH/DoT) или резолвер роутера и проверьте отсутствие перехвата.",
+        "check_survey": "Обзор Wi-Fi",
+        "check_rogue_ap": "Обнаружение rogue AP",
+        "check_pmf": "PMF/802.11w",
+        "check_cert": "Срок действия сертификата",
+        "check_gateway_ports": "Порты шлюза",
+        "check_dhcp": "DHCP/DNS",
+        "check_fingerprint": "Отпечаток сервера",
+        "check_csp": "Политика CSP",
+        "check_hsts": "HSTS",
+    },
+}.items():
+    STRINGS[_lang].update(_extra)
+
 
 def device_language():
     try:
@@ -634,6 +860,10 @@ class CaptivePortalAuditor(BasePlugin):
         self._report = ""
         self._status = ""
         self._log = ""
+        self._gateway_ports = []
+        self._fingerprint = {}
+        self._dhcp = {}
+        self._survey_summary = {}
         self._target_ssid = ""
         self._saved_networks = []
         self._networks = []
@@ -693,6 +923,18 @@ class CaptivePortalAuditor(BasePlugin):
         self._gateway = str(info.get("gateway", "") or "")
         self._meta["ip"] = str(info.get("ip", "") or "")
         self._meta["dns1"] = str(info.get("dns1", "") or "")
+        self._dhcp = {}
+        try:
+            detail = json.loads(str(self.api.getAndroid().wifiDetailedInfoJson()))
+            if isinstance(detail, dict) and detail:
+                self._dhcp = detail
+                self._gateway = str(detail.get("gateway", "") or self._gateway)
+                self._meta["dns1"] = str(detail.get("dns1", "") or self._meta.get("dns1", ""))
+                self._meta["dns2"] = str(detail.get("dns2", "") or "")
+                self._meta["dhcp_server"] = str(detail.get("serverAddress", "") or "")
+                self._meta["netmask"] = str(detail.get("netmask", "") or "")
+        except Exception:
+            pass
 
     def _portal_url(self):
         text = str(self._portal_input or "").strip()
@@ -884,6 +1126,40 @@ class CaptivePortalAuditor(BasePlugin):
             return "http://" + self._gateway + "/"
         return ""
 
+    def _channel_of(self, frequency):
+        freq = int(frequency or 0)
+        if 2412 <= freq <= 2484:
+            return max(1, (freq - 2407) // 5)
+        if 5000 <= freq < 5900:
+            return max(1, (freq - 5000) // 5)
+        if freq >= 5955:
+            return max(1, (freq - 5950) // 5)
+        return 0
+
+    def _width_of(self, width):
+        return {0: "20", 1: "40", 2: "80", 3: "160", 4: "80+80"}.get(int(width), "?")
+
+    def _vendor_of(self, bssid):
+        return OUI_VENDORS.get(str(bssid or "").upper()[:8], "unknown")
+
+    def _locally_administered(self, bssid):
+        try:
+            return bool(int(str(bssid).split(":")[0], 16) & 0x02)
+        except Exception:
+            return False
+
+    def _risk_of(self, net):
+        score = {"open": 40, "wep": 50, "wpa": 25, "wpa2": 5, "wpa3": 0, "enterprise": 0, "owe": 5}.get(net.get("security"), 10)
+        if net.get("wps"):
+            score += 15
+        if net.get("tkip"):
+            score += 10
+        if net.get("security") in ("wpa2", "wpa3") and not net.get("pmf"):
+            score += 10
+        if net.get("locally_administered"):
+            score += 15
+        return min(100, score)
+
     def _security_of(self, capabilities):
         caps = str(capabilities or "").upper()
         if not caps:
@@ -930,15 +1206,25 @@ class CaptivePortalAuditor(BasePlugin):
                 continue
             seen.add(identity)
             frequency = int(row.get("frequency", 0) or 0)
+            caps = str(row.get("capabilities", "") or "")
+            width = int(row.get("channelWidth", -1) or -1)
             networks.append(
                 {
                     "ssid": ssid,
                     "bssid": bssid,
                     "rssi": int(row.get("rssi", -100) or -100),
                     "frequency": frequency,
-                    "capabilities": str(row.get("capabilities", "") or ""),
-                    "security": self._security_of(row.get("capabilities", "")),
+                    "channelWidth": width,
+                    "capabilities": caps,
+                    "security": self._security_of(caps),
                     "band": "2.4" if 2400 <= frequency <= 2500 else ("5" if 5000 <= frequency < 5900 else ("6" if frequency >= 5900 else "")),
+                    "channel": self._channel_of(frequency),
+                    "width": self._width_of(width),
+                    "vendor": self._vendor_of(bssid),
+                    "pmf": ("MFPC" in caps.upper() or "MFPR" in caps.upper()),
+                    "wps": "WPS" in caps.upper(),
+                    "tkip": "TKIP" in caps.upper(),
+                    "locally_administered": self._locally_administered(bssid),
                     "current": bool(bssid) and bssid == self._bssid,
                     "saved": False,
                 }
@@ -962,11 +1248,20 @@ class CaptivePortalAuditor(BasePlugin):
                             "capabilities": "",
                             "security": "unknown",
                             "band": "",
+                            "channel": 0,
+                            "width": "?",
+                            "vendor": "unknown",
+                            "pmf": False,
+                            "wps": False,
+                            "tkip": False,
+                            "locally_administered": False,
                             "current": ssid == self._ssid,
                             "saved": True,
                         }
                     )
         networks.sort(key=lambda net: net["rssi"], reverse=True)
+        for net in networks:
+            net["risk"] = self._risk_of(net)
         self._networks = networks
         self._scan_at = time.strftime("%H:%M:%S")
         self._security = ""
@@ -991,16 +1286,32 @@ class CaptivePortalAuditor(BasePlugin):
         if current:
             self._security = current.get("security", "unknown")
         for net in self._networks:
-            if "WPS" in str(net.get("capabilities", "")).upper():
+            if net.get("wps"):
                 self._add("wps_enabled", net["ssid"])
                 break
+        if current:
+            caps = str(current.get("capabilities", "")).upper()
+            if current.get("security") in ("wpa2", "wpa3") and not current.get("pmf"):
+                self._add("pmf_missing", self._ssid)
+            if "SAE" in caps and ("PSK" in caps or "WPA2" in caps):
+                self._add("wpa3_transition", self._ssid)
         by_ssid = {}
         for net in self._networks:
             by_ssid.setdefault(net["ssid"], []).append(net)
+        rogue = 0
         for ssid, group in by_ssid.items():
             kinds = {net["security"] for net in group}
+            vendors = {net["vendor"] for net in group if net["vendor"] != "unknown"}
+            if len(vendors) > 1:
+                self._add("rogue_bssid", ssid + " · " + ", ".join(sorted(vendors)))
+                rogue += 1
+            if any(net.get("locally_administered") for net in group):
+                self._add("rogue_bssid", ssid + " · locally administered BSSID")
+                rogue += 1
             if "open" in kinds and kinds & {"wpa", "wpa2", "wpa3", "enterprise"}:
                 self._add("evil_twin", ssid)
+                self._add("ssid_downgrade", ssid)
+                rogue += 1
         for net in self._networks:
             if net["security"] == "wep":
                 self._add("wep_network", net["ssid"])
@@ -1011,6 +1322,18 @@ class CaptivePortalAuditor(BasePlugin):
                 break
         if self._security == "open":
             self._add("open_network", self._ssid)
+        pmf_ok = not (current and current.get("security") in ("wpa2", "wpa3") and not current.get("pmf"))
+        self._check("check_pmf", pmf_ok, "on" if (current and current.get("pmf")) else "off")
+        self._survey_summary = {
+            "aps": len(self._networks),
+            "channels": len({net["channel"] for net in self._networks if net.get("channel")}),
+            "open": sum(1 for net in self._networks if net.get("security") == "open"),
+            "wps": sum(1 for net in self._networks if net.get("wps")),
+            "rogue": rogue,
+            "strongest": max([net.get("rssi", -100) for net in self._networks] or [-100]),
+        }
+        self._check("check_survey", bool(self._networks), "%d AP · %d channels" % (len(self._networks), self._survey_summary["channels"]))
+        self._check("check_rogue_ap", rogue == 0, "%d suspicious" % rogue)
         self._check("check_networks", bool(self._networks), "%d network(s) · %s" % (len(self._networks), self._scan_at))
 
     def _origin(self, portal):
@@ -1053,6 +1376,18 @@ class CaptivePortalAuditor(BasePlugin):
         cipher = str((self._tls or {}).get("cipher", "")).upper()
         if cipher and any(token in cipher for token in ("RC4", "3DES", "DES_", "NULL", "MD5")):
             self._add("weak_cipher", cipher)
+        tls = self._tls or {}
+        subject = str(tls.get("subject", "") or "")
+        issuer = str(tls.get("issuer", "") or "")
+        cert_bad = False
+        if subject and issuer and subject == issuer:
+            self._add("cert_selfsigned", subject[:160])
+            cert_bad = True
+        days = self._cert_days(tls.get("expires", ""))
+        if days is not None and 0 <= days <= 30:
+            self._add("cert_expiring", "%d day(s) left" % days)
+            cert_bad = True
+        self._check("check_cert", not cert_bad, ("%d days left" % days) if days is not None else "certificate parsed")
 
     def _check_exposures(self, portal):
         origin = self._origin(portal)
@@ -1116,6 +1451,103 @@ class CaptivePortalAuditor(BasePlugin):
         self._check("check_cache", safe or not has_login, cache or "missing")
         if has_login and not safe:
             self._add("cache_missing", cache or "no Cache-Control")
+
+    def _probe_port(self, host, port, timeout=350):
+        socket = None
+        try:
+            from java import jclass
+
+            socket = jclass("java.net.Socket")()
+            socket.connect(jclass("java.net.InetSocketAddress")(str(host), int(port)), int(timeout))
+            return True
+        except Exception:
+            return False
+        finally:
+            if socket is not None:
+                try:
+                    socket.close()
+                except Exception:
+                    pass
+
+    def _scan_gateway(self):
+        if not self._consent or not self._gateway:
+            self._check("check_gateway_ports", False, "no gateway")
+            return
+        open_ports = []
+        for port, _label in GATEWAY_PORTS:
+            if self._probe_port(self._gateway, port):
+                open_ports.append(port)
+        self._gateway_ports = open_ports
+        risky = [port for port in open_ports if port in (21, 23, 445, 7547)]
+        self._check("check_gateway_ports", not risky, ", ".join(str(port) for port in open_ports) or "none")
+        if risky:
+            self._add("gateway_admin_exposed", ", ".join(str(port) for port in risky))
+
+    def _private_ip(self, address):
+        try:
+            parts = [int(part) for part in str(address).split(".")]
+            if len(parts) != 4:
+                return True
+            first, second = parts[0], parts[1]
+            return first == 10 or (first == 172 and 16 <= second <= 31) or (first == 192 and second == 168) or first == 127 or (first == 169 and second == 254)
+        except Exception:
+            return True
+
+    def _analyze_dhcp(self):
+        dns = [str(self._meta.get("dns1", "") or ""), str(self._meta.get("dns2", "") or "")]
+        dns = [item for item in dns if item and item != "0.0.0.0"]
+        server = str(self._meta.get("dhcp_server", "") or "")
+        mismatch = bool(server and self._gateway and server != self._gateway)
+        public = [item for item in dns if not self._private_ip(item)]
+        self._check("check_dhcp", not mismatch, ("server " + server) if server else "no DHCP detail")
+        if mismatch:
+            self._add("dhcp_mismatch", server + " vs gateway " + self._gateway)
+        if public:
+            self._add("dns_public", ", ".join(public))
+        self._meta["dns_public"] = public
+
+    def _fingerprint_page(self, headers, body):
+        server = str(headers.get("server", "") or "")
+        powered = str(headers.get("x-powered-by", "") or "")
+        waf = []
+        for key, name in (("cf-ray", "Cloudflare"), ("x-sucuri-id", "Sucuri"), ("x-akamai-transformed", "Akamai"), ("x-iinfo", "Imperva"), ("x-cache", "CDN cache"), ("via", "Proxy/CDN")):
+            if headers.get(key):
+                waf.append(name)
+        text = str(body or "").lower()
+        framework = []
+        for marker, name in (("wp-content", "WordPress"), ("drupal", "Drupal"), ("joomla", "Joomla"), ("__viewstate", "ASP.NET"), ("csrf-token", "Laravel"), ("django", "Django"), ("_next/static", "Next.js"), ("data-reactroot", "React")):
+            if marker in text:
+                framework.append(name)
+        generator = ""
+        match = re.search(r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']([^"\']+)', str(body or ""), re.I)
+        if match:
+            generator = match.group(1)[:80]
+        self._fingerprint = {
+            "server": server,
+            "powered": powered,
+            "waf": sorted(set(waf)),
+            "framework": sorted(set(framework)),
+            "generator": generator,
+        }
+        found = bool(server or powered or waf or framework or generator)
+        self._check("check_fingerprint", found, " · ".join([item for item in [server, powered, generator] if item] + sorted(set(waf)))[:160] or "no fingerprint")
+
+    def _cert_days(self, text):
+        value = str(text or "").strip()
+        if not value:
+            return None
+        try:
+            from email.utils import parsedate_to_datetime
+
+            return int((parsedate_to_datetime(value).timestamp() - time.time()) // 86400)
+        except Exception:
+            pass
+        for fmt in ("%a %b %d %H:%M:%S %Z %Y", "%a %b %d %H:%M:%S %Z%z %Y", "%Y-%m-%dT%H:%M:%SZ"):
+            try:
+                return int((time.mktime(time.strptime(value, fmt)) - time.time()) // 86400)
+            except Exception:
+                pass
+        return None
 
     def _pick_target(self, ssid):
         def callback(value=None):
@@ -1275,6 +1707,9 @@ class CaptivePortalAuditor(BasePlugin):
         self._analyze_reflection(page_url)
         self._analyze_garden()
         self._analyze_tls(portal)
+        self._analyze_dhcp()
+        self._scan_gateway()
+        self._fingerprint_page(headers, body)
         self._check_exposures(page_url)
         self._check_cors(page_url)
         self._check_methods(page_url)
@@ -1310,6 +1745,18 @@ class CaptivePortalAuditor(BasePlugin):
         self._check("check_headers", not missing, ", ".join(missing))
         if missing:
             self._add("headers_missing", ", ".join(missing))
+        csp = str(headers.get("content-security-policy", "") or "")
+        csp_weak = bool(csp) and ("unsafe-inline" in csp.lower() or "unsafe-eval" in csp.lower())
+        self._check("check_csp", bool(csp) and not csp_weak, csp[:120] or "missing")
+        if csp_weak:
+            self._add("csp_weak", csp[:180])
+        if is_https:
+            hsts = str(headers.get("strict-transport-security", "") or "")
+            age = re.search(r"max-age=(\d+)", hsts, re.I)
+            hsts_weak = bool(hsts) and (not age or int(age.group(1)) < 15552000 or "includesubdomains" not in hsts.lower())
+            self._check("check_hsts", bool(hsts) and not hsts_weak, hsts[:120] or "missing")
+            if hsts_weak:
+                self._add("hsts_weak", hsts[:180])
 
     def _analyze_cookies(self, raw_headers, is_https):
         cookies = parse_cookies(raw_headers)
@@ -1372,6 +1819,10 @@ class CaptivePortalAuditor(BasePlugin):
 
     # ---------------------------------------------------------------- output
 
+    def _risk_score(self):
+        counts = self._counts()
+        return min(100, counts["critical"] * 25 + counts["high"] * 15 + counts["medium"] * 8 + counts["low"] * 3)
+
     def _counts(self):
         counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
         for item in self._findings:
@@ -1392,6 +1843,7 @@ class CaptivePortalAuditor(BasePlugin):
             self._t("target") + ": " + (self._target_ssid or "?"),
             self._t("security") + ": " + self._t("security_" + (self._security or "unknown")),
             self._t("networks_count", len(self._networks)),
+            self._t("risk_score") + ": " + str(self._risk_score()) + "/100",
             "",
             self._t("findings") + ": " + self._t("found_summary", len(self._findings), counts["critical"], counts["high"]),
         ]
@@ -1406,6 +1858,21 @@ class CaptivePortalAuditor(BasePlugin):
         for check in self._checks:
             mark = "OK" if check.get("ok") else "WARN"
             lines.append(" [" + mark + "] " + self._t(check["key"]) + (": " + check["note"] if check.get("note") else ""))
+        if self._networks:
+            lines.extend(["", self._t("survey_card") + ":"])
+            for net in self._networks[:12]:
+                lines.append(
+                    " %s · ch %s (%s GHz, %s MHz) · %s · %s · risk %s"
+                    % (net.get("ssid", "?"), net.get("channel", 0), net.get("band", "?"), net.get("width", "?"), self._t("security_" + net.get("security", "unknown")), net.get("vendor", "unknown"), net.get("risk", 0))
+                )
+        if self._gateway_ports:
+            lines.append(self._t("open_ports") + ": " + ", ".join(str(port) for port in self._gateway_ports))
+        if self._fingerprint:
+            fp = [item for item in [self._fingerprint.get("server", ""), self._fingerprint.get("powered", ""), self._fingerprint.get("generator", "")] if item] + list(self._fingerprint.get("waf", []))
+            if fp:
+                lines.append(self._t("fingerprint_card") + ": " + " · ".join(fp))
+        if self._meta.get("dhcp_server") or self._meta.get("dns2"):
+            lines.append(self._t("dhcp_server") + ": " + str(self._meta.get("dhcp_server", "?")) + " · " + self._t("dns_servers") + ": " + ", ".join([item for item in [self._meta.get("dns1", ""), self._meta.get("dns2", "")] if item]))
         if self._meta.get("garden"):
             lines.append("")
             lines.append(self._t("check_garden") + ": " + "; ".join(self._meta["garden"]))
@@ -1439,6 +1906,10 @@ class CaptivePortalAuditor(BasePlugin):
                         "target": self._target_ssid,
                         "security": self._security,
                         "scanned": len(self._networks),
+                        "risk": self._risk_score(),
+                        "rogue": self._survey_summary.get("rogue", 0),
+                        "openPorts": self._gateway_ports,
+                        "fingerprint": self._fingerprint,
                         "findings": [{"id": item["id"], "severity": item["severity"]} for item in self._findings],
                         "counts": counts,
                         "generatedAt": int(time.time()),
@@ -1517,8 +1988,19 @@ class CaptivePortalAuditor(BasePlugin):
         rows = []
         for net in self._networks:
             detail = self._t("security_" + net.get("security", "unknown")) + " · " + str(net.get("rssi", -100)) + " dBm"
+            if net.get("channel"):
+                detail += " · ch " + str(net["channel"])
             if net.get("band"):
-                detail += " · " + net["band"] + " GHz"
+                detail += " (" + net["band"] + " GHz, " + str(net.get("width", "?")) + " MHz)"
+            if net.get("vendor", "unknown") != "unknown":
+                detail += " · " + net["vendor"]
+            if net.get("wps"):
+                detail += " · WPS"
+            if net.get("pmf"):
+                detail += " · PMF"
+            elif net.get("security") in ("wpa2", "wpa3"):
+                detail += " · no PMF"
+            detail += " · risk " + str(net.get("risk", 0))
             if net.get("current"):
                 detail += " · " + self._t("current_connected")
             rows.append(ui.settings_row(net["ssid"], detail, "wifi", on_click=self._pick_target(net["ssid"])))
@@ -1672,6 +2154,22 @@ class CaptivePortalAuditor(BasePlugin):
         if self._target_ssid and self._ssid and self._target_ssid != self._ssid:
             body.append(ui.card([ui.text(self._t("target_mismatch", self._target_ssid, self._ssid), "bodySmall")]))
         body.extend([network_controls, controls])
+        survey = self._survey_summary or {}
+        tools_rows = [
+            ui.settings_row(
+                self._t("survey_card"),
+                self._t("survey_summary", survey.get("aps", 0), survey.get("channels", 0), survey.get("open", 0), survey.get("wps", 0)),
+                "radar",
+            ),
+            ui.settings_row(self._t("rogue_count"), str(survey.get("rogue", 0)), "warning"),
+            ui.settings_row(self._t("gateway_card"), ", ".join(str(port) for port in self._gateway_ports) or self._t("no_open_ports"), "router"),
+            ui.settings_row(self._t("risk_score"), str(self._risk_score()) + "/100", "speed"),
+        ]
+        fingerprint = self._fingerprint or {}
+        fp = [item for item in [fingerprint.get("server", ""), fingerprint.get("powered", ""), fingerprint.get("generator", "")] if item] + list(fingerprint.get("waf", []))
+        if fp:
+            tools_rows.append(ui.settings_row(self._t("fingerprint_card"), " · ".join(fp)[:120], "travel_explore"))
+        body.append(ui.card([ui.text(self._t("tools_card"), "titleMedium"), ui.segmented_list(tools_rows), ui.text(self._t("tools_note"), "bodySmall")]))
         if self._busy:
             body.append(ui.linear_progress(None))
             body.append(ui.text(self._t("busy"), "bodySmall"))
@@ -1779,6 +2277,10 @@ class CaptivePortalAuditor(BasePlugin):
             "target": self._target_ssid,
             "security": self._security,
             "scanned": len(self._networks),
+            "risk": self._risk_score(),
+            "rogue": self._survey_summary.get("rogue", 0),
+            "open_ports": self._gateway_ports,
+            "fingerprint": self._fingerprint,
             "findings": len(self._findings),
             "counts": counts,
             "message": self._t("service_ready"),

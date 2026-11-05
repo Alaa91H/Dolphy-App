@@ -1489,6 +1489,9 @@
     <string name="plugin_catalog_version_available">Доступно обновление до %1$s</string>
     <string name="plugin_catalog_installed_version">Установлено %1$s</string>
     <string name="plugin_catalog_desc_wifi_scanner">Wi-Fi-сканер в стиле Material 3: текущее подключение, сети рядом, защита, канал и уровень сигнала.</string>
+    <string name="plugin_catalog_desc_wordlist">Студия словарей WPA с учётом имени сети: запуск одним нажатием, сохранённые пароли (root/Shizuku) и общий список для других плагинов.</string>
+    <string name="plugin_catalog_desc_identity_guard">Профессиональный аудит сетевой идентичности и смена MAC Wi-Fi: видимые приложениям идентификаторы, статус рандомизации по сетям и проверенная попытка смены MAC (без IMEI/SN).</string>
+    <string name="plugin_catalog_desc_captive">Профессиональный аудит captive-портала и Wi-Fi: обзор сетей, обнаружение rogue AP, PMF/WPA3, TLS и сертификаты, отпечаток сервера/WAF, порты шлюза, DHCP/DNS и отчёт с оценкой риска.</string>
     <string name="plugin_catalog_desc_ble_scanner">BLE-сканер: устройства рядом с оценкой расстояния, типом рекламы и данными производителя.</string>
     <string name="plugin_catalog_desc_radio_lab">Диагностика Bluetooth и Wi-Fi с живым BLE-сканированием и списком устройств в реальном времени.</string>
     <string name="plugin_catalog_desc_integration_hooks">Пример интеграции: плавающая кнопка и перехват передачи ИК внутри экранов Dolphy.</string>

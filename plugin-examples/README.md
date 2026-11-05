@@ -34,7 +34,7 @@ Plugins are executable user-provided code with broad access to application and d
 | [BadUSB Studio](badusb.dolphyplugin) | Other | `usb` | DuckyScript 3.0 payload library, validated editor and runner over Bluetooth HID or a rooted USB gadget. |
 | [Wi-Fi Wordlist Lab](wifi_wordlist_lab.dolphyplugin) | Plugins | `files`, `wifi` | SSID-aware WPA wordlist studio with one-tap generation, saved-network passwords (root/Shizuku) and cross-plugin sharing. |
 | [Network Identity Guard](network_identity_guard.dolphyplugin) | Plugins | `wifi`, `bluetooth`, `root`, `files` | Network identity audit plus verified Wi-Fi MAC rotation with per-network randomization status; IMEI/SN are intentionally out of scope. |
-| [Captive Portal Auditor](captive_portal_auditor.dolphyplugin) | Plugins | `network`, `wifi`, `files` | Consent-gated captive portal audit with network picker and Wi-Fi security scan (open/WEP/legacy WPA/WPS/evil twin), TLS versions, exposed files, CORS, HTTP methods, JavaScript, caching, login forms and a remediation report. |
+| [Captive Portal Auditor](captive_portal_auditor.dolphyplugin) | Plugins | `network`, `wifi`, `files` | Consent-gated captive portal and Wi-Fi audit toolkit: Kismet-style survey (channel/band/PMF/WPS/vendor), rogue AP detection, testssl-style TLS/certificate checks, WhatWeb/Nikto-style fingerprint and headers, Nmap-style gateway ports, DHCP/DNS audit and a risk-scored remediation report. |
 
 ## Cross-plugin wordlist integration
 

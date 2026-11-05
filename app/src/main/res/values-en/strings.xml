@@ -1550,6 +1550,9 @@ The file is downloaded from the official Dolphy GitHub repository. Plugins run w
     <string name="plugin_catalog_version_available">Update to %1$s available</string>
     <string name="plugin_catalog_installed_version">Installed %1$s</string>
     <string name="plugin_catalog_desc_wifi_scanner">Material 3 Wi-Fi scanner: current connection, nearby networks, security, channel and signal strength.</string>
+    <string name="plugin_catalog_desc_wordlist">SSID-aware WPA wordlist studio: one-tap start, saved-network passwords (root/Shizuku) and a shared list for other plugins.</string>
+    <string name="plugin_catalog_desc_identity_guard">Professional network identity audit and Wi-Fi MAC rotation: identifiers apps can see, per-network randomization status, and a verified MAC change attempt (no IMEI/SN).</string>
+    <string name="plugin_catalog_desc_captive">Professional captive-portal and Wi-Fi audit toolkit: survey, rogue AP detection, PMF/WPA3, TLS and certificates, server/WAF fingerprint, gateway ports, DHCP/DNS and a risk-scored remediation report.</string>
     <string name="plugin_catalog_desc_ble_scanner">BLE scanner: nearby devices with distance estimate, advertisement type and manufacturer data.</string>
     <string name="plugin_catalog_desc_radio_lab">Bluetooth and Wi-Fi diagnostics with live BLE scanning and a real-time device list.</string>
     <string name="plugin_catalog_desc_integration_hooks">Integration example that adds a floating action and an IR transmit hook inside Dolphy screens.</string>
